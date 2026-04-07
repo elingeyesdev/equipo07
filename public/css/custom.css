@@ -1,0 +1,199 @@
+:root {
+  --agro: #3f7e2a;     
+  --agro-700: #2f621f;
+}
+
+/* Barra superior */
+.project-topbar {
+  background: var(--agro) !important;
+}
+.project-topbar .nav-link {
+  color: #fff !important;
+}
+.project-topbar .nav-link.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: .25rem;
+}
+
+/* Botones verdes */
+.btn-success, .badge-success {
+  background-color: var(--agro) !important;
+  border-color: var(--agro) !important;
+}
+.btn-success:hover {
+  background-color: var(--agro-700) !important;
+  border-color: var(--agro-700) !important;
+}
+
+/* Tarjetas */
+.project-card {
+  border-radius: .75rem;
+}
+.rounded-lg {
+  border-radius: .75rem !important;
+}
+
+/* === THEME AGROVIDA para panel (AdminLTE) === */
+:root{
+  --agro:#3f7e2a;     
+  --agro-700:#2f621f;  
+  --agro-100:#e9f4ea;
+}
+
+/* Navbar superior del panel */
+.theme-agro .main-header.navbar {
+  background:#f7fff7;
+  border-bottom:1px solid #e6f2e6;
+}
+
+/* Sidebar oscuro en tonos verde */
+.theme-agro .main-sidebar{ background:var(--agro-700)!important; }
+.theme-agro .brand-link{
+  background:var(--agro)!important;
+  color:#fff!important;
+}
+.theme-agro .brand-link .brand-text{ color:#fff!important; }
+
+/* Ítems del menú lateral */
+.theme-agro .nav-sidebar .nav-link{ color:#cfe6d0; }
+.theme-agro .nav-sidebar .nav-link:hover{ color:#fff; }
+.theme-agro .nav-sidebar .nav-link.active{
+  background: rgba(63,126,42,.28)!important;
+  color:#fff!important;
+}
+.theme-agro .nav-icon{ color:#cfe6d0!important; }
+.theme-agro .nav-link.active .nav-icon,
+.theme-agro .nav-link:hover .nav-icon{ color:#fff!important; }
+
+/* Botones y badges con la misma paleta */
+.theme-agro .btn-success,
+.theme-agro .badge-success{
+  background:var(--agro)!important; border-color:var(--agro)!important;
+}
+.theme-agro .btn-success:hover{ background:var(--agro-700)!important; border-color:var(--agro-700)!important; }
+
+/* Recolorea primarios para que todo el panel use el verde */
+.theme-agro .btn-primary{ background:var(--agro)!important; border-color:var(--agro)!important; }
+.theme-agro .btn-primary:hover{ background:var(--agro-700)!important; border-color:var(--agro-700)!important; }
+.theme-agro .btn-info{ background:#2aa198!important; border-color:#2aa198!important; }
+
+/* Cards y tablas más “limpias” */
+.theme-agro .card{ border-radius:.75rem; }
+.theme-agro .card-header{ background:var(--agro-100); border-bottom:1px solid #dbe9dc; font-weight:600; }
+.theme-agro .table thead th{ background:#eef7ef; border-bottom:1px solid #dbe9dc; }
+/* Corregir color de encabezados de tabla en el tema Agro */
+.theme-agro .table thead th {
+    color: #000 !important;
+}
+/* Corregir color de contenido de tabla */
+.theme-agro .table tbody td {
+    color: #000 !important;
+}
+
+
+/* Paginación con acento verde */
+.theme-agro .page-item.active .page-link{
+  background:var(--agro)!important; border-color:var(--agro)!important;
+}
+.theme-agro .page-link:focus{ box-shadow:0 0 0 .2rem rgba(63,126,42,.2); }
+
+.font-weight-600{ font-weight:600; }
+.project-input{
+  border-radius: 30px;
+  padding-left: 1rem;
+}
+.custom-file-label{ border-radius: 30px; }
+
+/* === Listado de anuncios  === */
+.ad-img{
+  width: 100%;
+  height: 220px;     
+  object-fit: cover;   
+  border-top-left-radius: .75rem;
+  border-top-right-radius: .75rem;
+}
+
+.card-ad .card-body{
+  min-height: 140px;     
+}
+
+.line-clamp-2{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ad-meta{
+  list-style: none;
+  padding-left: 0;
+  margin: .25rem 0 .5rem;
+  color: #6c757d;
+  font-size: .875rem;
+}
+.ad-meta li{
+  display: inline-block;
+  margin-right: .5rem;
+}
+.ad-meta li::after{
+  content: "•";
+  margin-left: .5rem;
+  color: #c0c7cf;
+}
+.ad-meta li:last-child::after{ content: ""; }
+
+.price{
+  font-weight: 700;
+}
+
+@media (max-width: 575.98px){
+  .ad-img{ height: 180px; }
+}
+
+/* === Login AgroVida === */
+.login-hero{
+  min-height: 420px;
+  background:
+    linear-gradient(110deg, rgba(0,0,0,.35), rgba(0,0,0,.15)),
+    radial-gradient(1200px 500px at -10% -10%, rgba(255,255,255,.35), transparent 60%),
+    #9aa0a6;
+  background-image:
+    linear-gradient(110deg, rgba(0,0,0,.35), rgba(0,0,0,.15)),
+    url('../img/bg-agrovida.jpg'); 
+  background-size: cover;
+  background-position: center;
+}
+
+.login-card{ border:0; }
+.login-input{
+  border-radius: 12px;
+}
+.login-input:focus{
+  box-shadow: 0 0 0 .2rem rgba(63,126,42,.15);
+  border-color: #3f7e2a;
+}
+
+/* ==== Verde personalizado del sistema ==== */
+.bg-agro {
+    background-color: var(--agro) !important;
+    color: #fff !important;
+}
+
+.text-agro {
+    color: var(--agro) !important;
+}
+
+.badge-agro {
+    background-color: var(--agro) !important;
+    color: #fff !important;
+}
+
+.btn-outline-agro {
+    color: var(--agro) !important;
+    border-color: var(--agro) !important;
+}
+.btn-outline-agro:hover {
+    background-color: var(--agro) !important;
+    color: #fff !important;
+}
+
