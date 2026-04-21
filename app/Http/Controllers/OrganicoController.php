@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Organico;
 use App\Models\OrganicoImagen;
+use App\Models\OrganicoTrazabilidad;
 use App\Models\Categoria;
 use App\Models\UnidadOrganico;
 use App\Models\TipoCultivo;
@@ -17,7 +18,7 @@ class OrganicoController extends Controller
     {
         $q = request('q');
 
-        $organicos = Organico::with(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes'])
+        $organicos = Organico::with(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes', 'trazabilidad'])
             ->when($q, function ($qb) use ($q) {
                 $qb->where('nombre', 'ilike', "%$q%")
                     ->orWhereHas('categoria', function ($q2) use ($q) {
@@ -46,10 +47,35 @@ class OrganicoController extends Controller
     public function store(StoreOrganicoRequest $request)
     {
         $data = $request->validated();
+        $trazabilidadData = [
+            'origen' => $data['origen'],
+            'finca' => $data['finca'],
+            'ubicacion' => $data['ubicacion'],
+            'fecha_siembra' => $data['fecha_siembra'],
+            'fecha_cosecha' => $data['fecha_cosecha'],
+            'tratamientos_utilizados' => $data['tratamientos_utilizados'],
+            'certificaciones' => $data['certificaciones'],
+            'observaciones' => $data['observaciones'] ?? null,
+        ];
+
+        unset(
+            $data['finca'],
+            $data['ubicacion'],
+            $data['fecha_siembra'],
+            $data['tratamientos_utilizados'],
+            $data['certificaciones'],
+            $data['observaciones']
+        );
+
         $data['user_id'] = auth()->id();
 
         // Crear el orgánico
         $organico = Organico::create($data);
+
+        OrganicoTrazabilidad::create([
+            'organico_id' => $organico->id,
+            ...$trazabilidadData,
+        ]);
 
         // Guardar las imágenes si existen (máximo 3)
         if ($request->hasFile('imagenes')) {
@@ -74,7 +100,7 @@ class OrganicoController extends Controller
 
     public function show(Organico $organico)
     {
-        $organico->load(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes']);
+        $organico->load(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes', 'trazabilidad']);
 
         return view('organicos.show', compact('organico'));
     }
@@ -87,7 +113,7 @@ class OrganicoController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
-        $organico->load('imagenes');
+        $organico->load(['imagenes', 'trazabilidad']);
 
         $categorias   = Categoria::orderBy('nombre')->get();
         $unidades     = UnidadOrganico::orderBy('nombre')->get();
@@ -105,7 +131,29 @@ class OrganicoController extends Controller
         }
 
         $data = $request->validated();
+        $trazabilidadData = [
+            'origen' => $data['origen'],
+            'finca' => $data['finca'],
+            'ubicacion' => $data['ubicacion'],
+            'fecha_siembra' => $data['fecha_siembra'],
+            'fecha_cosecha' => $data['fecha_cosecha'],
+            'tratamientos_utilizados' => $data['tratamientos_utilizados'],
+            'certificaciones' => $data['certificaciones'],
+            'observaciones' => $data['observaciones'] ?? null,
+        ];
+        unset(
+            $data['finca'],
+            $data['ubicacion'],
+            $data['fecha_siembra'],
+            $data['tratamientos_utilizados'],
+            $data['certificaciones'],
+            $data['observaciones']
+        );
         $organico->update($data);
+        $organico->trazabilidad()->updateOrCreate(
+            ['organico_id' => $organico->id],
+            $trazabilidadData
+        );
 
         // Eliminar imágenes marcadas para eliminar
         if ($request->has('imagenes_eliminar')) {

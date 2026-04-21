@@ -1,4 +1,7 @@
 @csrf
+@php
+    $trazabilidad = $organico->trazabilidad ?? null;
+@endphp
 
 {{-- ====== SECCIÓN 1: INFORMACIÓN GENERAL ====== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
@@ -118,20 +121,53 @@
                 <div class="form-group mb-0">
                     <label class="mb-1">Fecha de cosecha</label>
                     <input type="date" name="fecha_cosecha" class="form-control"
-                        value="{{ old('fecha_cosecha', $organico->fecha_cosecha ?? '') }}">
+                        value="{{ old('fecha_cosecha', optional($trazabilidad->fecha_cosecha ?? null)->format('Y-m-d') ?? $organico->fecha_cosecha ?? '') }}" required>
                     <small class="form-text text-muted">
-                        Campo opcional para mejorar la confianza del comprador.
+                        Campo obligatorio para completar la trazabilidad.
                     </small>
                 </div>
             </div>
             <div class="col-md-6 mt-3 mt-md-0">
+                <div class="form-group mb-3">
+                    <label class="mb-1">Fecha de siembra *</label>
+                    <input type="date" name="fecha_siembra" class="form-control"
+                        value="{{ old('fecha_siembra', optional($trazabilidad->fecha_siembra ?? null)->format('Y-m-d')) }}" required>
+                </div>
                 <div class="form-group mb-0">
-                    <label class="mb-1">Referencia de origen</label>
+                    <label class="mb-1">Origen *</label>
                     <input type="text" id="origen" name="origen" class="form-control"
-                        value="{{ old('origen', $organico->origen ?? '') }}" readonly>
+                        value="{{ old('origen', $trazabilidad->origen ?? $organico->origen ?? '') }}" readonly required>
                     <small class="form-text text-muted">
                         Este campo se completa automáticamente al seleccionar ubicación en el mapa.
                     </small>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="mb-1">Finca *</label>
+                    <input type="text" name="finca" class="form-control"
+                        value="{{ old('finca', $trazabilidad->finca ?? '') }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="mb-1">Ubicación (finca/zona) *</label>
+                    <input type="text" name="ubicacion" class="form-control"
+                        value="{{ old('ubicacion', $trazabilidad->ubicacion ?? '') }}" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="mb-1">Tratamientos utilizados *</label>
+                    <textarea name="tratamientos_utilizados" class="form-control" rows="3" required>{{ old('tratamientos_utilizados', $trazabilidad->tratamientos_utilizados ?? '') }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="mb-1">Certificaciones *</label>
+                    <textarea name="certificaciones" class="form-control" rows="3" required>{{ old('certificaciones', $trazabilidad->certificaciones ?? '') }}</textarea>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="mb-1">Observaciones</label>
+                    <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', $trazabilidad->observaciones ?? '') }}</textarea>
                 </div>
             </div>
         </div>

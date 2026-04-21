@@ -76,4 +76,9 @@ class Organico extends Model
     {
         return $this->belongsTo(\App\Models\UnidadOrganico::class, 'unidad_id');
     }
+
+    public function trazabilidad()
+    {
+        return $this->hasOne(OrganicoTrazabilidad::class, 'organico_id');
+    }
 }
