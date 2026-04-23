@@ -197,3 +197,77 @@
     color: #fff !important;
 }
 
+/* === Panel de busqueda principal === */
+.search-panel {
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.search-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  pointer-events: none;
+}
+
+.search-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.search-panel label {
+  color: #24311f !important;
+  letter-spacing: 0.01em;
+}
+
+.search-panel .form-control,
+.search-panel .input-group-text {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(63, 126, 42, 0.14);
+}
+
+.search-panel .form-control {
+  background: rgba(255, 255, 255, 0.58);
+  color: #1f2a1b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.search-panel .form-control::placeholder {
+  color: rgba(31, 42, 27, 0.6);
+}
+
+.search-panel .form-control:focus {
+  background: rgba(255, 255, 255, 0.68);
+  border-color: rgba(63, 126, 42, 0.35);
+  box-shadow: 0 0 0 0.2rem rgba(63, 126, 42, 0.12);
+}
+
+.search-panel .input-group-text {
+  background: linear-gradient(135deg, rgba(63, 126, 42, 0.95), rgba(47, 98, 31, 0.95)) !important;
+  color: #fff !important;
+  border-color: rgba(63, 126, 42, 0.2);
+}
+
+.search-panel .btn-success {
+  border-radius: 0.9rem;
+  box-shadow: 0 10px 20px rgba(63, 126, 42, 0.18);
+}
+
+.search-panel .btn-outline-secondary {
+  background: rgba(255, 255, 255, 0.34);
+  border-color: rgba(108, 117, 125, 0.25);
+}
+
+@media (max-width: 767.98px) {
+  .search-panel {
+    padding: 1.1rem !important;
+    border-radius: 0.9rem;
+  }
+}

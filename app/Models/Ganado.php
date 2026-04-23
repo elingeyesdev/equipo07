@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\NormalizesStoredPaths;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ganado extends Model
 {
     use HasFactory;
+    use NormalizesStoredPaths;
 
     protected $fillable = [
         'nombre',
@@ -111,5 +113,15 @@ class Ganado extends Model
     public function hijosPadre()
     {
         return $this->hasMany(Ganado::class, 'padre_id');
+    }
+
+    public function getImagenNormalizadaAttribute(): ?string
+    {
+        return static::normalizeStoredPathValue($this->imagen);
+    }
+
+    public function getImagenUrlAttribute(): ?string
+    {
+        return $this->storageAssetUrl($this->imagen);
     }
 }

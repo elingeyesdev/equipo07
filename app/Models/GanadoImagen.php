@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\NormalizesStoredPaths;
 use Illuminate\Database\Eloquent\Model;
 
 class GanadoImagen extends Model
 {
+    use NormalizesStoredPaths;
+
     /**
      * Tabla asociada al modelo
      */
@@ -23,5 +26,15 @@ class GanadoImagen extends Model
     public function ganado()
     {
         return $this->belongsTo(Ganado::class);
+    }
+
+    public function getRutaNormalizadaAttribute(): ?string
+    {
+        return static::normalizeStoredPathValue($this->ruta);
+    }
+
+    public function getUrlAttribute(): ?string
+    {
+        return $this->storageAssetUrl($this->ruta);
     }
 }

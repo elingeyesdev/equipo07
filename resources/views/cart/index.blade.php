@@ -281,9 +281,9 @@
                                         if ($item->product_type == 'ganado' && $product) {
                                             // Intentar obtener imagen de la relación imagenes primero, luego del campo directo
                                             if ($product->imagenes && $product->imagenes->count() > 0) {
-                                                $imageUrl = asset('storage/' . $product->imagenes->first()->ruta);
+                                                $imageUrl = $product->imagenes->first()->url;
                                             } elseif ($product->imagen) {
-                                                $imageUrl = asset('storage/' . $product->imagen);
+                                                $imageUrl = $product->imagen_url;
                                             }
                                         } elseif (
                                             $item->product_type == 'maquinaria' &&

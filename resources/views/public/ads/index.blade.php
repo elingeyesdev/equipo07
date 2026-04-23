@@ -690,11 +690,11 @@
                                     <div class="product-card-modern">
                                         @php
                                             $imagenPrincipal =
-                                                $ganado->imagenes->first()->ruta ?? ($ganado->imagen ?? null);
+                                                optional($ganado->imagenes->first())->url ?? $ganado->imagen_url;
                                         @endphp
                                         @if ($imagenPrincipal)
                                             <div class="card-img-wrapper-modern">
-                                                <img src="{{ asset('storage/' . $imagenPrincipal) }}"
+                                                <img src="{{ $imagenPrincipal }}"
                                                     class="product-img" alt="{{ $ganado->nombre }}">
                                             </div>
                                         @else
