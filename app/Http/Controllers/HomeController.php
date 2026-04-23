@@ -66,7 +66,7 @@ class HomeController extends Controller
                 $ganadosQuery->where('raza_id', $raza_id);
             }
 
-            $ganados = $ganadosQuery->orderBy('created_at', 'desc')->paginate(12);
+            $ganados = $ganadosQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'ganados_page');
 
             // Búsqueda en Maquinarias (siempre mostrar)
             $maquinariasQuery = Maquinaria::with(['categoria', 'tipoMaquinaria', 'marcaMaquinaria', 'estadoMaquinaria', 'imagenes'])
@@ -87,7 +87,7 @@ class HomeController extends Controller
                 $maquinariasQuery->where('categoria_id', $categoria_id);
             }
 
-            $maquinarias = $maquinariasQuery->orderBy('created_at', 'desc')->paginate(12);
+            $maquinarias = $maquinariasQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'maquinarias_page');
 
             // Búsqueda en Orgánicos (siempre mostrar)
             $organicosQuery = Organico::with(['categoria', 'imagenes', 'unidad'])
@@ -102,7 +102,7 @@ class HomeController extends Controller
                 $organicosQuery->where('categoria_id', $categoria_id);
             }
 
-            $organicos = $organicosQuery->orderBy('created_at', 'desc')->paginate(12);
+            $organicos = $organicosQuery->orderBy('created_at', 'desc')->paginate(12, ['*'], 'organicos_page');
         } else {
             // Sin búsqueda: mostrar productos destacados/recientes (últimos 3 de cada tipo)
             $ganados = Ganado::with(['categoria', 'tipoAnimal', 'raza', 'datoSanitario', 'imagenes'])

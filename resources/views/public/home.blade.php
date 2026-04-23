@@ -383,7 +383,7 @@
                     </div>
                     @if (method_exists($ganados, 'links'))
                         <div class="mt-3">
-                            {{ $ganados->appends(request()->query())->links() }}
+                            {{ $ganados->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>
@@ -572,7 +572,7 @@
                     </div>
                     @if (method_exists($maquinarias, 'links'))
                         <div class="mt-3">
-                            {{ $maquinarias->appends(request()->query())->links() }}
+                            {{ $maquinarias->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>
@@ -678,7 +678,7 @@
                     </div>
                     @if (method_exists($organicos, 'links'))
                         <div class="mt-3">
-                            {{ $organicos->appends(request()->query())->links() }}
+                            {{ $organicos->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>

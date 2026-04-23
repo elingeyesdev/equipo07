@@ -184,7 +184,6 @@
                 <table class="table table-hover table-requests mb-0">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Usuario</th>
                             <th>Email</th>
                             <th>Teléfono</th>
@@ -200,7 +199,6 @@
                     <tbody>
                         @forelse($solicitudes as $solicitud)
                             <tr>
-                                <td>{{ $solicitud->id }}</td>
                                 <td>
                                     <strong>{{ $solicitud->user->name }}</strong><br>
                                     <small class="text-muted">

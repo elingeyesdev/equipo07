@@ -97,6 +97,86 @@
 }
 .theme-agro .page-link:focus{ box-shadow:0 0 0 .2rem rgba(63,126,42,.2); }
 
+/* Paginacion global consistente con el estilo AgroVida */
+.pagination {
+  gap: .35rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
+.pagination .page-link {
+  border: 1px solid rgba(63, 126, 42, 0.16);
+  color: var(--agro);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf4 100%);
+  border-radius: .8rem !important;
+  padding: .55rem .9rem;
+  min-width: 2.7rem;
+  min-height: 2.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(31, 42, 27, 0.06);
+  transition: all .2s ease;
+}
+
+.pagination .page-link:hover {
+  color: #fff;
+  background: linear-gradient(135deg, var(--agro) 0%, var(--agro-700) 100%);
+  border-color: var(--agro);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.18);
+}
+
+.pagination .page-link:focus {
+  box-shadow: 0 0 0 .2rem rgba(63,126,42,.18);
+}
+
+.pagination .page-item.active .page-link {
+  color: #fff;
+  background: linear-gradient(135deg, var(--agro) 0%, var(--agro-700) 100%);
+  border-color: var(--agro);
+  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.22);
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #9aa7a0;
+  background: #f3f6f1;
+  border-color: rgba(63, 126, 42, 0.08);
+  box-shadow: none;
+}
+
+.pagination .page-link span[aria-hidden="true"] {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.theme-agro .pagination,
+.content-wrapper .pagination,
+.content .pagination {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 575.98px) {
+  .pagination {
+    gap: .25rem;
+  }
+
+  .pagination .page-link {
+    min-width: 2.35rem;
+    min-height: 2.35rem;
+    padding: .45rem .72rem;
+    border-radius: .7rem !important;
+    font-size: .92rem;
+  }
+}
+
 .font-weight-600{ font-weight:600; }
 .project-input{
   border-radius: 30px;
