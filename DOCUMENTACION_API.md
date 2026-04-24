@@ -45,4 +45,7 @@ Blindaje del sistema para no procesar imperfecciones y configurar la apertura to
 
 * **Consistencia Nivel Base de Datos:** `database/migrations/` (Llaves foráneas garantizan cruce de entidades sin generar registros huérfanos).
 * **Consistencia Nivel HTTP / Validaciones:** En todas las recepciones (ej. `OrganicoApiController.php`), el estricto `$request->validate([...])` garantiza los tipos y existencia de datos en formato numérico o texto antes de contaminar la base de datos local.
-* **Apertura de Consumos Globales (CORS abierto y Exclusión CSRF):** En `bootstrap/app.php`, al establecer `$middleware->validateCsrfTokens(except: ['api/*']);`, se anulan las restricciones que causan error tipo *419* y permite así, aceptar consultas POST/PUT desde un desarrollo Frontend externo local o archivo nativo `file://` permitiendo trabajar comodamente con Angular, React, Vue o Mobile nativo.
+* **Apertura de Consumos Globales (CORS abierto y Exclusión CSRF):** En `bootstrap/app.php`, al establecer `$middleware->validateCsrfTokens(except: ['api/*']);`, se anulan las restricciones que causan error tipo *419* y permite así, aceptar consultas POST/PUT desde un desarrollo Frontend externo local o archivo nativo `file://` permitiendo trabajar comodamente con Angular, React, Vue o Mobile nativo.,,,,,
+asdasdasdasd as
+asdaasdasd 
+as das

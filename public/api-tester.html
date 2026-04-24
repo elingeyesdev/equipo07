@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester Pro - Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Axios para peticiones HTTP -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        /* Personalización de la barra de desplazamiento para el tema oscuro */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Colores para resaltar la sintaxis JSON en la consola */
+        .json-key {
+            color: #60a5fa;
+        }
+
+        /* Azul claro */
+        .json-string {
+            color: #34d399;
+        }
+
+        /* Verde esmeralda */
+        .json-number {
+            color: #fbbf24;
+        }
+
+        /* Amarillo ámbar */
+        .json-boolean {
+            color: #f472b6;
+        }
+
+        /* Rosa */
+        .json-null {
+            color: #9ca3af;
+        }
+
+        /* Gris */
+
+        /* Efecto de desenfoque cuando no hay sesión iniciada */
+        .blur-sm {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-200 h-screen flex flex-col overflow-hidden font-sans">
+
+    <!-- PANTALLA DE LOGIN (SUPERPUESTA) -->
+    <div id="loginOverlay"
+        class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-500 backdrop-blur-sm">
+        <div
+            class="bg-gray-800 p-8 rounded-xl shadow-2xl w-96 border border-gray-700 transform transition-transform scale-100">
+            <div class="text-center mb-6">
+                <i class="fas fa-terminal text-4xl text-indigo-500 mb-3"></i>
+                <h2 class="text-2xl font-bold text-white">API Tester Pro</h2>
+                <p class="text-xs text-gray-400 mt-1 font-mono" id="loginHostDisplay">Detectando servidor local...</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Correo de
+                        Usuario</label>
+                    <input type="email" id="loginEmail" placeholder="admin@ejemplo.com"
+                        class="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label
+                        class="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••"
+                        class="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Simular Rol en
+                        Menú</label>
+                    <select id="loginRole"
+                        class="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        <option value="admin">Administrador (Todas las APIs)</option>
+                        <option value="vendedor">Vendedor (Limitado)</option>
+                    </select>
+                </div>
+                <button onclick="processLogin()" id="btnLogin"
+                    class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-500 transition-colors flex justify-center items-center gap-2 mt-2">
+                    <i class="fas fa-power-off"></i> Autenticar con Laravel
+                </button>
+                <div id="loginError"
+                    class="hidden text-red-400 text-xs text-center font-medium mt-3 bg-red-900/30 p-3 rounded-lg border border-red-800/50">
+                    <!-- Errores dinámicos -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DEL PANEL -->
+    <div id="appContainer" class="flex flex-col h-full w-full blur-sm transition-all duration-300">
+        <!-- Encabezado / Navbar -->
+        <header
+            class="bg-gray-950 border-b border-gray-800 text-white p-3 flex justify-between items-center z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600/20 p-2 rounded-lg">
+                    <i class="fas fa-network-wired text-indigo-400"></i>
+                </div>
+                <h1 class="text-lg font-bold tracking-wide">API Workspace <span class="text-gray-500 font-light">| Local
+                        Dev</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs text-gray-400"><i class="fas fa-user-check mr-1"></i></span>
+                <span id="headerUserEmail" class="font-bold text-sm text-indigo-300">...</span>
+                <span id="roleBadge" class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider"></span>
+                <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors ml-2"
+                    title="Cerrar Sesión"><i class="fas fa-sign-out-alt text-lg"></i></button>
+            </div>
+        </header>
+
+        <!-- Área Central de Trabajo -->
+        <main class="flex-1 flex overflow-hidden">
+            <!-- Menú Lateral: Lista de APIs -->
+            <aside id="sidebar" class="w-72 bg-gray-900 border-r border-gray-800 flex flex-col">
+                <div class="p-4 border-b border-gray-800">
+                    <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Endpoints</h2>
+                </div>
+                <div class="overflow-y-auto flex-1 p-2 space-y-1" id="apiList">
+                    <!-- Se llena automáticamente con Javascript -->
+                </div>
+            </aside>
+
+            <!-- Centro: Formulario de la API seleccionada -->
+            <section class="flex-1 flex flex-col bg-gray-800">
+                <div class="p-6 flex-1 overflow-y-auto" id="actionArea">
+                    <div class="h-full flex flex-col items-center justify-center text-gray-600 space-y-4 text-center">
+                        <i class="fas fa-rocket text-6xl opacity-20"></i>
+                        <p class="text-lg font-medium text-gray-400">Selecciona un endpoint del menú izquierdo para
+                            comenzar tus pruebas.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Derecha: Consola Negra de Respuestas JSON -->
+            <aside class="w-[450px] bg-black flex flex-col shrink-0 border-l border-gray-800">
+                <div class="p-3 bg-gray-900 flex justify-between items-center border-b border-gray-800">
+                    <h2 class="text-xs font-mono text-gray-400"><i
+                            class="fas fa-terminal mr-2 text-indigo-500"></i>Response Console</h2>
+                    <button onclick="clearLogs()" class="text-gray-600 hover:text-gray-300 transition-colors"
+                        title="Limpiar Consola"><i class="fas fa-trash-alt text-sm"></i></button>
+                </div>
+                <div id="logConsole"
+                    class="flex-1 p-4 overflow-y-auto text-[11px] font-mono log-console whitespace-pre-wrap">
+                    <div class="text-gray-600 mb-2">// Consola lista. Esperando peticiones...</div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Abajo: Microventana (Iframe) para previsualización real -->
+        <section class="h-[35%] bg-gray-900 border-t border-gray-700 flex flex-col shrink-0 relative">
+            <div class="bg-gray-800 p-2 flex justify-between items-center text-xs border-b border-gray-700">
+                <div class="flex items-center gap-2 text-gray-300">
+                    <i class="fas fa-eye text-indigo-400"></i>
+                    <span class="font-bold tracking-wide">Live Frontend Preview</span>
+                </div>
+                <div
+                    class="flex items-center gap-2 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-700 shadow-inner">
+                    <i class="fas fa-globe text-gray-500 text-[10px]"></i>
+                    <span id="iframeUrlDisplay" class="font-mono text-[10px] text-gray-400">/dashboard</span>
+                    <div class="w-px h-3 bg-gray-700 mx-1"></div>
+                    <button onclick="refreshIframe()" class="text-gray-500 hover:text-indigo-400 transition-colors"
+                        title="Refrescar Iframe manualmente"><i class="fas fa-sync-alt"></i></button>
+                    <button onclick="openInNewTab()" class="text-gray-500 hover:text-indigo-400 transition-colors ml-2"
+                        title="Abrir en pestaña completa"><i class="fas fa-external-link-alt"></i></button>
+                </div>
+            </div>
+            <!-- El iframe cargará las vistas reales del proyecto -->
+            <div class="flex-1 relative w-full bg-white">
+                <iframe id="systemIframe" class="w-full h-full border-none" src=""></iframe>
+
+                <!-- Pantalla de carga superpuesta al iframe mientras refresca -->
+                <div id="iframeLoader"
+                    class="absolute inset-0 bg-gray-900/80 flex items-center justify-center hidden z-10 backdrop-blur-sm">
+                    <div class="flex flex-col items-center">
+                        <i class="fas fa-circle-notch fa-spin text-4xl text-indigo-500 mb-3"></i>
+                        <span class="text-xs font-bold text-gray-300 tracking-wider uppercase">Actualizando vista
+                            visual...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
+    <script>
+        // 1. DETECCIÓN AUTOMÁTICA DEL SERVIDOR (Localhost o Producción)
+        // window.location.origin obtendrá automáticamente "http://localhost:8000" si abres el archivo desde ahí
+        const BASE_URL = window.location.origin;
+        document.getElementById('loginHostDisplay').textContent = `Servidor actual: ${BASE_URL}`;
+
+        // 2. CONFIGURACIÓN GLOBAL DE AXIOS (Motor de peticiones)
+        axios.defaults.baseURL = BASE_URL;
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        axios.defaults.headers.common['Accept'] = 'application/json';
+        // Esto es OBLIGATORIO para que Laravel recuerde la sesión tras hacer login
+        axios.defaults.withCredentials = true;
+
+        // 3. DICCIONARIO COMPLETO DE ENDPOINTS DEL SISTEMA
+        const apiDictionary = [
+            // --- ORGÁNICOS ---
+            { id: 'org-get', group: '1. Orgánicos', name: 'Listar Todos', method: 'GET', endpoint: '/api/organicos', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Obtiene el catálogo de productos orgánicos.', bodyTpl: null },
+            { id: 'org-post', group: '1. Orgánicos', name: 'Crear Producto', method: 'POST', endpoint: '/api/organicos', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Registra un nuevo producto. El FormRequest validará los datos enviados.', bodyTpl: '{\n  "nombre": "Abono Natural",\n  "descripcion": "Abono rico en nutrientes para tierra fertil",\n  "precio": 150.50,\n  "stock": 100,\n  "tipo_cultivo_id": 1\n}' },
+            { id: 'org-put', group: '1. Orgánicos', name: 'Actualizar (ID: 1)', method: 'PUT', endpoint: '/api/organicos/1', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Actualiza datos. Puedes cambiar el "1" en la URL por el ID que desees editar.', bodyTpl: '{\n  "precio": 180.00,\n  "stock": 85\n}' },
+            { id: 'org-del', group: '1. Orgánicos', name: 'Eliminar (ID: 1)', method: 'DELETE', endpoint: '/api/organicos/1', viewUrl: '/organicos', roles: ['admin'], desc: 'Borra físicamente o hace borrado lógico del producto.', bodyTpl: null },
+
+            // --- MAQUINARIAS ---
+            { id: 'maq-get', group: '2. Maquinarias', name: 'Listar Todas', method: 'GET', endpoint: '/api/maquinarias', viewUrl: '/maquinarias', roles: ['admin', 'vendedor'], desc: 'Muestra todo el registro de maquinaria.', bodyTpl: null },
+            { id: 'maq-post', group: '2. Maquinarias', name: 'Registrar Nueva', method: 'POST', endpoint: '/api/maquinarias', viewUrl: '/maquinarias', roles: ['admin'], desc: 'Añade maquinaria. Verifica que el marca_id exista en la base de datos (Llave foránea).', bodyTpl: '{\n  "marca_id": 3,\n  "modelo": "Tractor X-500 Turbo",\n  "estado": "Operativo",\n  "anio_fabricacion": 2020\n}' },
+            { id: 'maq-put', group: '2. Maquinarias', name: 'Cambiar Estado (ID: 1)', method: 'PUT', endpoint: '/api/maquinarias/1', viewUrl: '/maquinarias', roles: ['admin'], desc: 'Actualiza el estado de una maquinaria específica.', bodyTpl: '{\n  "estado": "En Mantenimiento"\n}' },
+            { id: 'maq-del', group: '2. Maquinarias', name: 'Dar de Baja (ID: 1)', method: 'DELETE', endpoint: '/api/maquinarias/1', viewUrl: '/maquinarias', roles: ['admin'], desc: 'Elimina el registro del sistema.', bodyTpl: null },
+
+            // --- GANADOS ---
+            { id: 'gan-get', group: '3. Ganados', name: 'Inventario Completo', method: 'GET', endpoint: '/api/ganados', viewUrl: '/ganados', roles: ['admin', 'vendedor'], desc: 'Lista inventario completo de ganado e injertos.', bodyTpl: null },
+            { id: 'gan-post', group: '3. Ganados', name: 'Registrar Animal', method: 'POST', endpoint: '/api/ganados', viewUrl: '/ganados', roles: ['admin'], desc: 'Ingreso de nuevo ganado.', bodyTpl: '{\n  "raza_id": 2,\n  "peso_kg": 450.5,\n  "fecha_nacimiento": "2023-01-15",\n  "estado_salud": "Sano"\n}' },
+            { id: 'gan-put', group: '3. Ganados', name: 'Actualizar Peso (ID: 1)', method: 'PUT', endpoint: '/api/ganados/1', viewUrl: '/ganados', roles: ['admin', 'vendedor'], desc: 'Actualiza peso o salud del animal en específico.', bodyTpl: '{\n  "peso_kg": 465.0\n}' },
+            { id: 'gan-del', group: '3. Ganados', name: 'Reportar Baja (ID: 1)', method: 'DELETE', endpoint: '/api/ganados/1', viewUrl: '/ganados', roles: ['admin'], desc: 'Registra la baja del animal.', bodyTpl: null },
+
+            // --- SERVICIOS AUXILIARES ---
+            { id: 'srv-geo', group: '4. Servicios Generales', name: 'Test Geocodificación', method: 'GET', endpoint: '/api/geocodificacion?latitud=-16.5&longitud=-68.1', viewUrl: '/', roles: ['admin', 'vendedor'], desc: 'Prueba la API que usa Leaflet en el frontend.', bodyTpl: null },
+            { id: 'srv-cat', group: '4. Servicios Generales', name: 'Listar Categorías', method: 'GET', endpoint: '/api/categorias', viewUrl: '/', roles: ['admin', 'vendedor'], desc: 'Endpoint para alimentar selects visuales.', bodyTpl: null },
+            { id: 'srv-cul', group: '4. Servicios Generales', name: 'Listar Cultivos', method: 'GET', endpoint: '/api/tipo-cultivos', viewUrl: '/', roles: ['admin', 'vendedor'], desc: 'Devuelve cultivos válidos.', bodyTpl: null },
+            { id: 'srv-mar', group: '4. Servicios Generales', name: 'Listar Marcas Maq.', method: 'GET', endpoint: '/api/marcas-maquinaria', viewUrl: '/', roles: ['admin', 'vendedor'], desc: 'Devuelve listado de marcas.', bodyTpl: null },
+
+            // --- REPORTES ---
+            { id: 'rep-ven', group: '5. Reportes (Builders)', name: 'Reporte Ventas (Filtrado)', method: 'GET', endpoint: '/api/reportes/ventas?desde=2023-01-01&hasta=2023-12-31', viewUrl: '/reportes/ventas', roles: ['admin'], desc: 'Prueba las consultas dinámicas de Laravel.', bodyTpl: null },
+            { id: 'rep-len', group: '5. Reportes (Builders)', name: 'Productos Poco Movimiento', method: 'GET', endpoint: '/api/reportes/productos-lentos', viewUrl: '/reportes/inventario', roles: ['admin'], desc: 'Prueba la consulta compleja (unionAll) de productos.', bodyTpl: null }
+        ];
+
+        let currentSelectedApi = null;
+
+        // 4. LÓGICA DE INICIO DE SESIÓN
+        function processLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+            const btn = document.getElementById('btnLogin');
+
+            if (!email || !password) {
+                showError("Por favor, rellena todos los campos.");
+                return;
+            }
+
+            document.getElementById('loginError').classList.add('hidden');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Conectando con Laravel...';
+            btn.disabled = true;
+
+            // Petición real al servidor local para login
+            axios.get('/sanctum/csrf-cookie')
+                .then(() => axios.post('/login', { email, password }))
+                .then(() => unlockDashboard(email, role))
+                .catch(error => {
+                    btn.innerHTML = originalBtnHtml;
+                    btn.disabled = false;
+
+                    if (error.response && error.response.status === 422) {
+                        showError("Credenciales incorrectas validadas por el servidor.");
+                    } else if (error.response && error.response.status === 419) {
+                        showError("Error de token CSRF. Intenta recargar la página.");
+                    } else {
+                        showError("No hay conexión. Asegúrate que tu servidor local (php artisan serve) esté encendido.");
+                    }
+                });
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('loginError');
+            el.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${msg}`;
+            el.classList.remove('hidden');
+        }
+
+        function unlockDashboard(email, role) {
+            document.getElementById('loginOverlay').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('appContainer').classList.remove('blur-sm');
+
+            document.getElementById('headerUserEmail').textContent = email;
+            const badge = document.getElementById('roleBadge');
+            badge.textContent = role;
+            badge.className = `px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white ${role === 'admin' ? 'bg-red-500/80 border border-red-500' : 'bg-blue-500/80 border border-blue-500'}`;
+
+            addLog('SYS', 'Conexión Local Establecida', { usuario: email, servidor: BASE_URL });
+            renderApiList(role);
+            document.getElementById('systemIframe').src = BASE_URL + '/dashboard';
+        }
+
+        function logout() {
+            axios.post('/logout').finally(() => location.reload());
+        }
+
+        // 5. RENDERIZAR MENÚ SEGÚN EL ROL
+        function renderApiList(role) {
+            const apiListEl = document.getElementById('apiList');
+            apiListEl.innerHTML = '';
+
+            const groups = {};
+            apiDictionary.forEach(api => {
+                if (api.roles.includes(role)) {
+                    if (!groups[api.group]) groups[api.group] = [];
+                    groups[api.group].push(api);
+                }
+            });
+
+            for (const [groupName, apis] of Object.entries(groups)) {
+                const groupTitle = document.createElement('div');
+                groupTitle.className = 'text-[10px] font-bold text-gray-500 uppercase mt-5 mb-2 px-3 border-b border-gray-800 pb-1 tracking-widest';
+                groupTitle.textContent = groupName;
+                apiListEl.appendChild(groupTitle);
+
+                apis.forEach(api => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-between group mb-1';
+
+                    let methodColor = api.method === 'GET' ? 'bg-blue-900/50 text-blue-400 border border-blue-800/50' :
+                        api.method === 'POST' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-800/50' :
+                            api.method === 'PUT' ? 'bg-amber-900/50 text-amber-400 border border-amber-800/50' :
+                                'bg-red-900/50 text-red-400 border border-red-800/50';
+
+                    btn.innerHTML = `
+                        <span class="text-sm font-medium text-gray-400 group-hover:text-gray-200 truncate pr-2">${api.name}</span>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded ${methodColor}">${api.method}</span>
+                    `;
+                    btn.onclick = () => loadApiAction(api);
+                    apiListEl.appendChild(btn);
+                });
+            }
+        }
+
+        // 6. CARGAR EL FORMULARIO DE LA API EN EL CENTRO
+        function loadApiAction(api) {
+            currentSelectedApi = api;
+
+            // Lógica para sincronizar la ventana inferior (Iframe) con la sección que estamos probando
+            const iframe = document.getElementById('systemIframe');
+            const targetVisualUrl = BASE_URL + api.viewUrl;
+            if (!iframe.src.includes(api.viewUrl)) {
+                iframe.src = targetVisualUrl;
+                document.getElementById('iframeUrlDisplay').textContent = api.viewUrl;
+            }
+
+            let methodColorClass = api.method === 'GET' ? 'bg-blue-500' :
+                api.method === 'POST' ? 'bg-emerald-500' :
+                    api.method === 'PUT' ? 'bg-amber-500' : 'bg-red-500';
+
+            // Campo de texto modificable por si quieres probar borrar el ID 2 en vez del 1
+            let endpointInput = `<input type="text" id="dynamicEndpoint" value="${api.endpoint}" class="w-full bg-gray-900 p-2.5 rounded-lg font-mono text-sm text-gray-300 border border-gray-700 outline-none focus:border-indigo-500 transition-colors">`;
+
+            let bodySection = '';
+            // Si no es GET ni DELETE, significa que necesitamos mandar JSON en el body
+            if (api.method !== 'GET' && api.method !== 'DELETE') {
+                bodySection = `
+                    <div class="mt-5">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Payload o Cuerpo (Formato JSON)</label>
+                        <textarea id="apiBody" rows="7" class="w-full font-mono text-sm p-4 bg-gray-900 border border-gray-700 rounded-lg text-green-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none shadow-inner" spellcheck="false">${api.bodyTpl}</textarea>
+                    </div>
+                `;
+            }
+
+            document.getElementById('actionArea').innerHTML = `
+                <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl">
+                    <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-700">
+                        <span class="${methodColorClass} text-white px-3 py-1 rounded-md font-bold tracking-wider w-20 text-center shadow-lg">${api.method}</span>
+                        <h2 class="text-xl font-bold text-white">${api.name}</h2>
+                    </div>
+                    
+                    <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">URL de Destino</label>
+                    <div class="flex items-center gap-2 mb-5">
+                        <span class="text-gray-500 font-mono text-sm bg-gray-900 py-2.5 px-3 rounded-lg border border-gray-800">${BASE_URL}</span>
+                        ${endpointInput}
+                    </div>
+                    
+                    <div class="bg-indigo-900/20 text-indigo-300 p-3 rounded-lg text-sm border border-indigo-500/20 mb-2 flex gap-3">
+                        <i class="fas fa-info-circle mt-0.5"></i>
+                        <p>${api.desc}</p>
+                    </div>
+                    
+                    ${bodySection}
+
+                    <div class="pt-6 mt-6 border-t border-gray-700 flex justify-end">
+                        <button onclick="executeRealFetch()" id="btnExecute" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-8 rounded-lg shadow-lg flex items-center gap-2 transition-all active:scale-95">
+                            <i class="fas fa-paper-plane text-sm"></i> Enviar Petición a Laravel
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 7. EJECUTAR LA PETICIÓN Y VER RESULTADOS EN LA CONSOLA NEGRA
+        function executeRealFetch() {
+            if (!currentSelectedApi) return;
+
+            const method = currentSelectedApi.method;
+            const finalEndpoint = document.getElementById('dynamicEndpoint').value;
+            let reqBody = null;
+
+            if (method === 'POST' || method === 'PUT') {
+                try { reqBody = JSON.parse(document.getElementById('apiBody').value); }
+                catch (e) { addLog('ERR', finalEndpoint, { error: "El texto ingresado no es un JSON válido" }, 400); return; }
+            }
+
+            addLog('REQ', `${method} ${finalEndpoint}`, reqBody);
+
+            const btn = document.getElementById('btnExecute');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Ejecutando...';
+            btn.disabled = true;
+
+            // Ejecuta petición Axios
+            axios({ method: method, url: finalEndpoint, data: reqBody })
+                .then(response => {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    addLog('RES', `[${response.status}] ÉXITO`, response.data, response.status);
+                    // Si alteramos la BD, recargamos la ventanita visual de abajo
+                    if (method !== 'GET') triggerIframeReload();
+                })
+                .catch(error => {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    let status = error.response ? error.response.status : 'ERR';
+                    let data = error.response ? error.response.data : { msg: error.message };
+                    addLog('RES', `[${status}] FALLO`, data, parseInt(status));
+                });
+        }
+
+        // 8. FUNCIONES DE IMPRESIÓN PARA LA CONSOLA NEGRA
+        function addLog(type, header, data, status = 200) {
+            const consoleEl = document.getElementById('logConsole');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+            let color = 'text-green-400';
+            let bgBadge = 'bg-green-900/30 border-green-800';
+
+            if (type === 'REQ') { color = 'text-blue-400'; bgBadge = 'bg-blue-900/30 border-blue-800'; }
+            if (status >= 400 || type === 'ERR') { color = 'text-red-400'; bgBadge = 'bg-red-900/30 border-red-800'; }
+            if (type === 'SYS') { color = 'text-amber-400'; bgBadge = 'bg-amber-900/30 border-amber-800'; }
+
+            let jsonHtml = '';
+            if (data) {
+                let jsonString = JSON.stringify(data, null, 2);
+                jsonString = jsonString.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                jsonString = jsonString.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) cls = 'json-key';
+                        else cls = 'json-string';
+                    } else if (/true|false/.test(match)) cls = 'json-boolean';
+                    else if (/null/.test(match)) cls = 'json-null';
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+                jsonHtml = `<pre class="mt-2 p-3 bg-gray-950 border border-gray-800 rounded-lg text-[10px] overflow-x-auto leading-relaxed shadow-inner">${jsonString}</pre>`;
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'mb-4 border-b border-gray-800 pb-3 opacity-0 translate-y-2 transition-all duration-300';
+            entry.innerHTML = `
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-gray-600 text-[9px]">${time}</span>
+                    <span class="px-1.5 py-0.5 text-[9px] font-bold rounded border ${color} ${bgBadge}">${type}</span>
+                    <span class="text-gray-300 tracking-wide">${header}</span>
+                </div>
+                ${jsonHtml}
+            `;
+
+            consoleEl.appendChild(entry);
+            setTimeout(() => { entry.classList.remove('opacity-0', 'translate-y-2'); }, 10);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function clearLogs() { document.getElementById('logConsole').innerHTML = ''; }
+
+        function triggerIframeReload() {
+            const loader = document.getElementById('iframeLoader');
+            const iframe = document.getElementById('systemIframe');
+            loader.classList.remove('hidden');
+            setTimeout(() => { iframe.src = iframe.src; }, 500);
+            iframe.onload = () => loader.classList.add('hidden');
+        }
+        function refreshIframe() { triggerIframeReload(); }
+        function openInNewTab() { window.open(document.getElementById('systemIframe').src, '_blank'); }
+    </script>
+</body>
+
+</html>
