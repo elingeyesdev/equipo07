@@ -20,10 +20,7 @@ class DatoSanitarioController extends Controller
         } else {
             $ganadoIds = Ganado::where('user_id', auth()->id())->pluck('id');
             $items = DatoSanitario::with(['ganado.tipoAnimal', 'ganado.raza'])
-                ->where(function ($query) use ($ganadoIds) {
-                    $query->whereIn('ganado_id', $ganadoIds)
-                        ->orWhere('user_id', auth()->id());
-                })
+                ->whereIn('ganado_id', $ganadoIds)
                 ->orderBy('id', 'desc')
                 ->get();
         }
@@ -107,8 +104,7 @@ class DatoSanitarioController extends Controller
             'nombre_dueno'
         ]);
 
-        // Asignar el user_id del usuario autenticado
-        $data['user_id'] = auth()->id();
+
 
         // Convertir checkboxes a boolean (si vienen como null, serán false)
         $data['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
@@ -344,16 +340,9 @@ class DatoSanitarioController extends Controller
         if (!auth()->user()->isAdmin()) {
             $tienePermiso = false;
 
-            // Verificar si el usuario creó el registro
-            if ($datos_sanitario->user_id === auth()->id()) {
-                $tienePermiso = true;
-            }
-
             // Verificar si el ganado pertenece al usuario
-            if (!$tienePermiso && $datos_sanitario->ganado) {
-                if ($datos_sanitario->ganado->user_id === auth()->id()) {
-                    $tienePermiso = true;
-                }
+            if ($datos_sanitario->ganado && $datos_sanitario->ganado->user_id === auth()->id()) {
+                $tienePermiso = true;
             }
 
             if (!$tienePermiso) {
