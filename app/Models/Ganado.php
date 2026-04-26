@@ -24,7 +24,6 @@ class Ganado extends Model
         'imagen',
         'descripcion',
         'categoria_id',
-        'dato_sanitario_id',
         'fecha_publicacion',
         'ubicacion',
         'departamento',
@@ -36,6 +35,7 @@ class Ganado extends Model
         'es_campeon',     // 👈 nuevo
         'madre_id',       // 👈 nuevo
         'padre_id',       // 👈 nuevo
+        'ubicacion_id',
     ];
 
 
@@ -62,7 +62,7 @@ class Ganado extends Model
     // ✅ RELACIÓN CORRECTA (uno a uno)
     public function datoSanitario()
     {
-        return $this->belongsTo(DatoSanitario::class, 'dato_sanitario_id');
+        return $this->hasOne(DatoSanitario::class, 'ganado_id');
     }
 
     /**
@@ -111,5 +111,39 @@ class Ganado extends Model
     public function hijosPadre()
     {
         return $this->hasMany(Ganado::class, 'padre_id');
+    }
+
+    public function logros()
+    {
+        return $this->hasMany(GanadoLogro::class);
+    }
+
+    public function documentos()
+    {
+        return $this->hasMany(GanadoDocumento::class);
+    }
+
+    /**
+     * Relación: un ganado pertenece a una ubicación (Nueva estructura)
+     */
+    public function ubicacionAsociada()
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
+    }
+
+    /**
+     * Relación polimórfica: un ganado puede tener una publicación centralizada
+     */
+    public function publicacion()
+    {
+        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
+    }
+
+    /**
+     * Relación para la nueva tabla de árbol genealógico (normalizado)
+     */
+    public function genealogias()
+    {
+        return $this->hasMany(GanadoGenealogia::class, 'ganado_id');
     }
 }

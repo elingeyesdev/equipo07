@@ -9,8 +9,6 @@ use App\Models\TipoPeso;
 use App\Models\Raza;
 use App\Models\GanadoImagen;
 use App\Services\GeocodificacionService;
-use App\Http\Requests\StoreGanadoRequest;
-use App\Http\Requests\UpdateGanadoRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -44,7 +42,7 @@ class GanadoController extends Controller
     public function create()
     {
         $tipo_animals = TipoAnimal::orderBy('nombre')->get();
-        $categorias   = Categoria::orderBy('nombre')->get();
+        $categorias   = Categoria::whereIn('tipo', ['ganado', 'general'])->orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
         $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
@@ -62,45 +60,108 @@ class GanadoController extends Controller
     /**
      * Guarda un nuevo registro.
      */
-    public function store(StoreGanadoRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
+        $request->validate([
+            'nombre'          => 'required|string|max:255',
+            'tipo_animal_id'  => 'required|exists:tipo_animals,id',
+            'raza_id'         => 'nullable|exists:razas,id,tipo_animal_id,' . $request->tipo_animal_id,
+            'edad_anos'       => 'required|integer|min:0|max:25',
+            'edad_meses'      => 'required|integer|min:0|max:11',
+            'edad_dias'       => 'required|integer|min:0|max:30',
+            'tipo_peso_id'    => 'required|exists:tipo_pesos,id',
+            'peso_actual'     => 'nullable|numeric|min:0',
+            'sexo'            => 'nullable|string',
+            'cantidad_leche_dia' => 'nullable|numeric|min:0',
+            'descripcion'     => 'nullable|string',
+            'precio'          => 'nullable|numeric|min:0',
+            'stock'            => 'required|integer|min:0',
+            'imagenes.*'      => 'nullable|image|max:2048',
+            'categoria_id'    => 'required|exists:categorias,id',
+            'ubicacion' => 'nullable|string|max:255',
+            'latitud' => 'nullable|numeric',
+            'longitud' => 'nullable|numeric',
+            'madre_id' => 'nullable|exists:ganados,id',
+            'padre_id' => 'nullable|exists:ganados,id',
+        ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
-        $edadMeses = ($validated['edad_anos'] * 12) + $validated['edad_meses'];
-        if ($validated['edad_dias'] >= 15) {
+        $edadMeses = ($request->edad_anos * 12) + $request->edad_meses;
+        if ($request->edad_dias >= 15) {
             $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
         }
 
+        // Sincronización automática de tipo_animal_id basado en raza_id para mantener consistencia
+        $tipo_animal_id = $request->tipo_animal_id;
+        if ($request->raza_id) {
+            $raza = \App\Models\Raza::find($request->raza_id);
+            if ($raza) {
+                $tipo_animal_id = $raza->tipo_animal_id;
+            }
+        }
+
         $data = [
-            'nombre' => $validated['nombre'],
-            'tipo_animal_id' => $validated['tipo_animal_id'],
-            'raza_id' => $validated['raza_id'] ?? null,
+            'nombre' => $request->nombre,
+            'tipo_animal_id' => $tipo_animal_id,
+            'raza_id' => $request->raza_id,
             'edad' => $edadMeses,
-            'tipo_peso_id' => $validated['tipo_peso_id'],
-            'peso_actual' => $validated['peso_actual'] ?? null,
-            'sexo' => $validated['sexo'] ?? null,
-            'cantidad_leche_dia' => $validated['cantidad_leche_dia'] ?? null,
-            'descripcion' => $validated['descripcion'] ?? null,
-            'precio' => $validated['precio'] ?? null,
-            'stock' => $validated['stock'],
-            'categoria_id' => $validated['categoria_id'],
+            'tipo_peso_id' => $request->tipo_peso_id,
+            'peso_actual' => $request->peso_actual,
+            'sexo' => $request->sexo,
+            'cantidad_leche_dia' => $request->cantidad_leche_dia,
+            'descripcion' => $request->descripcion,
+            'precio' => $request->precio,
+            'stock' => $request->stock,
+            'categoria_id' => $request->categoria_id,
             'fecha_publicacion' => now(), // Fecha automática al crear
-            'ubicacion' => $validated['ubicacion'] ?? null,
-            'latitud' => $validated['latitud'] ?? null,
-            'longitud' => $validated['longitud'] ?? null,
-            'departamento' => $validated['departamento'] ?? null,
-            'municipio' => $validated['municipio'] ?? null,
-            'provincia' => $validated['provincia'] ?? null,
-            'ciudad' => $validated['ciudad'] ?? null,
-            'dato_sanitario_id' => $validated['dato_sanitario_id'] ?? null,
+            'ubicacion' => $request->ubicacion,
+            'latitud' => $request->latitud,
+            'longitud' => $request->longitud,
+            'departamento' => $request->departamento,
+            'municipio' => $request->municipio,
+            'provincia' => $request->provincia,
+            'ciudad' => $request->ciudad,
+            'madre_id' => $request->madre_id,
+            'padre_id' => $request->padre_id,
         ];
 
         // Asignar el usuario autenticado
         $data['user_id'] = auth()->id();
 
+        // Fase 1: Creación progresiva de Ubicación normalizada
+        $ubicacion = \App\Models\Ubicacion::create([
+            'departamento' => $data['departamento'] ?? null,
+            'provincia' => $data['provincia'] ?? null,
+            'municipio' => $data['municipio'] ?? null,
+            'ciudad' => $data['ciudad'] ?? null,
+            'direccion' => $data['ubicacion'] ?? null,
+            'latitud' => $data['latitud'] ?? null,
+            'longitud' => $data['longitud'] ?? null,
+        ]);
+        $data['ubicacion_id'] = $ubicacion->id;
+
         // Crear el ganado
         $ganado = Ganado::create($data);
+
+        // Sincronizar madre en tabla normalizada
+        if ($ganado->madre_id) {
+            \App\Models\GanadoGenealogia::updateOrCreate(
+                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'madre'],
+                ['pariente_id' => $ganado->madre_id]
+            );
+        } else {
+            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'madre')->delete();
+        }
+
+        // Sincronizar padre en tabla normalizada
+        if ($ganado->padre_id) {
+            \App\Models\GanadoGenealogia::updateOrCreate(
+                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'padre'],
+                ['pariente_id' => $ganado->padre_id]
+            );
+        } else {
+            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'padre')->delete();
+        }
 
         // Guardar las imágenes si existen (máximo 3)
         if ($request->hasFile('imagenes')) {
@@ -135,7 +196,7 @@ class GanadoController extends Controller
         }
 
         $tipo_animals = TipoAnimal::orderBy('nombre')->get();
-        $categorias   = Categoria::orderBy('nombre')->get();
+        $categorias   = Categoria::whereIn('tipo', ['ganado', 'general'])->orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
         $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
@@ -154,7 +215,7 @@ class GanadoController extends Controller
     /**
      * Actualiza un registro existente.
      */
-    public function update(UpdateGanadoRequest $request, Ganado $ganado)
+    public function update(Request $request, Ganado $ganado)
     {
         // Verificar permisos: solo el dueño o admin puede actualizar
         if (!auth()->user()->isAdmin() && $ganado->user_id !== auth()->id()) {
@@ -162,37 +223,68 @@ class GanadoController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
-        $validated = $request->validated();
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'tipo_animal_id' => 'required|exists:tipo_animals,id',
+            'raza_id' => 'nullable|exists:razas,id,tipo_animal_id,' . $request->tipo_animal_id,
+            'edad_anos' => 'required|integer|min:0|max:25',
+            'edad_meses' => 'required|integer|min:0|max:11',
+            'edad_dias' => 'required|integer|min:0|max:30',
+            'peso_actual' => 'nullable|numeric|min:0',
+            'sexo' => 'nullable|string',
+            'cantidad_leche_dia' => 'nullable|numeric|min:0',
+            'descripcion' => 'nullable|string',
+            'precio' => 'nullable|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'tipo_peso_id' => 'required|exists:tipo_pesos,id',
+            'imagenes.*' => 'nullable|image|max:2048',
+            'categoria_id' => 'required|exists:categorias,id',
+            'ubicacion' => 'nullable|string|max:255',
+            'latitud' => 'nullable|numeric',
+            'longitud' => 'nullable|numeric',
+            'madre_id' => 'nullable|exists:ganados,id',
+            'padre_id' => 'nullable|exists:ganados,id',
+        ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
-        $edadMeses = ($validated['edad_anos'] * 12) + $validated['edad_meses'];
-        if ($validated['edad_dias'] >= 15) {
+        $edadMeses = ($request->edad_anos * 12) + $request->edad_meses;
+        if ($request->edad_dias >= 15) {
             $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
         }
 
+        // Sincronización automática de tipo_animal_id basado en raza_id para mantener consistencia
+        $tipo_animal_id = $request->tipo_animal_id;
+        if ($request->raza_id) {
+            $raza = \App\Models\Raza::find($request->raza_id);
+            if ($raza) {
+                $tipo_animal_id = $raza->tipo_animal_id;
+            }
+        }
+
         $data = [
-            'nombre' => $validated['nombre'],
-            'tipo_animal_id' => $validated['tipo_animal_id'],
-            'raza_id' => $validated['raza_id'] ?? null,
+            'nombre' => $request->nombre,
+            'tipo_animal_id' => $tipo_animal_id,
+            'raza_id' => $request->raza_id,
             'edad' => $edadMeses,
-            'tipo_peso_id' => $validated['tipo_peso_id'],
-            'peso_actual' => $validated['peso_actual'] ?? null,
-            'sexo' => $validated['sexo'] ?? null,
-            'cantidad_leche_dia' => $validated['cantidad_leche_dia'] ?? null,
-            'descripcion' => $validated['descripcion'] ?? null,
-            'precio' => $validated['precio'] ?? null,
-            'stock' => $validated['stock'],
-            'categoria_id' => $validated['categoria_id'],
-            'ubicacion' => $validated['ubicacion'] ?? null,
-            'latitud' => $validated['latitud'] ?? null,
-            'longitud' => $validated['longitud'] ?? null,
-            'departamento' => $validated['departamento'] ?? null,
-            'municipio' => $validated['municipio'] ?? null,
-            'provincia' => $validated['provincia'] ?? null,
-            'ciudad' => $validated['ciudad'] ?? null,
+            'tipo_peso_id' => $request->tipo_peso_id,
+            'peso_actual' => $request->peso_actual,
+            'sexo' => $request->sexo,
+            'cantidad_leche_dia' => $request->cantidad_leche_dia,
+            'descripcion' => $request->descripcion,
+            'precio' => $request->precio,
+            'stock' => $request->stock,
+            'categoria_id' => $request->categoria_id,
+            'ubicacion' => $request->ubicacion,
+            'latitud' => $request->latitud,
+            'longitud' => $request->longitud,
+            'departamento' => $request->departamento,
+            'municipio' => $request->municipio,
+            'provincia' => $request->provincia,
+            'ciudad' => $request->ciudad,
+            'madre_id' => $request->madre_id,
+            'padre_id' => $request->padre_id,
             // Mantener la fecha de publicación existente, o establecerla si no existe
             'fecha_publicacion' => $ganado->fecha_publicacion ?? now(),
-            'dato_sanitario_id' => $validated['dato_sanitario_id'] ?? null,
         ];
 
         // Eliminar imágenes marcadas para eliminar
@@ -230,7 +322,54 @@ class GanadoController extends Controller
             }
         }
 
+        // Fase 1: Actualización progresiva de Ubicación normalizada
+        if ($ganado->ubicacion_id) {
+            $ubicacion = \App\Models\Ubicacion::find($ganado->ubicacion_id);
+            if ($ubicacion) {
+                $ubicacion->update([
+                    'departamento' => $data['departamento'] ?? null,
+                    'provincia' => $data['provincia'] ?? null,
+                    'municipio' => $data['municipio'] ?? null,
+                    'ciudad' => $data['ciudad'] ?? null,
+                    'direccion' => $data['ubicacion'] ?? null,
+                    'latitud' => $data['latitud'] ?? null,
+                    'longitud' => $data['longitud'] ?? null,
+                ]);
+            }
+        } else {
+            $ubicacion = \App\Models\Ubicacion::create([
+                'departamento' => $data['departamento'] ?? null,
+                'provincia' => $data['provincia'] ?? null,
+                'municipio' => $data['municipio'] ?? null,
+                'ciudad' => $data['ciudad'] ?? null,
+                'direccion' => $data['ubicacion'] ?? null,
+                'latitud' => $data['latitud'] ?? null,
+                'longitud' => $data['longitud'] ?? null,
+            ]);
+            $data['ubicacion_id'] = $ubicacion->id;
+        }
+
         $ganado->update($data);
+
+        // Sincronizar madre en tabla normalizada
+        if ($ganado->madre_id) {
+            \App\Models\GanadoGenealogia::updateOrCreate(
+                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'madre'],
+                ['pariente_id' => $ganado->madre_id]
+            );
+        } else {
+            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'madre')->delete();
+        }
+
+        // Sincronizar padre en tabla normalizada
+        if ($ganado->padre_id) {
+            \App\Models\GanadoGenealogia::updateOrCreate(
+                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'padre'],
+                ['pariente_id' => $ganado->padre_id]
+            );
+        } else {
+            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'padre')->delete();
+        }
 
         return redirect()->route('ganados.index')
             ->with('success', 'Registro actualizado correctamente.');
