@@ -15,6 +15,7 @@ class PedidoDetalle extends Model
         'precio_unitario',
         'subtotal',
         'notas',
+        'publicacion_id',
     ];
 
     protected $casts = [
@@ -25,5 +26,10 @@ class PedidoDetalle extends Model
     public function pedido()
     {
         return $this->belongsTo(Pedido::class);
+    }
+
+    public function publicacion()
+    {
+        return $this->belongsTo(Publicacion::class);
     }
 }
