@@ -499,26 +499,7 @@
                                 <div class="status-ribbon {{ $estadoClase }}">
                                     <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
                                 </div>
-                            @elseif($maquinaria->estado)
-                                @php
-                                    $estadoNombre = strtolower($maquinaria->estado);
-                                    $estadoClase = str_replace(' ', '_', $estadoNombre);
-                                    $estadoTexto = ucfirst(str_replace('_', ' ', $estadoNombre));
-                                    
-                                    $iconos = [
-                                        'disponible' => 'fa-check-circle',
-                                        'en_mantenimiento' => 'fa-tools',
-                                        'mantenimiento' => 'fa-tools',
-                                        'en_uso' => 'fa-cog',
-                                        'uso' => 'fa-cog',
-                                        'dado_baja' => 'fa-ban',
-                                        'dado-de-baja' => 'fa-ban'
-                                    ];
-                                    $icono = $iconos[$estadoClase] ?? 'fa-info-circle';
-                                @endphp
-                                <div class="status-ribbon {{ $estadoClase }}">
-                                    <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
-                                </div>
+
                             @endif
                             
                             <img id="mainImage" 
@@ -575,26 +556,7 @@
                                 <div class="status-ribbon {{ $estadoClase }}">
                                     <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
                                 </div>
-                            @elseif($maquinaria->estado)
-                                @php
-                                    $estadoNombre = strtolower($maquinaria->estado);
-                                    $estadoClase = str_replace(' ', '_', $estadoNombre);
-                                    $estadoTexto = ucfirst(str_replace('_', ' ', $estadoNombre));
-                                    
-                                    $iconos = [
-                                        'disponible' => 'fa-check-circle',
-                                        'en_mantenimiento' => 'fa-tools',
-                                        'mantenimiento' => 'fa-tools',
-                                        'en_uso' => 'fa-cog',
-                                        'uso' => 'fa-cog',
-                                        'dado_baja' => 'fa-ban',
-                                        'dado-de-baja' => 'fa-ban'
-                                    ];
-                                    $icono = $iconos[$estadoClase] ?? 'fa-info-circle';
-                                @endphp
-                                <div class="status-ribbon {{ $estadoClase }}">
-                                    <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
-                                </div>
+
                             @endif
                             <div class="text-center text-muted">
                                 <i class="fas fa-image fa-4x mb-3 pulse-animation"></i>

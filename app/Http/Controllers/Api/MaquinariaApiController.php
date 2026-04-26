@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\MaquinariaResource;
 use App\Models\Maquinaria;
 use Illuminate\Http\Request;
 
@@ -11,18 +12,32 @@ class MaquinariaApiController extends Controller
     // LISTAR TODAS (GET /api/maquinarias)
     public function index()
     {
-        $data = Maquinaria::latest()->get();
+        $data = Maquinaria::with([
+            'categoria',
+            'tipoMaquinaria',
+            'marcaMaquinaria',
+            'estadoMaquinaria',
+            'imagenes',
+            'user',
+        ])->latest()->get();
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $data,
+            'data'   => MaquinariaResource::collection($data),
         ]);
     }
 
     // VER UNA (GET /api/maquinarias/{id})
     public function show($id)
     {
-        $maquinaria = Maquinaria::find($id);
+        $maquinaria = Maquinaria::with([
+            'categoria',
+            'tipoMaquinaria',
+            'marcaMaquinaria',
+            'estadoMaquinaria',
+            'imagenes',
+            'user',
+        ])->find($id);
 
         if (!$maquinaria) {
             return response()->json([
@@ -33,7 +48,7 @@ class MaquinariaApiController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $maquinaria,
+            'data'   => new MaquinariaResource($maquinaria),
         ]);
     }
 
@@ -63,11 +78,19 @@ class MaquinariaApiController extends Controller
         ]);
 
         $maquinaria = Maquinaria::create($validated);
+        $maquinaria->load([
+            'categoria',
+            'tipoMaquinaria',
+            'marcaMaquinaria',
+            'estadoMaquinaria',
+            'imagenes',
+            'user',
+        ]);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Maquinaria creada correctamente',
-            'data'    => $maquinaria,
+            'data'    => new MaquinariaResource($maquinaria),
         ], 201);
     }
 
@@ -106,11 +129,19 @@ class MaquinariaApiController extends Controller
         ]);
 
         $maquinaria->update($validated);
+        $maquinaria->load([
+            'categoria',
+            'tipoMaquinaria',
+            'marcaMaquinaria',
+            'estadoMaquinaria',
+            'imagenes',
+            'user',
+        ]);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Maquinaria actualizada correctamente',
-            'data'    => $maquinaria,
+            'data'    => new MaquinariaResource($maquinaria),
         ]);
     }
 

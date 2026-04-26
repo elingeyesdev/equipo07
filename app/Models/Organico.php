@@ -29,11 +29,8 @@ class Organico extends Model
         'origen',
         'latitud_origen',
         'longitud_origen',
-        'departamento_origen',
-        'municipio_origen',
-        'provincia_origen',
-        'ciudad_origen',
         'tipo_cultivo_id',
+        'ubicacion_id',
     ];
 
     /**
@@ -72,8 +69,25 @@ class Organico extends Model
     {
         return $this->belongsTo(TipoCultivo::class, 'tipo_cultivo_id');
     }
+
+    /**
+     * Relación: un orgánico pertenece a una ubicación (Nueva estructura)
+     */
+    public function ubicacionAsociada()
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
+    }
+
     public function unidadOrganico()
     {
         return $this->belongsTo(\App\Models\UnidadOrganico::class, 'unidad_id');
+    }
+
+    /**
+     * Relación polimórfica: un orgánico puede tener una publicación centralizada
+     */
+    public function publicacion()
+    {
+        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
     }
 }

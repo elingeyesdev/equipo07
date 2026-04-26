@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrganicoResource;
 use App\Models\Organico;
 use Illuminate\Http\Request;
 
@@ -11,18 +12,20 @@ class OrganicoApiController extends Controller
     // LISTAR TODOS (GET /api/organicos)
     public function index()
     {
-        $data = Organico::with('unidadOrganico')->latest()->get();
+        $data = Organico::with(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user'])
+            ->latest()
+            ->get();
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $data,
+            'data'   => OrganicoResource::collection($data),
         ]);
     }
 
     // VER UNO (GET /api/organicos/{id})
     public function show($id)
     {
-        $organico = Organico::with('unidadOrganico')->find($id);
+        $organico = Organico::with(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user'])->find($id);
 
         if (!$organico) {
             return response()->json([
@@ -33,7 +36,7 @@ class OrganicoApiController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $organico,
+            'data'   => new OrganicoResource($organico),
         ]);
     }
 
@@ -57,11 +60,12 @@ class OrganicoApiController extends Controller
         ]);
 
         $organico = Organico::create($validated);
+        $organico->load(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user']);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Orgánico creado correctamente',
-            'data'    => $organico,
+            'data'    => new OrganicoResource($organico),
         ], 201);
     }
 
@@ -94,11 +98,12 @@ class OrganicoApiController extends Controller
         ]);
 
         $organico->update($validated);
+        $organico->load(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user']);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Orgánico actualizado correctamente',
-            'data'    => $organico,
+            'data'    => new OrganicoResource($organico),
         ]);
     }
 
