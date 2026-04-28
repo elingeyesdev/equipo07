@@ -19,8 +19,8 @@ services:
     container_name: agrovida-nginx
     expose:
       - "80"
-    # ports:
-    #   - "8080:80"
+    ports:
+      - "8080:80"
     volumes:
       - .:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf

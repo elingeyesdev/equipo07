@@ -97,6 +97,10 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
 
 // TODOS LOS USUARIOS AUTENTICADOS
 Route::middleware('auth')->group(function () {
+    // Agrega tu ruta aquí, fuera de los grupos de roles específicos
+    Route::get('/api-tester', function () {
+        return view('api-tester');
+    });
     Route::get('ganados', [GanadoController::class, 'index'])->name('ganados.index');
     Route::get('ganados/{ganado}', [GanadoController::class, 'show'])->name('ganados.show');
     Route::get('maquinarias', [MaquinariaController::class, 'index'])->name('maquinarias.index');
@@ -123,4 +127,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role.cliente'])->group(function () {
     Route::get('/solicitar-vendedor', [SolicitudVendedorController::class, 'create'])->name('solicitar-vendedor');
     Route::post('/solicitar-vendedor', [SolicitudVendedorController::class, 'store'])->name('solicitar-vendedor.store');
+
+
+
 });

@@ -62,6 +62,29 @@
             filter: blur(5px);
             pointer-events: none;
         }
+                /* Líneas divisorias (Resizers) */
+        .resizer-h { width: 5px; cursor: col-resize; background: #1f2937; flex-shrink: 0; transition: background 0.2s; }
+        .resizer-h:hover { background: #4f46e5; }
+        .resizer-v { height: 5px; cursor: row-resize; background: #1f2937; flex-shrink: 0; transition: background 0.2s; }
+        .resizer-v:hover { background: #4f46e5; }
+
+        /* Contenedor para evitar que el preview se estire */
+        #iframeWrapper {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #systemIframe {
+            background: white;
+            aspect-ratio: 16 / 9; /* Mantiene la proporción siempre */
+            max-width: 100%;
+            max-height: 100%;
+            border: none;
+        }
     </style>
 </head>
 
@@ -144,6 +167,7 @@
                     <!-- Se llena automáticamente con Javascript -->
                 </div>
             </aside>
+            <div class="resizer-h" id="resizerSidebar"></div>
 
             <!-- Centro: Formulario de la API seleccionada -->
             <section class="flex-1 flex flex-col bg-gray-800">
@@ -155,9 +179,10 @@
                     </div>
                 </div>
             </section>
+            <div class="resizer-h" id="resizerConsole"></div>
 
             <!-- Derecha: Consola Negra de Respuestas JSON -->
-            <aside class="w-[450px] bg-black flex flex-col shrink-0 border-l border-gray-800">
+            <aside id="console" class="w-[450px] bg-black flex flex-col shrink-0 border-l border-gray-800">
                 <div class="p-3 bg-gray-900 flex justify-between items-center border-b border-gray-800">
                     <h2 class="text-xs font-mono text-gray-400"><i
                             class="fas fa-terminal mr-2 text-indigo-500"></i>Response Console</h2>
@@ -172,7 +197,8 @@
         </main>
 
         <!-- Abajo: Microventana (Iframe) para previsualización real -->
-        <section class="h-[35%] bg-gray-900 border-t border-gray-700 flex flex-col shrink-0 relative">
+        <div class="resizer-v" id="resizerPreview"></div>
+        <section id="previewZone" class="h-[35%] bg-gray-900 border-t border-gray-700 flex flex-col shrink-0 relative">
             <div class="bg-gray-800 p-2 flex justify-between items-center text-xs border-b border-gray-700">
                 <div class="flex items-center gap-2 text-gray-300">
                     <i class="fas fa-eye text-indigo-400"></i>
@@ -190,7 +216,7 @@
                 </div>
             </div>
             <!-- El iframe cargará las vistas reales del proyecto -->
-            <div class="flex-1 relative w-full bg-white">
+            <div class="flex-1 relative w-full bg-white" id="iframeWrapper">
                 <iframe id="systemIframe" class="w-full h-full border-none" src=""></iframe>
 
                 <!-- Pantalla de carga superpuesta al iframe mientras refresca -->
@@ -208,23 +234,29 @@
 
     <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
     <script>
-        // 1. DETECCIÓN AUTOMÁTICA DEL SERVIDOR (Localhost o Producción)
-        // window.location.origin obtendrá automáticamente "http://localhost:8000" si abres el archivo desde ahí
+// 1. DETECCIÓN AUTOMÁTICA DEL SERVIDOR
         const BASE_URL = window.location.origin;
         document.getElementById('loginHostDisplay').textContent = `Servidor actual: ${BASE_URL}`;
 
-        // 2. CONFIGURACIÓN GLOBAL DE AXIOS (Motor de peticiones)
+        // 2. CONFIGURACIÓN GLOBAL DE AXIOS (¡Aquí está la magia de Blade!)
         axios.defaults.baseURL = BASE_URL;
         axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
         axios.defaults.headers.common['Accept'] = 'application/json';
-        // Esto es OBLIGATORIO para que Laravel recuerde la sesión tras hacer login
+        // Laravel inyectará el token de seguridad real en esta línea automáticamente
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = '{{ csrf_token() }}'; 
         axios.defaults.withCredentials = true;
 
         // 3. DICCIONARIO COMPLETO DE ENDPOINTS DEL SISTEMA
         const apiDictionary = [
             // --- ORGÁNICOS ---
             { id: 'org-get', group: '1. Orgánicos', name: 'Listar Todos', method: 'GET', endpoint: '/api/organicos', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Obtiene el catálogo de productos orgánicos.', bodyTpl: null },
-            { id: 'org-post', group: '1. Orgánicos', name: 'Crear Producto', method: 'POST', endpoint: '/api/organicos', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Registra un nuevo producto. El FormRequest validará los datos enviados.', bodyTpl: '{\n  "nombre": "Abono Natural",\n  "descripcion": "Abono rico en nutrientes para tierra fertil",\n  "precio": 150.50,\n  "stock": 100,\n  "tipo_cultivo_id": 1\n}' },
+            { id: 'org-post', group: '1. Orgánicos', name: 'Crear Producto', method: 'POST', endpoint: '/api/organicos', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Crea un producto orgánico. (Solo campos obligatorios según tus Rules)', bodyTpl: JSON.stringify({
+                nombre: "Producto de Prueba",
+                categoria_id: 1,
+                tipo_cultivo_id: 1,
+                precio: 10.50,
+                stock: 100
+            }, null, 2) },
             { id: 'org-put', group: '1. Orgánicos', name: 'Actualizar (ID: 1)', method: 'PUT', endpoint: '/api/organicos/1', viewUrl: '/organicos', roles: ['admin', 'vendedor'], desc: 'Actualiza datos. Puedes cambiar el "1" en la URL por el ID que desees editar.', bodyTpl: '{\n  "precio": 180.00,\n  "stock": 85\n}' },
             { id: 'org-del', group: '1. Orgánicos', name: 'Eliminar (ID: 1)', method: 'DELETE', endpoint: '/api/organicos/1', viewUrl: '/organicos', roles: ['admin'], desc: 'Borra físicamente o hace borrado lógico del producto.', bodyTpl: null },
 
@@ -252,8 +284,7 @@
         ];
 
         let currentSelectedApi = null;
-
-        // 4. LÓGICA DE INICIO DE SESIÓN
+// 4. LÓGICA DE INICIO DE SESIÓN DIRECTA
         function processLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -270,9 +301,8 @@
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Conectando con Laravel...';
             btn.disabled = true;
 
-            // Petición real al servidor local para login
-            axios.get('/sanctum/csrf-cookie')
-                .then(() => axios.post('/login', { email, password }))
+            // Hacemos el login directo, ya no necesitamos pedir la cookie de Sanctum
+            axios.post('/login', { email, password })
                 .then(() => unlockDashboard(email, role))
                 .catch(error => {
                     btn.innerHTML = originalBtnHtml;
@@ -281,9 +311,11 @@
                     if (error.response && error.response.status === 422) {
                         showError("Credenciales incorrectas validadas por el servidor.");
                     } else if (error.response && error.response.status === 419) {
-                        showError("Error de token CSRF. Intenta recargar la página.");
+                        showError("Sesión expirada. Por favor, recarga la página.");
                     } else {
-                        showError("No hay conexión. Asegúrate que tu servidor local (php artisan serve) esté encendido.");
+                        // Ahora mostraremos el error real para saber exactamente qué falla
+                        let status = error.response ? error.response.status : 'Desconocido';
+                        showError(`Error del servidor: Código ${status}. Revisa la consola.`);
                     }
                 });
         }
@@ -306,6 +338,7 @@
             addLog('SYS', 'Conexión Local Establecida', { usuario: email, servidor: BASE_URL });
             renderApiList(role);
             document.getElementById('systemIframe').src = BASE_URL + '/dashboard';
+            initResizing();
         }
 
         function logout() {
@@ -500,6 +533,31 @@
         }
         function refreshIframe() { triggerIframeReload(); }
         function openInNewTab() { window.open(document.getElementById('systemIframe').src, '_blank'); }
+
+        function initResizing() {
+            const setup = (resizerId, panelId, type) => {
+                const resizer = document.getElementById(resizerId);
+                const panel = document.getElementById(panelId);
+                if (!resizer || !panel) return;
+
+                resizer.onmousedown = (e) => {
+                    document.onmousemove = (e) => {
+                        if (type === 'h') {
+                            const width = resizerId === 'resizerSidebar' ? e.clientX : window.innerWidth - e.clientX;
+                            panel.style.width = width + "px";
+                        } else {
+                            const height = window.innerHeight - e.clientY;
+                            panel.style.height = height + "px";
+                        }
+                    };
+                    document.onmouseup = () => document.onmousemove = null;
+                };
+            };
+
+            setup('resizerSidebar', 'sidebar', 'h');
+            setup('resizerConsole', 'console', 'h');
+            setup('resizerPreview', 'previewZone', 'v');
+        }
     </script>
 </body>
 
