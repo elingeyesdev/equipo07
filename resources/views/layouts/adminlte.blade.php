@@ -17,6 +17,14 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
+
+
+
+
+
+
+
+
 <body class="hold-transition sidebar-mini layout-fixed theme-agro">
     <div class="wrapper">
 
@@ -611,6 +619,30 @@
             });
         });
     </script>
+    <div id="chatbot-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+    <div id="chat-window" class="hidden bg-white w-80 h-96 rounded-lg shadow-2xl border border-gray-200 flex flex-col mb-3 overflow-hidden">
+        <div class="bg-green-600 text-white p-3 font-bold flex justify-between items-center">
+            <span><i class="fas fa-robot mr-2"></i> AgroAsistente</span>
+            <button onclick="toggleChat()" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chat-messages" class="flex-1 p-3 overflow-y-auto bg-gray-50 text-sm space-y-3">
+            <div class="bg-green-100 text-green-900 p-2 rounded-lg inline-block max-w-[80%]">
+                ¡Hola! Soy tu asistente de AgroVida. ¿Qué estás buscando hoy?
+            </div>
+        </div>
+        <div class="p-3 border-t border-gray-200 bg-white flex gap-2">
+            <input type="text" id="chat-input" placeholder="Ej. ¿Tienen papas moradas?" class="flex-1 border rounded px-2 py-1 text-sm outline-none focus:border-green-500" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" id="chat-send-btn" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <button onclick="toggleChat()" class="bg-green-600 hover:bg-green-700 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center text-2xl transition-transform hover:scale-110">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+</div>
+    
 
 </body>
 

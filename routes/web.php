@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\ChatBotController; 
 
 
 Route::redirect('/', '/login');
@@ -101,6 +102,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api-tester', function () {
         return view('api-tester');
     });
+    Route::post('/chat-bot', [ChatBotController::class, 'ask'])->name('chatbot.ask');//ruta del chatbot
     Route::get('ganados', [GanadoController::class, 'index'])->name('ganados.index');
     Route::get('ganados/{ganado}', [GanadoController::class, 'show'])->name('ganados.show');
     Route::get('maquinarias', [MaquinariaController::class, 'index'])->name('maquinarias.index');

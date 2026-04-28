@@ -152,6 +152,85 @@
     <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('vendor/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
     <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+
+
+
+
+<style>
+    .chatbot-float-container { position: fixed; bottom: 25px; right: 25px; z-index: 9999; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .chat-card { display: none; width: 330px; height: 450px; background: #fff; border-radius: 15px; box-shadow: 0 12px 28px rgba(0,0,0,0.25); flex-direction: column; margin-bottom: 20px; border: 1px solid #ddd; overflow: hidden; }
+    .chat-header { background: #2ecc71; color: #fff; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 12px; }
+    .msg { padding: 10px 15px; border-radius: 12px; font-size: 14px; line-height: 1.4; max-width: 85%; }
+    .msg-bot { background: #e1f7e7; color: #27ae60; align-self: flex-start; border-bottom-left-radius: 2px; }
+    .msg-user { background: #3498db; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .chat-footer { padding: 10px; background: #fff; border-top: 1px solid #eee; display: flex; gap: 8px; }
+    .chat-footer input { flex: 1; border: 1px solid #ccc; border-radius: 25px; padding: 8px 15px; outline: none; font-size: 14px; }
+    .chat-footer input:focus { border-color: #2ecc71; }
+    .btn-send { background: #2ecc71; color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; transition: background 0.3s; }
+    .btn-send:hover { background: #27ae60; }
+    .fab-button { width: 65px; height: 65px; background: #2ecc71; color: white; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; shadow: 0 5px 15px rgba(46,204,113,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.3s; }
+    .fab-button:hover { transform: scale(1.1) rotate(5deg); }
+</style>
+
+<div class="chatbot-float-container">
+    <div id="agro-chat-window" class="chat-card">
+        <div class="chat-header">
+            <span><i class="fas fa-seedling"></i> AgroAsistente IA</span>
+            <button onclick="toggleAgroChat()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="agro-messages" class="chat-body">
+            <div class="msg msg-bot">¡Hola! Soy tu asistente inteligente. Puedo ayudarte a encontrar productos orgánicos, maquinaria o ganado. ¿Qué necesitas?</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="agro-input" placeholder="Escribe tu consulta..." onkeypress="if(event.key === 'Enter') sendAgroMessage()">
+            <button onclick="sendAgroMessage()" id="agro-send-btn" class="btn-send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button onclick="toggleAgroChat()" class="fab-button"><i class="fas fa-robot"></i></button>
+</div>
+
+<script>
+    function toggleAgroChat() {
+        const win = document.getElementById('agro-chat-window');
+        win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function sendAgroMessage() {
+        const input = document.getElementById('agro-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        const container = document.getElementById('agro-messages');
+        const btn = document.getElementById('agro-send-btn');
+
+        container.innerHTML += `<div class="msg msg-user">${msg}</div>`;
+        input.value = '';
+        container.scrollTop = container.scrollHeight;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        axios.post('/chat-bot', { message: msg }, {
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+        })
+        .then(res => {
+            container.innerHTML += `<div class="msg msg-bot">${res.data.reply}</div>`;
+        })
+        .catch(() => {
+            container.innerHTML += `<div class="msg msg-bot" style="color:red;">Error de conexión. Verifica el controlador.</div>`;
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            container.scrollTop = container.scrollHeight;
+        });
+    }
+</script>
+
+
+
+    
 </body>
 
 </html>
