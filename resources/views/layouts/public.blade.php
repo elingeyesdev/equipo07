@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'AgroVida')</title>
 
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
@@ -190,6 +191,10 @@
     <button onclick="toggleAgroChat()" class="fab-button"><i class="fas fa-robot"></i></button>
 </div>
 
+
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 <script>
     function toggleAgroChat() {
         const win = document.getElementById('agro-chat-window');
@@ -204,21 +209,43 @@
         const container = document.getElementById('agro-messages');
         const btn = document.getElementById('agro-send-btn');
 
+        // Mensaje del usuario
         container.innerHTML += `<div class="msg msg-user">${msg}</div>`;
         input.value = '';
         container.scrollTop = container.scrollHeight;
 
+        // Estado de "Cargando..."
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-        axios.post('/chat-bot', { message: msg }, {
+axios.post('/chat-bot', { message: msg }, {
             headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
         })
         .then(res => {
+            // Respuesta exitosa normal
             container.innerHTML += `<div class="msg msg-bot">${res.data.reply}</div>`;
         })
-        .catch(() => {
-            container.innerHTML += `<div class="msg msg-bot" style="color:red;">Error de conexión. Verifica el controlador.</div>`;
+        .catch(error => {
+            let errorText = "Error desconocido";
+            
+            // Verificamos si Laravel logró enviarnos el error atrapado en nuestro JSON
+            if (error.response && error.response.data && error.response.data.reply) {
+                errorText = error.response.data.reply;
+            } 
+            // Si Laravel nos botó por Token CSRF o ruta inexistente (HTML gigante)
+            else if (error.response) {
+                errorText = `HTTP [${error.response.status}]: El servidor rechazó la conexión. ¿Expiró la página? (Refresca con F5)`;
+            } 
+            // Si ni siquiera hay respuesta del servidor
+            else {
+                errorText = error.message;
+            }
+
+            // IMPRESIÓN FORZADA EN LA BURBUJA
+            container.innerHTML += `
+                <div class="msg msg-bot" style="background:#fee2e2; color:#991b1b; border: 2px solid #ef4444; font-family: monospace;">
+                    <b>⚙️ MODO DEBUG:</b><br><br>${errorText}
+                </div>`;
         })
         .finally(() => {
             btn.disabled = false;
@@ -227,8 +254,6 @@
         });
     }
 </script>
-
-
 
     
 </body>

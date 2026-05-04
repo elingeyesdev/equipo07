@@ -8,41 +8,72 @@ use App\Models\Organico;
 use App\Models\Maquinaria;
 
 class ChatBotController extends Controller
-{
-    public function ask(Request $request)
+{ 
+
+public function ask(Request $request)
     {
-        $userMessage = $request->input('message');
+        try {
+            $userMessage = $request->input('message');
 
-        // 1. Inyectar Contexto: Traemos un resumen rápido de lo que hay en la BD
-        // (Limitamos a 20 para no saturar la memoria en esta versión simple)
-        $organicos = Organico::select('id', 'nombre', 'precio', 'stock')->take(20)->get();
-        $maquinarias = Maquinaria::select('id', 'modelo', 'precio_alquiler')->take(20)->get();
+            $organicos = Organico::select('id', 'nombre')->take(20)->get();
+            $maquinarias = Maquinaria::select('id', 'modelo')->take(20)->get();
 
-        $contexto = "Catálogo de Orgánicos: " . json_encode($organicos) . "\n";
-        $contexto .= "Catálogo de Maquinarias: " . json_encode($maquinarias) . "\n";
+            $contexto = "Catálogo de Orgánicos: " . json_encode($organicos) . "\n";
+            $contexto .= "Catálogo de Maquinarias: " . json_encode($maquinarias) . "\n";
 
-        // 2. El Prompt Maestro (La personalidad de la IA)
-        $prompt = "Eres el asistente virtual de AgroVida Bolivia. Sé breve, amable y directo. 
-        Revisa este catálogo de nuestra base de datos: \n" . $contexto . "
-        Si el usuario busca algo que está en el catálogo, dile que sí lo tenemos, menciónale el precio y dile que puede buscarlo en el menú principal. Si no lo tenemos, discúlpate amablemente.
-        Pregunta del usuario: " . $userMessage;
+            $prompt = "Eres el asistente de AgroVida. Revisa este catálogo: \n" . $contexto . "\nPregunta: " . $userMessage;
 
-        // 3. Hablar con Gemini
-        $apiKey = env('GEMINI_API_KEY');
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
+            $apiKey = env('GEMINI_API_KEY');
+            if (empty($apiKey)) {
+                return response()->json(['reply' => '⚠️ ERROR: Falta la GEMINI_API_KEY en .env'], 500);
+            }
 
-        $response = Http::post($url, [
-            'contents' => [
-                ['parts' => [['text' => $prompt]]]
-            ]
-        ]);
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
 
-        if ($response->successful()) {
-            // Extraer la respuesta del JSON que devuelve Google
-            $respuestaIA = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? 'Lo siento, no pude procesar eso.';
+            $response = Http::post($url, [
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]]
+                ]
+            ]);
+
+            // VALIDACIÓN MEJORADA: Clasificación de errores reales
+            if (!$response->successful()) {
+                $codigoHTTP = $response->status();
+                $mensajeGoogle = $response->json()['error']['message'] ?? 'Error desconocido de la API';
+
+                // Si realmente es el error 404 (Modelo no encontrado)
+                if ($codigoHTTP == 404 && strpos($mensajeGoogle, 'is not found') !== false) {
+                    $listUrl = "https://generativelanguage.googleapis.com/v1beta/models?key=" . $apiKey;
+                    $listResp = Http::get($listUrl);
+                    
+                    $modelosDisponibles = "No se pudo obtener la lista.";
+                    if ($listResp->successful()) {
+                        $nombres = [];
+                        foreach ($listResp->json()['models'] ?? [] as $mod) {
+                            $nombres[] = str_replace('models/', '', $mod['name']);
+                        }
+                        $modelosDisponibles = implode(', ', $nombres);
+                    }
+                    return response()->json(['reply' => "⚠️ MODELO RECHAZADO. Usa uno de estos:\n" . $modelosDisponibles], 500);
+                }
+
+                // Si es un error de Rate Limit (Demasiadas peticiones)
+                if ($codigoHTTP == 429) {
+                    return response()->json(['reply' => "⏳ Espera un momento, estás enviando mensajes muy rápido."], 500);
+                }
+
+                // Cualquier otro error (ej. Seguridad, Servicio Caído)
+                return response()->json(['reply' => "⚠️ AVISO DE GOOGLE [Error $codigoHTTP]: " . $mensajeGoogle], 500);
+            }
+
+            $respuestaIA = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? 'Respuesta vacía.';
             return response()->json(['reply' => $respuestaIA]);
-        }
 
-        return response()->json(['reply' => 'Error de conexión con el asistente.'], 500);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'reply' => '🛑 ERROR INTERNO: ' . $e->getMessage() . ' (Línea ' . $e->getLine() . ')'
+            ], 500);
+        }
     }
-}
+
+} 
