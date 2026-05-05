@@ -8,57 +8,54 @@ use Illuminate\Http\Request;
 
 class RazaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $razas = Raza::with('tipoAnimal')->orderBy('id', 'desc')->paginate(10);
-        return view('razas.index', compact('razas'));
-    }
-
-    public function create()
-    {
-        $tipos = TipoAnimal::orderBy('nombre')->get();
-        return view('razas.create', compact('tipos'));
+        $q = $request->q;
+        // Traemos razas y tipos de animales activos para el select del Modal
+        $razas = Raza::with('tipoAnimal')->withTrashed()
+            ->when($q, function($query, $q) {
+                return $query->where('nombre', 'like', "%$q%");
+            })
+            ->orderBy('id', 'desc')
+            ->paginate(10);
+            
+        $tipos = TipoAnimal::all(); // Solo los activos para asignar nuevas razas
+        
+        return view('admin.razas.index', compact('razas', 'q', 'tipos'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:razas,nombre',
+            'nombre' => 'required|string|max:255',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
-            'descripcion' => 'nullable|string',
+            'descripcion' => 'nullable|string|max:1000'
         ]);
-
         Raza::create($request->all());
-
-        return redirect()->route('admin.razas.index')
-            ->with('success', 'Raza registrada correctamente.');
+        return back()->with('success', 'Raza creada correctamente.');
     }
 
-    public function edit(Raza $raza)
-    {
-        $tipos = TipoAnimal::orderBy('nombre')->get();
-        return view('razas.edit', compact('raza', 'tipos'));
-    }
-
-    public function update(Request $request, Raza $raza)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:razas,nombre,' . $raza->id,
+            'nombre' => 'required|string|max:255',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
-            'descripcion' => 'nullable|string',
+            'descripcion' => 'nullable|string|max:1000'
         ]);
-
+        $raza = Raza::withTrashed()->findOrFail($id);
         $raza->update($request->all());
-
-        return redirect()->route('admin.razas.index')
-            ->with('success', 'Raza actualizada correctamente.');
+        return back()->with('success', 'Raza actualizada correctamente.');
     }
 
-    public function destroy(Raza $raza)
+    public function destroy($id)
     {
-        $raza->delete();
-
-        return redirect()->route('admin.razas.index')
-            ->with('success', 'Raza eliminada correctamente.');
+        $raza = Raza::withTrashed()->findOrFail($id);
+        if ($raza->trashed()) {
+            $raza->restore();
+            return back()->with('success', 'Raza restaurada (Visible).');
+        } else {
+            $raza->delete();
+            return back()->with('success', 'Raza archivada (Oculta para usuarios).');
+        }
     }
 }

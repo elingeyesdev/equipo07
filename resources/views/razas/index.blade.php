@@ -1,147 +1,28 @@
 @extends('layouts.adminlte')
-
-@section('title', 'Razas')
+@section('title', 'Razas de Ganado')
 
 @section('content')
 <style>
-    .breeds-card {
-        border-radius: 15px;
-        overflow: hidden;
-        border: 0;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    }
-
-    .breeds-header {
-        background: var(--agro);
-        color: #fff;
-        padding: 1.5rem 1.75rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .breeds-header h2 {
-        font-size: 1.4rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-    }
-
-    .breeds-header h2 i {
-        font-size: 1.5rem;
-    }
-
-    .breeds-body {
-        background: #fff;
-        padding: 1.5rem 1.75rem 1.25rem;
-    }
-
-    .breeds-search .input-group {
-        border-radius: 999px;
-        overflow: hidden;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-
-    .breeds-search input {
-        border: 0;
-        box-shadow: none !important;
-    }
-
-    .breeds-search .btn {
-        border: 0;
-        background: var(--agro);
-        color: #fff;
-    }
-
-    .breeds-search .btn:hover {
-        background: var(--agro-700);
-    }
-
-    .table-breeds thead th {
-        border-top: 0;
-        font-size: .9rem;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        color: #6c757d;
-        background-color: #f8f9fa;
-    }
-
-    .table-breeds tbody tr {
-        transition: background-color .2s ease, transform .1s ease;
-    }
-
-    .table-breeds tbody tr:hover {
-        background-color: #fdfdfd;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-    }
-
-    .table-breeds td {
-        vertical-align: middle;
-        font-size: .95rem;
-    }
-
-    .btn-action {
-        border-radius: 999px;
-        padding: .25rem .6rem;
-        font-size: .8rem;
-    }
-
-    .breeds-footer {
-        background: #fff;
-        border-top: 1px solid #e9ecef;
-        padding: .75rem 1.75rem;
-    }
+    .breeds-card { border-radius: 15px; overflow: hidden; border: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+    .breeds-header { background: var(--agro); color: #fff; padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; }
+    .breeds-body { background: #fff; padding: 1.5rem 1.75rem 1.25rem; }
+    .table-breeds thead th { border-top: 0; font-size: .9rem; text-transform: uppercase; color: #6c757d; background-color: #f8f9fa; }
+    .badge-soft { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
 </style>
 
 <div class="container-fluid">
     <div class="breeds-card card">
-
-        {{-- HEADER --}}
         <div class="breeds-header">
-            <h2>
-                <i class="fas fa-dna"></i>
-                Razas
-            </h2>
-
-            <a href="{{ route('admin.razas.create') }}" class="btn btn-light btn-sm">
-                <i class="fas fa-plus-circle mr-1"></i> Nueva raza
-            </a>
+            <h2 class="m-0"><i class="fas fa-dna mr-2"></i> Razas</h2>
+            <button class="btn btn-light btn-sm" data-toggle="modal" data-target="#createModal">
+                <i class="fas fa-plus mr-1"></i> Nueva Raza
+            </button>
         </div>
 
-        {{-- BODY --}}
         <div class="breeds-body">
             @if(session('success'))
-                <div class="alert alert-success mb-3">
-                    {{ session('success') }}
-                </div>
+                <div class="alert alert-success mb-3">{{ session('success') }}</div>
             @endif
-
-            <div class="row align-items-center mb-3">
-                <div class="col-md-6 breeds-search mb-2 mb-md-0">
-                    <form method="GET" action="{{ route('admin.razas.index') }}">
-                        <div class="input-group">
-                            <input
-                                type="text"
-                                name="q"
-                                class="form-control"
-                                placeholder="Buscar por nombre, tipo de animal o descripción..."
-                                value="{{ request('q') }}"
-                            >
-                            <div class="input-group-append">
-                                <button class="btn" type="submit">
-                                    <i class="fas fa-search mr-1"></i> Buscar
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="col-md-6 text-md-right text-muted small">
-                    Listado de razas registradas
-                </div>
-            </div>
 
             <div class="table-responsive">
                 <table class="table table-hover table-breeds mb-0">
@@ -149,58 +30,128 @@
                         <tr>
                             <th style="width: 70px;">ID</th>
                             <th>Nombre</th>
-                            <th>Tipo de animal</th>
-                            <th>Descripción</th>
+                            <th>Especie (Paterna)</th>
+                            <th class="text-center">Estado</th>
                             <th class="text-right" style="width: 150px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($razas as $raza)
                             <tr>
-                                <td>{{ $raza->id }}</td>
-                                <td>{{ $raza->nombre }}</td>
-                                <td>{{ $raza->tipoAnimal->nombre ?? '—' }}</td>
-                                <td>{{ $raza->descripcion ?? '—' }}</td>
-                                <td class="text-right">
-                                    <a href="{{ route('admin.razas.edit', $raza->id) }}"
-                                       class="btn btn-warning btn-action"
-                                       title="Editar">
+                                <td class="align-middle">{{ $raza->id }}</td>
+                                <td class="align-middle font-weight-bold">{{ $raza->nombre }}</td>
+                                <td class="align-middle"><span class="badge badge-info px-2 py-1">{{ $raza->tipoAnimal->nombre ?? 'Sin Especie' }}</span></td>
+                                <td class="align-middle text-center">
+                                    @if($raza->trashed())
+                                        <span class="badge-soft" style="background:#e2e3e5; color:#383d41;">⚪ Archivada</span>
+                                    @else
+                                        <span class="badge-soft" style="background:#d4edda; color:#155724;">🟢 Activa</span>
+                                    @endif
+                                </td>
+                                <td class="text-right align-middle">
+                                    <button class="btn btn-warning btn-sm rounded-pill px-3 text-white" onclick="editModal({{ $raza->id }}, '{{ addslashes($raza->nombre) }}', '{{ $raza->tipo_animal_id }}', '{{ addslashes($raza->descripcion) }}')">
                                         <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('admin.razas.destroy', $raza->id) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar raza?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-danger btn-action" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                    </button>
+                                    
+                                    <form action="{{ route('admin.razas.destroy', $raza->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Cambiar estado de esta raza?');">
+                                        @csrf @method('DELETE')
+                                        @if($raza->trashed())
+                                            <button class="btn btn-success btn-sm rounded-pill px-3" title="Restaurar"><i class="fas fa-undo"></i></button>
+                                        @else
+                                            <button class="btn btn-secondary btn-sm rounded-pill px-3" title="Archivar"><i class="fas fa-archive"></i></button>
+                                        @endif
                                     </form>
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    No hay razas registradas.
-                                </td>
-                            </tr>
+                            <tr><td colspan="5" class="text-center text-muted py-4">No hay razas registradas.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+            <div class="mt-3">{{ $razas->links() }}</div>
         </div>
-
-        {{-- FOOTER / PAGINACIÓN --}}
-        <div class="breeds-footer d-flex justify-content-between align-items-center">
-            <span class="text-muted small">
-                Mostrando {{ $razas->count() }} de {{ $razas->total() }} registros
-            </span>
-            <div class="mb-0">
-                {{ $razas->links() }}
-            </div>
-        </div>
-
     </div>
 </div>
+
+<!-- Modal CREAR -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ route('admin.razas.store') }}" method="POST" class="modal-content">
+            @csrf
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Crear Nueva Raza</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre de la Raza *</label>
+                    <input type="text" name="nombre" class="form-control" required placeholder="Ej. Nelore">
+                </div>
+                <div class="form-group">
+                    <label>Pertenece a (Especie) *</label>
+                    <select name="tipo_animal_id" class="form-control" required>
+                        <option value="">Seleccione una especie...</option>
+                        @foreach($tipos as $tipo)
+                            <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal EDITAR -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form id="editForm" method="POST" class="modal-content">
+            @csrf @method('PUT')
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title font-weight-bold">Editar Raza</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" name="nombre" id="edit_nombre" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Especie *</label>
+                    <select name="tipo_animal_id" id="edit_tipo" class="form-control" required>
+                        @foreach($tipos as $tipo)
+                            <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" id="edit_descripcion" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-warning font-weight-bold">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function editModal(id, nombre, tipoId, descripcion) {
+        document.getElementById('editForm').action = '/admin/razas/' + id;
+        document.getElementById('edit_nombre').value = nombre;
+        document.getElementById('edit_tipo').value = tipoId;
+        document.getElementById('edit_descripcion').value = descripcion;
+        $('#editModal').modal('show');
+    }
+</script>
 @endsection

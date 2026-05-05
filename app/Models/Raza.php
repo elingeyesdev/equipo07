@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Raza extends Model
 {
+    use SoftDeletes; // Activa el Falso Borrado
+
     protected $fillable = [
         'nombre',
         'descripcion',
@@ -14,6 +17,7 @@ class Raza extends Model
 
     public function tipoAnimal()
     {
-        return $this->belongsTo(TipoAnimal::class);
+        // withTrashed() permite ver la especie paterna incluso si fue archivada
+        return $this->belongsTo(TipoAnimal::class)->withTrashed();
     }
 }

@@ -173,93 +173,97 @@
                             @endif
 
 
-                            {{-- ===== OPCIONES SOLO PARA ADMIN ===== --}}
-                            @if (auth()->user()->isAdmin())
-                                <li class="nav-header">CONFIGURACIÓN</li>
+{{-- ===== OPCIONES SOLO PARA ADMIN ===== --}}
+                                @if (auth()->user()->isAdmin())
+                                    <li class="nav-header">PILARES DEL SISTEMA</li>
 
-                                <!-- CATEGORÍAS -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.categorias.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.categorias.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-tags"></i>
-                                        <p>Categorías</p>
-                                    </a>
-                                </li>
+                                    <!-- CATEGORÍAS (Solo Lectura) -->
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.categorias.index') }}"
+                                            class="nav-link {{ request()->routeIs('admin.categorias.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-lock text-warning"></i>
+                                            <p>Categorías Base</p>
+                                        </a>
+                                    </li>
 
-                                <!-- TIPOS DE ANIMAL -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.tipo_animals.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.tipo_animals.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-paw"></i>
-                                        <p>Tipos de Animal</p>
-                                    </a>
-                                </li>
+                                    <li class="nav-header">MÓDULOS DE NEGOCIO</li>
 
-                                <!-- TIPO DE PESO -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.tipo-pesos.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.tipo-pesos.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-weight-hanging"></i>
-                                        <p>Tipo de Peso</p>
-                                    </a>
-                                </li>
+                                    <!-- MODULO GANADO (Desplegable) -->
+                                    <li class="nav-item {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*') ? 'menu-is-opening menu-open' : '' }}">
+                                        <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-cow"></i>
+                                            <p>
+                                                Módulo Ganado
+                                                <i class="right fas fa-angle-left"></i>
+                                            </p>
+                                        </a>
+                                        <ul class="nav nav-treeview">
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.tipo_animals.index') }}" class="nav-link {{ request()->routeIs('admin.tipo_animals.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-paw nav-icon"></i>
+                                                    <p>Especies</p>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.razas.index') }}" class="nav-link {{ request()->routeIs('admin.razas.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-dna nav-icon"></i>
+                                                    <p>Razas</p>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
 
-                                <!-- DATOS SANITARIOS -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.datos-sanitarios.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.datos-sanitarios.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-syringe"></i>
-                                        <p>Datos Sanitarios</p>
-                                    </a>
-                                </li>
+                                    <!-- MODULO MAQUINARIA (Desplegable) -->
+                                    <li class="nav-item {{ request()->routeIs('admin.tipo_maquinarias.*', 'admin.marcas_maquinarias.*', 'admin.estado_maquinarias.*') ? 'menu-is-opening menu-open' : '' }}">
+                                        <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_maquinarias.*', 'admin.marcas_maquinarias.*', 'admin.estado_maquinarias.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-tractor"></i>
+                                            <p>
+                                                Módulo Maquinaria
+                                                <i class="right fas fa-angle-left"></i>
+                                            </p>
+                                        </a>
+                                        <ul class="nav nav-treeview">
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.tipo_maquinarias.index') }}" class="nav-link {{ request()->routeIs('admin.tipo_maquinarias.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-cogs nav-icon"></i>
+                                                    <p>Tipos de Maquinaria</p>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.marcas_maquinarias.index') }}" class="nav-link {{ request()->routeIs('admin.marcas_maquinarias.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-tag nav-icon"></i>
+                                                    <p>Marcas</p>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.estado_maquinarias.index') }}" class="nav-link {{ request()->routeIs('admin.estado_maquinarias.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-check-circle nav-icon"></i>
+                                                    <p>Estados Físicos</p>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
 
-                                <!-- RAZAS -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.razas.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.razas.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-dna"></i>
-                                        <p>Razas</p>
-                                    </a>
-                                </li>
+                                    <!-- MODULO CULTIVOS (Desplegable) -->
+                                    <li class="nav-item {{ request()->routeIs('admin.unidades_organicos.*') ? 'menu-is-opening menu-open' : '' }}">
+                                        <a href="#" class="nav-link {{ request()->routeIs('admin.unidades_organicos.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-leaf"></i>
+                                            <p>
+                                                Módulo Cultivos
+                                                <i class="right fas fa-angle-left"></i>
+                                            </p>
+                                        </a>
+                                        <ul class="nav nav-treeview">
+                                            <li class="nav-item">
+                                                <a href="{{ route('admin.unidades_organicos.index') }}" class="nav-link {{ request()->routeIs('admin.unidades_organicos.*') ? 'active' : '' }}">
+                                                    <i class="fas fa-balance-scale nav-icon"></i>
+                                                    <p>Unidades de Medida</p>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
 
-                                <!-- TIPOS DE MAQUINARIA -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.tipo_maquinarias.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.tipo_maquinarias.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-cogs"></i>
-                                        <p>Tipos de Maquinaria</p>
-                                    </a>
-                                </li>
-
-                                <!-- MARCAS DE MAQUINARIA -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.marcas_maquinarias.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.marcas_maquinarias.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-tag"></i>
-                                        <p>Marcas de Maquinaria</p>
-                                    </a>
-                                </li>
-
-                                <!-- ESTADOS DE MAQUINARIA -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.estado_maquinarias.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.estado_maquinarias.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-check-circle"></i>
-                                        <p>Estados de Maquinaria</p>
-                                    </a>
-                                </li>
-
-                                <!-- UNIDADES DE ORGÁNICO -->
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.unidades_organicos.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.unidades_organicos.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-balance-scale"></i>
-                                        <p>Unidades de Orgánico</p>
-                                    </a>
-                                </li>
-
-                                <li class="nav-header">GESTIÓN</li>
-
+                                    <li class="nav-header mt-3">GESTIÓN Y REPORTES</li>
                                 <!-- DASHBOARD -->
                                 <li class="nav-item">
                                     <a href="{{ route('admin.dashboard') }}"

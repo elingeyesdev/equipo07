@@ -47,7 +47,7 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/solicitudes-vendedor/{id}/rechazar', [SolicitudVendedorController::class, 'rechazar'])->name('solicitudes-vendedor.rechazar');
 
     // Parámetros del sistema
-    Route::resource('categorias', App\Http\Controllers\CategoriaController::class);
+    Route::resource('categorias', App\Http\Controllers\CategoriaController::class)->only(['index']);
     Route::resource('tipo_animals', TipoAnimalController::class);
     Route::resource('tipo-pesos', TipoPesoController::class);
     Route::resource('razas', RazaController::class);

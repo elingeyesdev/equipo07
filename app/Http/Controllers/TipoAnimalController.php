@@ -7,59 +7,51 @@ use Illuminate\Http\Request;
 
 class TipoAnimalController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $q = request('q');
-        $items = TipoAnimal::when(
-            $q,
-            fn($qb) =>
-            $qb->where('nombre', 'ilike', "%$q%")
-        )
+        $q = $request->q;
+        // withTrashed() trae activos y archivados
+        $items = TipoAnimal::withTrashed()
+            ->when($q, function($query, $q) {
+                return $query->where('nombre', 'like', "%$q%")
+                             ->orWhere('descripcion', 'like', "%$q%");
+            })
             ->orderBy('id', 'desc')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('tipo_animals.index', compact('items', 'q'));
-    }
-
-    public function create()
-    {
-        return view('tipo_animals.create');
+            ->paginate(10);
+            
+        return view('admin.tipo_animals.index', compact('items', 'q'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:tipo_animals,nombre',
-            'descripcion' => 'nullable|string|max:5000',
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:1000'
         ]);
-
-        TipoAnimal::create($request->only('nombre', 'descripcion'));
-
-        return redirect()->route('admin.tipo_animals.index')->with('ok', 'Tipo de animal creado');
+        TipoAnimal::create($request->all());
+        return back()->with('ok', 'Especie creada correctamente.');
     }
 
-    public function edit(TipoAnimal $tipoAnimal)
-    {
-        return view('tipo_animals.edit', compact('tipoAnimal'));
-    }
-
-    public function update(Request $request, TipoAnimal $tipoAnimal)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255|unique:tipo_animals,nombre,' . $tipoAnimal->id,
-            'descripcion' => 'nullable|string|max:5000',
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:1000'
         ]);
-
-        $tipoAnimal->update($request->only('nombre', 'descripcion'));
-
-        return redirect()->route('admin.tipo_animals.index')->with('ok', 'Tipo de animal actualizado');
+        $tipo = TipoAnimal::withTrashed()->findOrFail($id);
+        $tipo->update($request->all());
+        return back()->with('ok', 'Especie actualizada correctamente.');
     }
 
-    public function destroy(TipoAnimal $tipoAnimal)
+    public function destroy($id)
     {
-        $tipoAnimal->delete();
-
-        return redirect()->route('admin.tipo_animals.index')->with('ok', 'Tipo de animal eliminado');
+        $tipo = TipoAnimal::withTrashed()->findOrFail($id);
+        if ($tipo->trashed()) {
+            $tipo->restore(); // Si estaba archivado, lo restaura
+            return back()->with('ok', 'Especie restaurada (Visible nuevamente).');
+        } else {
+            $tipo->delete(); // Si estaba activo, lo archiva (SoftDelete)
+            return back()->with('ok', 'Especie archivada correctamente.');
+        }
     }
 }
