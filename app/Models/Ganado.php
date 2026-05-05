@@ -15,7 +15,6 @@ class Ganado extends Model
         'tipo_animal_id',
         'raza_id',
         'edad',
-        'tipo_peso_id',
         'peso_actual',
         'sexo',
         'cantidad_leche_dia',
@@ -24,7 +23,6 @@ class Ganado extends Model
         'imagen',
         'descripcion',
         'categoria_id',
-        'dato_sanitario_id',
         'fecha_publicacion',
         'ubicacion',
         'departamento',
@@ -33,9 +31,14 @@ class Ganado extends Model
         'ciudad',
         'latitud',
         'longitud',
-        'es_campeon',     // 👈 nuevo
-        'madre_id',       // 👈 nuevo
-        'padre_id',       // 👈 nuevo
+        'tipo_venta',
+        'tipo_precio',
+        'tiene_sanidad',
+        'archivo_sanidad',
+        'es_campeon',
+        'archivo_genetica',
+        'madre_id',
+        'padre_id',
     ];
 
 
