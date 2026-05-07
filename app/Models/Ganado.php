@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\NormalizesStoredPaths;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ganado extends Model
 {
     use HasFactory;
+    use NormalizesStoredPaths;
 
     protected $fillable = [
         'nombre',

@@ -3,6 +3,9 @@
 @section('title', 'Detalle de Orgánico')
 
 @section('content')
+    @php
+        $trazabilidad = $organico->trazabilidad;
+    @endphp
     <div class="container-fluid">
 
         <style>
@@ -239,7 +242,7 @@
                                     <div>
                                         <small class="text-muted d-block">Fecha de Cosecha</small>
                                         <div class="font-weight-bold">
-                                            {{ $organico->fecha_cosecha ? \Carbon\Carbon::parse($organico->fecha_cosecha)->format('d/m/Y') : '—' }}
+                                            {{ $trazabilidad?->fecha_cosecha ? \Carbon\Carbon::parse($trazabilidad->fecha_cosecha)->format('d/m/Y') : ($organico->fecha_cosecha ? \Carbon\Carbon::parse($organico->fecha_cosecha)->format('d/m/Y') : '—') }}
                                         </div>
                                     </div>
                                 </div>
@@ -281,6 +284,26 @@
                             </p>
                         </div>
 
+                        @if ($trazabilidad)
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-route mr-1"></i> Trazabilidad
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2"><strong>Origen:</strong> {{ $trazabilidad->origen }}</div>
+                                    <div class="col-md-6 mb-2"><strong>Finca:</strong> {{ $trazabilidad->finca }}</div>
+                                    <div class="col-md-6 mb-2"><strong>Ubicación:</strong> {{ $trazabilidad->ubicacion }}</div>
+                                    <div class="col-md-6 mb-2"><strong>Siembra:</strong> {{ \Carbon\Carbon::parse($trazabilidad->fecha_siembra)->format('d/m/Y') }}</div>
+                                    <div class="col-md-6 mb-2"><strong>Cosecha:</strong> {{ \Carbon\Carbon::parse($trazabilidad->fecha_cosecha)->format('d/m/Y') }}</div>
+                                    <div class="col-md-12 mb-2"><strong>Tratamientos:</strong> {{ $trazabilidad->tratamientos_utilizados }}</div>
+                                    <div class="col-md-12 mb-2"><strong>Certificaciones:</strong> {{ $trazabilidad->certificaciones }}</div>
+                                    @if ($trazabilidad->observaciones)
+                                        <div class="col-md-12"><strong>Observaciones:</strong> {{ $trazabilidad->observaciones }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
                     </div>
                 </div>
 
@@ -299,7 +322,9 @@
                     <div class="card-body">
 
                         <p class="mb-2">
-                            @if ($organico->origen)
+                            @if ($trazabilidad?->origen)
+                                {{ $trazabilidad->origen }}
+                            @elseif($organico->origen)
                                 {{ $organico->origen }}
                             @elseif($organico->latitud_origen && $organico->longitud_origen)
                                 Lat: {{ $organico->latitud_origen }}, Lng: {{ $organico->longitud_origen }}

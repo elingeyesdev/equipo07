@@ -172,7 +172,7 @@
                 Tu mercado de animales, maquinaria y<br>orgánicos en un solo lugar
             </h1>
 
-            <div class="bg-white p-4 rounded mt-4 shadow-lg">
+            <div class="search-panel p-4 mt-4">
                 <form method="GET" action="{{ route('home') }}" id="searchForm" class="form-row align-items-end">
                     <div class="col-md-3 mb-2">
                         <label class="text-dark small font-weight-bold mb-1">Categoría</label>
@@ -277,16 +277,6 @@
                     </div>
                 </form>
 
-                @if (request()->has('q') ||
-                        request()->has('categoria_id') ||
-                        request()->has('tipo_animal_id') ||
-                        request()->has('raza_id'))
-                    <div class="mt-2">
-                        <a href="{{ route('home') }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-times"></i> Limpiar filtros
-                        </a>
-                    </div>
-                @endif
             </div>
         </div>
         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:1;"></div>
@@ -320,11 +310,11 @@
                                         style="cursor: pointer;">
                                         @php
                                             $imagenPrincipal =
-                                                $ganado->imagenes->first()->ruta ?? ($ganado->imagen ?? null);
+                                                optional($ganado->imagenes->first())->url ?? $ganado->imagen_url;
                                         @endphp
                                         @if ($imagenPrincipal)
                                             <div class="card-img-wrapper position-relative overflow-hidden">
-                                                <img src="{{ asset('storage/' . $imagenPrincipal) }}"
+                                                <img src="{{ $imagenPrincipal }}"
                                                     class="card-img-top ganado-img"
                                                     style="height:220px; object-fit:cover; transition: transform 0.3s ease;"
                                                     alt="{{ $ganado->nombre }}">
@@ -393,7 +383,7 @@
                     </div>
                     @if (method_exists($ganados, 'links'))
                         <div class="mt-3">
-                            {{ $ganados->appends(request()->query())->links() }}
+                            {{ $ganados->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>
@@ -582,7 +572,7 @@
                     </div>
                     @if (method_exists($maquinarias, 'links'))
                         <div class="mt-3">
-                            {{ $maquinarias->appends(request()->query())->links() }}
+                            {{ $maquinarias->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>
@@ -688,7 +678,7 @@
                     </div>
                     @if (method_exists($organicos, 'links'))
                         <div class="mt-3">
-                            {{ $organicos->appends(request()->query())->links() }}
+                            {{ $organicos->appends(request()->except(['ganados_page', 'maquinarias_page', 'organicos_page']))->links() }}
                         </div>
                     @endif
                 </div>

@@ -169,7 +169,7 @@ class GanadoController extends Controller
             $imagenes = array_slice($request->file('imagenes'), 0, 3); // Limitar a 3 imágenes
             foreach ($imagenes as $imagen) {
                 if ($imagen && $imagen->isValid()) {
-                    $ruta = $imagen->store('ganados', 'public');
+                    $ruta = Ganado::normalizeStoredPathValue($imagen->store('ganados', 'public'));
                     GanadoImagen::create([
                         'ganado_id' => $ganado->id,
                         'ruta' => $ruta,
@@ -178,6 +178,8 @@ class GanadoController extends Controller
                 }
             }
         }
+
+        $this->sincronizarImagenPrincipal($ganado);
 
         return redirect()->route('ganados.index')
             ->with('success', 'Ganado registrado correctamente.');
@@ -292,8 +294,9 @@ class GanadoController extends Controller
             foreach ($request->imagenes_eliminar as $imagenId) {
                 $imagen = GanadoImagen::find($imagenId);
                 if ($imagen && $imagen->ganado_id === $ganado->id) {
-                    if (Storage::disk('public')->exists($imagen->ruta)) {
-                        Storage::disk('public')->delete($imagen->ruta);
+                    $rutaImagen = GanadoImagen::normalizeStoredPathValue($imagen->ruta);
+                    if ($rutaImagen && Storage::disk('public')->exists($rutaImagen)) {
+                        Storage::disk('public')->delete($rutaImagen);
                     }
                     $imagen->delete();
                 }
@@ -311,7 +314,7 @@ class GanadoController extends Controller
                 $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
                 foreach ($imagenes as $imagen) {
                     if ($imagen && $imagen->isValid()) {
-                        $ruta = $imagen->store('ganados', 'public');
+                        $ruta = Ganado::normalizeStoredPathValue($imagen->store('ganados', 'public'));
                         GanadoImagen::create([
                             'ganado_id' => $ganado->id,
                             'ruta' => $ruta,
@@ -350,6 +353,7 @@ class GanadoController extends Controller
         }
 
         $ganado->update($data);
+        $this->sincronizarImagenPrincipal($ganado);
 
         // Sincronizar madre en tabla normalizada
         if ($ganado->madre_id) {
@@ -453,18 +457,30 @@ class GanadoController extends Controller
 
         // Eliminar todas las imágenes asociadas
         foreach ($ganado->imagenes as $imagen) {
-            if (Storage::disk('public')->exists($imagen->ruta)) {
-                Storage::disk('public')->delete($imagen->ruta);
+            $rutaImagen = GanadoImagen::normalizeStoredPathValue($imagen->ruta);
+            if ($rutaImagen && Storage::disk('public')->exists($rutaImagen)) {
+                Storage::disk('public')->delete($rutaImagen);
             }
         }
 
         // Eliminar imagen antigua si existe
-        if ($ganado->imagen && Storage::disk('public')->exists($ganado->imagen)) {
-            Storage::disk('public')->delete($ganado->imagen);
+        $rutaImagenPrincipal = Ganado::normalizeStoredPathValue($ganado->imagen);
+        if ($rutaImagenPrincipal && Storage::disk('public')->exists($rutaImagenPrincipal)) {
+            Storage::disk('public')->delete($rutaImagenPrincipal);
         }
 
         $ganado->delete();
         return redirect()->route('ganados.index')
             ->with('success', 'Ganado eliminado correctamente.');
+    }
+
+    private function sincronizarImagenPrincipal(Ganado $ganado): void
+    {
+        $rutaPrincipal = $ganado->imagenes()->orderBy('orden')->value('ruta');
+        $rutaPrincipal = Ganado::normalizeStoredPathValue($rutaPrincipal);
+
+        if ($ganado->imagen !== $rutaPrincipal) {
+            $ganado->updateQuietly(['imagen' => $rutaPrincipal]);
+        }
     }
 }

@@ -341,7 +341,7 @@
                                                 <div class="col-md-4 mb-3 imagen-item"
                                                     data-imagen-id="{{ $imagen->id }}">
                                                     <div class="position-relative">
-                                                        <img src="{{ asset('storage/' . $imagen->ruta) }}"
+                                                        <img src="{{ $imagen->url }}"
                                                             alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
                                                             style="width: 100%; height: 150px; object-fit: cover;">
                                                         <button type="button"
