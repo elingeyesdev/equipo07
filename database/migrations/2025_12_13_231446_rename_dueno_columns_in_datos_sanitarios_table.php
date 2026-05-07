@@ -8,38 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (
-            Schema::hasColumn('datos_sanitarios', 'nombre_dueno') &&
-            Schema::hasColumn('datos_sanitarios', 'carnet_dueno_foto')
-        ) {
-            return;
-        }
-
-        if (Schema::hasColumn('datos_sanitarios', 'nombre_dueno')) {
-            Schema::table('datos_sanitarios', function (Blueprint $table) {
-                $table->renameColumn('nombre_dueno', 'nombre_dueno');
-            });
-        }
-
-        if (Schema::hasColumn('datos_sanitarios', 'carnet_dueno_foto')) {
-            Schema::table('datos_sanitarios', function (Blueprint $table) {
-                $table->renameColumn('carnet_dueno_foto', 'carnet_dueno_foto');
-            });
-        }
+        // No-op: esta migración no puede renombrar columnas con nombres idénticos
+        // sin arriesgar errores en el motor de BD durante migrate/rollback.
+        return;
     }
 
     public function down(): void
     {
-        if (Schema::hasColumn('datos_sanitarios', 'nombre_dueno')) {
-            Schema::table('datos_sanitarios', function (Blueprint $table) {
-                $table->renameColumn('nombre_dueno', 'nombre_dueno');
-            });
-        }
-
-        if (Schema::hasColumn('datos_sanitarios', 'carnet_dueno_foto')) {
-            Schema::table('datos_sanitarios', function (Blueprint $table) {
-                $table->renameColumn('carnet_dueno_foto', 'carnet_dueno_foto');
-            });
-        }
+        // No-op por simetría con up().
+        return;
     }
 };

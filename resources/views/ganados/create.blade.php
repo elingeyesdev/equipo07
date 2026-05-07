@@ -63,8 +63,8 @@
                     <div class="row">
                         <!-- COLUMNA IZQUIERDA -->
                         <div class="col-lg-6">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i>
-                                Información general</h6>
+                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Datos
+                                Básicos</h6>
 
                             <div class="form-group mb-3">
                                 <label for="nombre" class="font-weight-bold">Nombre *</label>
@@ -73,7 +73,7 @@
                             </div>
 
                             <div class="form-group mb-3">
-                                <label for="tipo_animal_id" class="font-weight-bold">Tipo de animal *</label>
+                                <label for="tipo_animal_id" class="font-weight-bold">Tipo de Animal *</label>
                                 <select name="tipo_animal_id" id="tipo_animal_id" class="form-control" required>
                                     <option value="">Seleccione...</option>
                                     @foreach ($tipo_animals as $item)
@@ -192,11 +192,11 @@
 
                         <!-- COLUMNA DERECHA -->
                         <div class="col-lg-6">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-chart-line"></i>
-                                Información comercial</h6>
+                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-chart-line"></i> Información
+                                Comercial</h6>
 
                             <div class="form-group mb-3">
-                                <label for="tipo_peso_id" class="font-weight-bold">Método de venta / Tipo de peso
+                                <label for="tipo_peso_id" class="font-weight-bold">Método de Venta / Tipo de Peso
                                     *</label>
                                 <select name="tipo_peso_id" class="form-control" required>
                                     @foreach ($tipoPesos as $peso)
@@ -206,7 +206,7 @@
                             </div>
 
                             <div class="form-group mb-3">
-                                <label for="peso_actual" class="font-weight-bold">Peso actual (kg)</label>
+                                <label for="peso_actual" class="font-weight-bold">Peso Actual (kg)</label>
                                 <div class="input-group">
                                     <input type="number" name="peso_actual" id="peso_actual" class="form-control"
                                         step="0.01" min="0" value="{{ old('peso_actual') }}"
@@ -236,29 +236,19 @@
                                 <small class="form-text text-muted">Ingrese la cantidad disponible de ganado</small>
                             </div>
 
-                            <div class="form-group mb-3">
-                                <label for="dato_sanitario_id" class="font-weight-bold">Datos Sanitarios</label>
-                                <select name="dato_sanitario_id" class="form-control">
-                                    <option value="">Sin registro sanitario</option>
-                                    @foreach ($datosSanitarios as $ds)
-                                        <option value="{{ $ds->id }}">
-                                            {{ $ds->vacuna ?? 'Sin vacuna' }} - {{ $ds->fecha_aplicacion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+
                         </div>
                     </div>
 
-                    <!-- SECCIÓN 2: TRAZABILIDAD -->
+                    <!-- SECCIÓN DE DESCRIPCIÓN (ANCHO COMPLETO) -->
                     <div class="row mt-3">
                         <div class="col-12">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-route"></i> Trazabilidad
+                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-align-left"></i> Descripción
                             </h6>
                             <div class="form-group mb-3">
-                                <label for="descripcion" class="font-weight-bold">Descripción de trazabilidad</label>
+                                <label for="descripcion" class="font-weight-bold">Descripción del Animal</label>
                                 <textarea name="descripcion" id="descripcion" class="form-control" rows="4"
-                                    placeholder="Detalle antecedentes, manejo, observaciones y características relevantes...">{{ old('descripcion') }}</textarea>
+                                    placeholder="Describa las características del animal...">{{ old('descripcion') }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -266,7 +256,7 @@
                     <div class="form-group mt-3">
                     </div>
 
-                    <!-- SECCIÓN 3: UBICACIÓN -->
+                    <!-- SECCIÓN DE UBICACIÓN (ANCHO COMPLETO) -->
                     <div class="row mt-3">
                         <div class="col-12">
                             <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-map-marker-alt"></i>
@@ -314,7 +304,7 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN 4: IMÁGENES -->
+                    <!-- SECCIÓN DE IMÁGENES (ANCHO COMPLETO) -->
                     <div class="row mt-3">
                         <div class="col-12">
                             <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-images"></i> Imágenes del

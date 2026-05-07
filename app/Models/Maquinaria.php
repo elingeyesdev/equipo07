@@ -17,7 +17,6 @@ class Maquinaria extends Model
         'modelo',
         'telefono',
         'precio_dia',
-        'estado',
         'estado_maquinaria_id',
         'descripcion',
         'categoria_id',
@@ -28,6 +27,7 @@ class Maquinaria extends Model
         'ciudad',
         'latitud',
         'longitud',
+        'ubicacion_id',
     ];
 
     /**
@@ -76,5 +76,21 @@ class Maquinaria extends Model
     public function imagenes()
     {
         return $this->hasMany(MaquinariaImagen::class)->orderBy('orden');
+    }
+
+    /**
+     * Relación: una maquinaria pertenece a una ubicación (Nueva estructura)
+     */
+    public function ubicacionAsociada()
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
+    }
+
+    /**
+     * Relación polimórfica: una maquinaria puede tener una publicación centralizada
+     */
+    public function publicacion()
+    {
+        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GanadoResource;
 use App\Models\Ganado;
 use Illuminate\Http\Request;
 
@@ -14,14 +15,17 @@ class GanadoApiController extends Controller
         $ganados = Ganado::with([
             'raza',
             'tipoPeso',
-            'tipoAnimal'
+            'tipoAnimal',
+            'categoria',
+            'imagenes',
+            'user',
         ])
         ->orderBy('id', 'desc')
         ->get();
 
         return response()->json([
             'status' => 'ok',
-            'data' => $ganados
+            'data' => GanadoResource::collection($ganados),
         ]);
     }
 
@@ -33,6 +37,9 @@ class GanadoApiController extends Controller
             'tipoPeso',
             'tipoAnimal',
             'datoSanitario',
+            'categoria',
+            'imagenes',
+            'user',
         ])->find($id);
 
         if (!$ganado) {
@@ -44,7 +51,7 @@ class GanadoApiController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'data' => $ganado
+            'data' => new GanadoResource($ganado),
         ]);
     }
 
@@ -52,11 +59,20 @@ class GanadoApiController extends Controller
     public function store(Request $request)
     {
         $ganado = Ganado::create($request->all());
+        $ganado->load([
+            'raza',
+            'tipoPeso',
+            'tipoAnimal',
+            'datoSanitario',
+            'categoria',
+            'imagenes',
+            'user',
+        ]);
 
         return response()->json([
             'status' => 'ok',
             'message' => 'Ganado creado correctamente',
-            'data' => $ganado
+            'data' => new GanadoResource($ganado),
         ]);
     }
 
@@ -73,11 +89,20 @@ class GanadoApiController extends Controller
         }
 
         $ganado->update($request->all());
+        $ganado->load([
+            'raza',
+            'tipoPeso',
+            'tipoAnimal',
+            'datoSanitario',
+            'categoria',
+            'imagenes',
+            'user',
+        ]);
 
         return response()->json([
             'status' => 'ok',
             'message' => 'Ganado actualizado correctamente',
-            'data' => $ganado
+            'data' => new GanadoResource($ganado),
         ]);
     }
 

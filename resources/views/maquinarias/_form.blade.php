@@ -1,12 +1,12 @@
 @csrf
 
-{{-- ========== SECCIÓN 1: INFORMACIÓN GENERAL ========== --}}
+{{-- ========== CARD 1: DATOS DE LA MAQUINARIA ========== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">
-            <i class="fas fa-info-circle mr-2"></i> Información general
+            <i class="fas fa-tractor mr-2"></i> Datos de la maquinaria
         </h3>
-        <span class="badge badge-success">Sección 1</span>
+        <span class="badge badge-success">Nuevo / Edición</span>
     </div>
 
     <div class="card-body">
@@ -15,7 +15,7 @@
             {{-- COLUMNA IZQUIERDA --}}
             <div class="col-md-6">
                 <h6 class="text-muted text-uppercase mb-3">
-                    <i class="fas fa-clipboard-list mr-1"></i> Datos principales
+                    <i class="fas fa-info-circle mr-1"></i> Información básica
                 </h6>
 
                 <div class="form-group">
@@ -38,60 +38,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="mb-1">Precio por día (Bs) *</label>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Bs/día</span>
-                        </div>
-                        <input type="number" step="0.01" name="precio_dia" class="form-control" placeholder="0.00"
-                            value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" required>
-                    </div>
-                    <small class="form-text text-muted">
-                        Monto de alquiler por día.
-                    </small>
-                </div>
-
-                <div class="form-group mb-0">
-                    <label class="mb-1">Descripción</label>
-                    <textarea name="descripcion" class="form-control" rows="4"
-                        placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
-                </div>
-            </div>
-
-            {{-- COLUMNA DERECHA --}}
-            <div class="col-md-6">
-                <h6 class="text-muted text-uppercase mb-3">
-                    <i class="fas fa-phone-alt mr-1"></i> Contacto
-                </h6>
-
-                <div class="form-group">
-                    <label class="mb-1">Teléfono</label>
-                    <input type="tel" name="telefono" class="form-control" placeholder="Ej: +591 700 00000"
-                        value="{{ old('telefono', $maquinaria->telefono ?? '') }}">
-                </div>
-
-                <div class="form-group mb-0">
-                    <label class="mb-1">Observaciones de contacto</label>
-                    <input class="form-control" value="Disponible para coordinación directa con el vendedor." readonly>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-{{-- ========== SECCIÓN 2: TRAZABILIDAD ========== --}}
-<div class="card card-outline card-success shadow-sm mb-4">
-    <div class="card-header">
-        <h3 class="card-title mb-0">
-            <i class="fas fa-route mr-2"></i> Trazabilidad
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="mb-1">Tipo de maquinaria *</label>
+                    <label class="mb-1">Tipo de Maquinaria *</label>
                     <select name="tipo_maquinaria_id" class="form-control" required>
                         <option value="">Seleccione un tipo de maquinaria</option>
                         @foreach ($tipo_maquinarias as $tipo)
@@ -102,8 +49,9 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group mb-0">
-                    <label class="mb-1">Marca de maquinaria *</label>
+
+                <div class="form-group">
+                    <label class="mb-1">Marca de Maquinaria *</label>
                     <select name="marca_maquinaria_id" class="form-control" required>
                         <option value="">Seleccione una marca de maquinaria</option>
                         @foreach ($marcas_maquinarias as $marca)
@@ -114,14 +62,41 @@
                         @endforeach
                     </select>
                 </div>
-            </div>
-            <div class="col-md-6 mt-3 mt-md-0">
-                <div class="form-group">
+
+                <div class="form-group mb-0">
                     <label class="mb-1">Modelo</label>
                     <input name="modelo" class="form-control" placeholder="Ej: 5050E"
                         value="{{ old('modelo', $maquinaria->modelo ?? '') }}">
                 </div>
-                <div class="form-group mb-0">
+            </div>
+
+            {{-- COLUMNA DERECHA --}}
+            <div class="col-md-6">
+                <h6 class="text-muted text-uppercase mb-3">
+                    <i class="fas fa-hand-holding-usd mr-1"></i> Contacto y alquiler
+                </h6>
+
+                <div class="form-group">
+                    <label class="mb-1">Teléfono</label>
+                    <input type="tel" name="telefono" class="form-control" placeholder="Ej: +591 700 00000"
+                        value="{{ old('telefono', $maquinaria->telefono ?? '') }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="mb-1">Precio por día *</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Bs/día</span>
+                        </div>
+                        <input type="number" step="0.01" name="precio_dia" class="form-control" placeholder="0.00"
+                            value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" required>
+                    </div>
+                    <small class="form-text text-muted">
+                        Monto a cobrar por cada día de alquiler.
+                    </small>
+                </div>
+
+                <div class="form-group">
                     <label class="mb-1">Estado *</label>
                     <select name="estado_maquinaria_id" class="form-control" required>
                         <option value="">Seleccione un estado</option>
@@ -133,16 +108,23 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div class="form-group mb-0">
+                    <label class="mb-1">Descripción</label>
+                    <textarea name="descripcion" class="form-control" rows="4"
+                        placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
+                </div>
             </div>
+
         </div>
     </div>
 </div>
 
-{{-- ========== SECCIÓN 3: UBICACIÓN ========== --}}
+{{-- ========== CARD 2: UBICACIÓN ========== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header">
         <h3 class="card-title mb-0">
-            <i class="fas fa-map-marker-alt mr-2"></i> Ubicación
+            <i class="fas fa-map-marker-alt mr-2"></i> Ubicación de la maquinaria
         </h3>
     </div>
 
@@ -216,11 +198,11 @@
     </div>
 </div>
 
-{{-- ========== SECCIÓN 4: IMÁGENES ========== --}}
+{{-- ========== CARD 3: IMÁGENES ========== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">
-            <i class="fas fa-images mr-2"></i> Imágenes
+            <i class="fas fa-images mr-2"></i> Imágenes de la maquinaria
         </h3>
         <small class="text-muted">Máximo 3 imágenes por publicación</small>
     </div>

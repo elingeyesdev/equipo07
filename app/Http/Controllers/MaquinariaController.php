@@ -32,7 +32,7 @@ class MaquinariaController extends Controller
 
     public function create()
     {
-        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
+        $categorias = \App\Models\Categoria::whereIn('tipo', ['maquinaria', 'general'])->orderBy('nombre')->get();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
@@ -64,6 +64,18 @@ class MaquinariaController extends Controller
                 }
             }
         }
+
+        // Fase 1: Creación progresiva de Ubicación normalizada
+        $ubicacion = \App\Models\Ubicacion::create([
+            'departamento' => $data['departamento'] ?? null,
+            'provincia' => $data['provincia'] ?? null,
+            'municipio' => $data['municipio'] ?? null,
+            'ciudad' => $data['ciudad'] ?? null,
+            'direccion' => $data['ubicacion'] ?? null,
+            'latitud' => $data['latitud'] ?? null,
+            'longitud' => $data['longitud'] ?? null,
+        ]);
+        $data['ubicacion_id'] = $ubicacion->id;
 
         // Crear la maquinaria
         $maquinaria = Maquinaria::create($data);
@@ -102,7 +114,7 @@ class MaquinariaController extends Controller
         }
 
         $maquinaria->load('imagenes');
-        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
+        $categorias = \App\Models\Categoria::whereIn('tipo', ['maquinaria', 'general'])->orderBy('nombre')->get();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
@@ -142,6 +154,33 @@ class MaquinariaController extends Controller
                     $data['ubicacion'] = $infoGeografica['direccion_completa'];
                 }
             }
+        }
+
+        // Fase 1: Actualización progresiva de Ubicación normalizada
+        if ($maquinaria->ubicacion_id) {
+            $ubicacion = \App\Models\Ubicacion::find($maquinaria->ubicacion_id);
+            if ($ubicacion) {
+                $ubicacion->update([
+                    'departamento' => $data['departamento'] ?? null,
+                    'provincia' => $data['provincia'] ?? null,
+                    'municipio' => $data['municipio'] ?? null,
+                    'ciudad' => $data['ciudad'] ?? null,
+                    'direccion' => $data['ubicacion'] ?? null,
+                    'latitud' => $data['latitud'] ?? null,
+                    'longitud' => $data['longitud'] ?? null,
+                ]);
+            }
+        } else {
+            $ubicacion = \App\Models\Ubicacion::create([
+                'departamento' => $data['departamento'] ?? null,
+                'provincia' => $data['provincia'] ?? null,
+                'municipio' => $data['municipio'] ?? null,
+                'ciudad' => $data['ciudad'] ?? null,
+                'direccion' => $data['ubicacion'] ?? null,
+                'latitud' => $data['latitud'] ?? null,
+                'longitud' => $data['longitud'] ?? null,
+            ]);
+            $data['ubicacion_id'] = $ubicacion->id;
         }
 
         $maquinaria->update($data);

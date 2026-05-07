@@ -3,22 +3,22 @@
     $trazabilidad = $organico->trazabilidad ?? null;
 @endphp
 
-{{-- ====== SECCIÓN 1: INFORMACIÓN GENERAL ====== --}}
+{{-- ====== CARD 1: DATOS DEL PRODUCTO ====== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">
-            <i class="fas fa-info-circle mr-2"></i>Información general
+            <i class="fas fa-leaf mr-2"></i>Datos del producto orgánico
         </h3>
-        <span class="badge badge-success">Sección 1</span>
+        <span class="badge badge-success">Nuevo / Edición</span>
     </div>
 
     <div class="card-body">
         <div class="row">
 
-            {{-- COLUMNA IZQUIERDA: DATOS GENERALES --}}
+            {{-- COLUMNA IZQUIERDA: DATOS BÁSICOS --}}
             <div class="col-md-6">
                 <h6 class="text-muted text-uppercase mb-3">
-                    <i class="fas fa-box-open mr-1"></i> Datos del producto
+                    <i class="fas fa-info-circle mr-1"></i> Datos básicos
                 </h6>
 
                 <div class="form-group">
@@ -41,17 +41,40 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label for="tipo_cultivo_id" class="mb-1">Tipo de Cultivo *</label>
+                    <select name="tipo_cultivo_id" id="tipo_cultivo_id" class="form-control" required>
+                        <option value="">Seleccione un tipo</option>
+                        @foreach ($tiposCultivo as $tipo)
+                            <option value="{{ $tipo->id }}"
+                                {{ old('tipo_cultivo_id', $organico->tipo_cultivo_id ?? '') == $tipo->id ? 'selected' : '' }}>
+                                {{ $tipo->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="form-group mb-0">
-                    <label class="mb-1">Descripción</label>
-                    <textarea name="descripcion" class="form-control" rows="6"
-                        placeholder="Describe características principales del producto...">{{ old('descripcion', $organico->descripcion ?? '') }}</textarea>
+                    <label for="unidad_id" class="mb-1">Unidad de Medida</label>
+                    <select name="unidad_id" id="unidad_id" class="form-control">
+                        <option value="">Seleccione una unidad</option>
+                        @foreach ($unidades as $unidad)
+                            <option value="{{ $unidad->id }}"
+                                {{ old('unidad_id', $organico->unidad_id ?? '') == $unidad->id ? 'selected' : '' }}>
+                                {{ $unidad->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-muted">
+                        Ejemplos: Kg, Libras, Atados, Saco 50kg, Docena
+                    </small>
                 </div>
             </div>
 
             {{-- COLUMNA DERECHA: INFORMACIÓN COMERCIAL --}}
             <div class="col-md-6">
                 <h6 class="text-muted text-uppercase mb-3">
-                    <i class="fas fa-tags mr-1"></i> Datos comerciales
+                    <i class="fas fa-chart-line mr-1"></i> Información comercial
                 </h6>
 
                 <div class="form-group">
@@ -78,69 +101,104 @@
                 </div>
 
                 <div class="form-group mb-0">
-                    <label for="unidad_id" class="mb-1">Unidad de medida</label>
-                    <select name="unidad_id" id="unidad_id" class="form-control">
-                        <option value="">Seleccione una unidad</option>
-                        @foreach ($unidades as $unidad)
-                            <option value="{{ $unidad->id }}"
-                                {{ old('unidad_id', $organico->unidad_id ?? '') == $unidad->id ? 'selected' : '' }}>
-                                {{ $unidad->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="mb-1">Fecha de cosecha</label>
+                    <input type="date" name="fecha_cosecha" class="form-control"
+                        value="{{ old('fecha_cosecha', $organico->fecha_cosecha ?? '') }}">
+                    <small class="form-text text-muted">
+                        Opcional, pero ayuda a dar confianza al comprador.
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- ====== SECCIÓN 2: TRAZABILIDAD ====== --}}
+{{-- ====== CARD 2: DESCRIPCIÓN + ORIGEN ====== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header">
         <h3 class="card-title mb-0">
-            <i class="fas fa-route mr-2"></i>Trazabilidad
+            <i class="fas fa-map-marker-alt mr-2"></i>Descripción y origen del producto
         </h3>
     </div>
 
     <div class="card-body">
         <div class="row">
-            <div class="col-md-6">
-                <div class="form-group mb-3">
-                    <label for="tipo_cultivo_id" class="mb-1">Tipo de cultivo *</label>
-                    <select name="tipo_cultivo_id" id="tipo_cultivo_id" class="form-control" required>
-                        <option value="">Seleccione un tipo</option>
-                        @foreach ($tiposCultivo as $tipo)
-                            <option value="{{ $tipo->id }}"
-                                {{ old('tipo_cultivo_id', $organico->tipo_cultivo_id ?? '') == $tipo->id ? 'selected' : '' }}>
-                                {{ $tipo->nombre }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
 
+            {{-- DESCRIPCIÓN --}}
+            <div class="col-md-5">
                 <div class="form-group mb-0">
-                    <label class="mb-1">Fecha de cosecha</label>
-                    <input type="date" name="fecha_cosecha" class="form-control"
-                        value="{{ old('fecha_cosecha', optional($trazabilidad->fecha_cosecha ?? null)->format('Y-m-d') ?? $organico->fecha_cosecha ?? '') }}" required>
+                    <label class="mb-1">Descripción</label>
+                    <textarea name="descripcion" class="form-control" rows="6"
+                        placeholder="Describe características, certificaciones, forma de cultivo, etc.">{{ old('descripcion', $organico->descripcion ?? '') }}</textarea>
                     <small class="form-text text-muted">
-                        Campo obligatorio para completar la trazabilidad.
+                        Esta información aparecerá en la ficha del producto.
                     </small>
                 </div>
             </div>
-            <div class="col-md-6 mt-3 mt-md-0">
-                <div class="form-group mb-3">
-                    <label class="mb-1">Fecha de siembra *</label>
-                    <input type="date" name="fecha_siembra" class="form-control"
-                        value="{{ old('fecha_siembra', optional($trazabilidad->fecha_siembra ?? null)->format('Y-m-d')) }}" required>
+
+            {{-- ORIGEN / MAPA (MISMO ESTILO QUE MAQUINARIA) --}}
+            <div class="col-md-7 mt-3 mt-md-0">
+                <h6 class="text-muted text-uppercase mb-2">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Origen del producto
+                </h6>
+
+                <div class="form-group mb-2">
+                    <label class="mb-1">Ubicación (seleccione en el mapa)</label>
+                    <div id="map-origen" style="height: 320px; border-radius: 8px; border: 1px solid #e0e0e0;"></div>
                 </div>
-                <div class="form-group mb-0">
-                    <label class="mb-1">Origen *</label>
-                    <input type="text" id="origen" name="origen" class="form-control"
-                        value="{{ old('origen', $trazabilidad->origen ?? $organico->origen ?? '') }}" readonly required>
-                    <small class="form-text text-muted">
-                        Este campo se completa automáticamente al seleccionar ubicación en el mapa.
-                    </small>
+
+                {{-- BARRA CON DIRECCIÓN RESUMIDA (como en maquinaria) --}}
+                <input type="text" id="origen" name="origen" class="form-control mb-3"
+                    value="{{ old('origen', $organico->origen ?? '') }}" readonly>
+
+                {{-- DETALLE DE UBICACIÓN (CIUDAD + DIRECCIÓN) --}}
+                <div id="info-origen" class="mt-1"
+                    style="display: {{ isset($organico) && ($organico->origen ?? false) ? 'block' : 'none' }};">
+                    <div class="card border">
+                        <div class="card-body py-3">
+                            <h6 class="mb-3 text-muted text-uppercase">
+                                <i class="fas fa-map mr-1"></i> Detalle de ubicación
+                            </h6>
+
+                            <div class="row mb-2">
+                                <div class="col-md-3">
+                                    <strong>Ciudad:</strong>
+                                </div>
+                                <div class="col-md-9" id="ciudad-origen-texto">
+                                    {{ isset($organico) ? $organico->ciudad_origen ?? '-' : '-' }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Dirección:</strong>
+                                </div>
+                                <div class="col-md-9" id="direccion-origen-texto">
+                                    @if (isset($organico) && ($organico->origen ?? false))
+                                        {{ $organico->origen }}
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                {{-- CAMPOS OCULTOS PARA GUARDAR COORDENADAS Y DATOS --}}
+                <input type="hidden" name="latitud_origen" id="latitud_origen"
+                    value="{{ old('latitud_origen', $organico->latitud_origen ?? '') }}">
+                <input type="hidden" name="longitud_origen" id="longitud_origen"
+                    value="{{ old('longitud_origen', $organico->longitud_origen ?? '') }}">
+
+                <input type="hidden" name="departamento_origen" id="departamento_origen"
+                    value="{{ old('departamento_origen', $organico->departamento_origen ?? '') }}">
+                <input type="hidden" name="municipio_origen" id="municipio_origen"
+                    value="{{ old('municipio_origen', $organico->municipio_origen ?? '') }}">
+                <input type="hidden" name="provincia_origen" id="provincia_origen"
+                    value="{{ old('provincia_origen', $organico->provincia_origen ?? '') }}">
+                <input type="hidden" name="ciudad_origen" id="ciudad_origen"
+                    value="{{ old('ciudad_origen', $organico->ciudad_origen ?? '') }}">
             </div>
         </div>
         <div class="row mt-3">
@@ -174,67 +232,11 @@
     </div>
 </div>
 
-{{-- ====== SECCIÓN 3: UBICACIÓN ====== --}}
-<div class="card card-outline card-success shadow-sm mb-4">
-    <div class="card-header">
-        <h3 class="card-title mb-0">
-            <i class="fas fa-map-marker-alt mr-2"></i>Ubicación
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="form-group mb-2">
-            <label class="mb-1">Seleccione la ubicación en el mapa</label>
-            <div id="map-origen" style="height: 320px; border-radius: 8px; border: 1px solid #e0e0e0;"></div>
-        </div>
-
-        <div id="info-origen" class="mt-1"
-            style="display: {{ isset($organico) && ($organico->origen ?? false) ? 'block' : 'none' }};">
-            <div class="card border">
-                <div class="card-body py-3">
-                    <h6 class="mb-3 text-muted text-uppercase">
-                        <i class="fas fa-map mr-1"></i> Detalle de ubicación
-                    </h6>
-                    <div class="row mb-2">
-                        <div class="col-md-3"><strong>Ciudad:</strong></div>
-                        <div class="col-md-9" id="ciudad-origen-texto">
-                            {{ isset($organico) ? $organico->ciudad_origen ?? '-' : '-' }}
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3"><strong>Dirección:</strong></div>
-                        <div class="col-md-9" id="direccion-origen-texto">
-                            @if (isset($organico) && ($organico->origen ?? false))
-                                {{ $organico->origen }}
-                            @else
-                                -
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- CAMPOS OCULTOS PARA GUARDAR COORDENADAS Y DATOS --}}
-        <input type="hidden" name="latitud_origen" id="latitud_origen"
-            value="{{ old('latitud_origen', $organico->latitud_origen ?? '') }}">
-        <input type="hidden" name="longitud_origen" id="longitud_origen"
-            value="{{ old('longitud_origen', $organico->longitud_origen ?? '') }}">
-        <input type="hidden" name="departamento_origen" id="departamento_origen"
-            value="{{ old('departamento_origen', $organico->departamento_origen ?? '') }}">
-        <input type="hidden" name="municipio_origen" id="municipio_origen"
-            value="{{ old('municipio_origen', $organico->municipio_origen ?? '') }}">
-        <input type="hidden" name="provincia_origen" id="provincia_origen"
-            value="{{ old('provincia_origen', $organico->provincia_origen ?? '') }}">
-        <input type="hidden" name="ciudad_origen" id="ciudad_origen"
-            value="{{ old('ciudad_origen', $organico->ciudad_origen ?? '') }}">
-    </div>
-</div>
-
-{{-- ====== SECCIÓN 4: IMÁGENES ====== --}}
+{{-- ====== CARD 3: IMÁGENES ====== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">
-            <i class="fas fa-images mr-2"></i>Imágenes
+            <i class="fas fa-images mr-2"></i>Imágenes del producto
         </h3>
         <small class="text-muted">Máximo 3 imágenes por publicación</small>
     </div>

@@ -37,7 +37,7 @@ class OrganicoController extends Controller
 
     public function create()
     {
-        $categorias   = Categoria::orderBy('nombre')->get();
+        $categorias   = Categoria::whereIn('tipo', ['organico', 'general'])->orderBy('nombre')->get();
         $unidades     = UnidadOrganico::orderBy('nombre')->get();
         $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
 
@@ -68,6 +68,18 @@ class OrganicoController extends Controller
         );
 
         $data['user_id'] = auth()->id();
+
+        // Fase 1: Creación progresiva de Ubicación normalizada
+        $ubicacion = \App\Models\Ubicacion::create([
+            'departamento' => null,
+            'provincia' => null,
+            'municipio' => null,
+            'ciudad' => null,
+            'direccion' => $data['origen'] ?? null,
+            'latitud' => $data['latitud_origen'] ?? null,
+            'longitud' => $data['longitud_origen'] ?? null,
+        ]);
+        $data['ubicacion_id'] = $ubicacion->id;
 
         // Crear el orgánico
         $organico = Organico::create($data);
@@ -115,7 +127,7 @@ class OrganicoController extends Controller
 
         $organico->load(['imagenes', 'trazabilidad']);
 
-        $categorias   = Categoria::orderBy('nombre')->get();
+        $categorias   = Categoria::whereIn('tipo', ['organico', 'general'])->orderBy('nombre')->get();
         $unidades     = UnidadOrganico::orderBy('nombre')->get();
         $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
 
@@ -131,24 +143,29 @@ class OrganicoController extends Controller
         }
 
         $data = $request->validated();
-        $trazabilidadData = [
-            'origen' => $data['origen'],
-            'finca' => $data['finca'],
-            'ubicacion' => $data['ubicacion'],
-            'fecha_siembra' => $data['fecha_siembra'],
-            'fecha_cosecha' => $data['fecha_cosecha'],
-            'tratamientos_utilizados' => $data['tratamientos_utilizados'],
-            'certificaciones' => $data['certificaciones'],
-            'observaciones' => $data['observaciones'] ?? null,
-        ];
-        unset(
-            $data['finca'],
-            $data['ubicacion'],
-            $data['fecha_siembra'],
-            $data['tratamientos_utilizados'],
-            $data['certificaciones'],
-            $data['observaciones']
-        );
+        // Fase 1: Actualización progresiva de Ubicación normalizada
+        if ($organico->ubicacion_id) {
+            $ubicacion = \App\Models\Ubicacion::find($organico->ubicacion_id);
+            if ($ubicacion) {
+                $ubicacion->update([
+                    'direccion' => $data['origen'] ?? null,
+                    'latitud' => $data['latitud_origen'] ?? null,
+                    'longitud' => $data['longitud_origen'] ?? null,
+                ]);
+            }
+        } else {
+            $ubicacion = \App\Models\Ubicacion::create([
+                'departamento' => null,
+                'provincia' => null,
+                'municipio' => null,
+                'ciudad' => null,
+                'direccion' => $data['origen'] ?? null,
+                'latitud' => $data['latitud_origen'] ?? null,
+                'longitud' => $data['longitud_origen'] ?? null,
+            ]);
+            $data['ubicacion_id'] = $ubicacion->id;
+        }
+
         $organico->update($data);
         $organico->trazabilidad()->updateOrCreate(
             ['organico_id' => $organico->id],

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrganicoResource;
 use App\Models\Organico;
 use App\Models\OrganicoTrazabilidad;
 use Illuminate\Http\Request;
@@ -12,18 +13,20 @@ class OrganicoApiController extends Controller
     // LISTAR TODOS (GET /api/organicos)
     public function index()
     {
-        $data = Organico::with(['unidadOrganico', 'trazabilidad'])->latest()->get();
+        $data = Organico::with(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user'])
+            ->latest()
+            ->get();
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $data,
+            'data'   => OrganicoResource::collection($data),
         ]);
     }
 
     // VER UNO (GET /api/organicos/{id})
     public function show($id)
     {
-        $organico = Organico::with(['unidadOrganico', 'trazabilidad'])->find($id);
+        $organico = Organico::with(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user'])->find($id);
 
         if (!$organico) {
             return response()->json([
@@ -34,7 +37,7 @@ class OrganicoApiController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'data'   => $organico,
+            'data'   => new OrganicoResource($organico),
         ]);
     }
 
@@ -62,31 +65,13 @@ class OrganicoApiController extends Controller
             'longitud_origen'  => 'nullable|string',
         ]);
 
-        $organicoPayload = $validated;
-        unset(
-            $organicoPayload['finca'],
-            $organicoPayload['ubicacion'],
-            $organicoPayload['fecha_siembra'],
-            $organicoPayload['tratamientos_utilizados'],
-            $organicoPayload['certificaciones'],
-            $organicoPayload['observaciones']
-        );
-        $organico = Organico::create($organicoPayload);
-        $organico->trazabilidad()->create([
-            'origen' => $validated['origen'],
-            'finca' => $validated['finca'],
-            'ubicacion' => $validated['ubicacion'],
-            'fecha_siembra' => $validated['fecha_siembra'],
-            'fecha_cosecha' => $validated['fecha_cosecha'],
-            'tratamientos_utilizados' => $validated['tratamientos_utilizados'],
-            'certificaciones' => $validated['certificaciones'],
-            'observaciones' => $validated['observaciones'] ?? null,
-        ]);
+        $organico = Organico::create($validated);
+        $organico->load(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user']);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Orgánico creado correctamente',
-            'data'    => $organico,
+            'data'    => new OrganicoResource($organico),
         ], 201);
     }
 
@@ -124,46 +109,13 @@ class OrganicoApiController extends Controller
             'longitud_origen'  => 'nullable|string',
         ]);
 
-        $organicoPayload = $validated;
-        unset(
-            $organicoPayload['finca'],
-            $organicoPayload['ubicacion'],
-            $organicoPayload['fecha_siembra'],
-            $organicoPayload['tratamientos_utilizados'],
-            $organicoPayload['certificaciones'],
-            $organicoPayload['observaciones']
-        );
-        $organico->update($organicoPayload);
-
-        if (
-            array_key_exists('origen', $validated) ||
-            array_key_exists('finca', $validated) ||
-            array_key_exists('ubicacion', $validated) ||
-            array_key_exists('fecha_siembra', $validated) ||
-            array_key_exists('fecha_cosecha', $validated) ||
-            array_key_exists('tratamientos_utilizados', $validated) ||
-            array_key_exists('certificaciones', $validated) ||
-            array_key_exists('observaciones', $validated)
-        ) {
-            $existing = $organico->trazabilidad ?? new OrganicoTrazabilidad(['organico_id' => $organico->id]);
-            $existing->fill([
-                'origen' => $validated['origen'] ?? $existing->origen,
-                'finca' => $validated['finca'] ?? $existing->finca,
-                'ubicacion' => $validated['ubicacion'] ?? $existing->ubicacion,
-                'fecha_siembra' => $validated['fecha_siembra'] ?? $existing->fecha_siembra,
-                'fecha_cosecha' => $validated['fecha_cosecha'] ?? $existing->fecha_cosecha,
-                'tratamientos_utilizados' => $validated['tratamientos_utilizados'] ?? $existing->tratamientos_utilizados,
-                'certificaciones' => $validated['certificaciones'] ?? $existing->certificaciones,
-                'observaciones' => $validated['observaciones'] ?? $existing->observaciones,
-            ]);
-            $existing->organico_id = $organico->id;
-            $existing->save();
-        }
+        $organico->update($validated);
+        $organico->load(['categoria', 'unidadOrganico', 'tipoCultivo', 'imagenes', 'user']);
 
         return response()->json([
             'status'  => 'ok',
             'message' => 'Orgánico actualizado correctamente',
-            'data'    => $organico,
+            'data'    => new OrganicoResource($organico),
         ]);
     }
 

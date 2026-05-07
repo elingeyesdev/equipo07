@@ -1,0 +1,66 @@
+CREATE TABLE "password_reset_tokens" ("email" varchar not null, "token" varchar not null, "created_at" datetime, primary key ("email"))
+
+CREATE TABLE "sessions" ("id" varchar not null, "user_id" integer, "ip_address" varchar, "user_agent" text, "payload" text not null, "last_activity" integer not null, primary key ("id"))
+
+CREATE TABLE "cache" ("key" varchar not null, "value" text not null, "expiration" integer not null, primary key ("key"))
+
+CREATE TABLE "cache_locks" ("key" varchar not null, "owner" varchar not null, "expiration" integer not null, primary key ("key"))
+
+CREATE TABLE "jobs" ("id" integer primary key autoincrement not null, "queue" varchar not null, "payload" text not null, "attempts" integer not null, "reserved_at" integer, "available_at" integer not null, "created_at" integer not null)
+
+CREATE TABLE "job_batches" ("id" varchar not null, "name" varchar not null, "total_jobs" integer not null, "pending_jobs" integer not null, "failed_jobs" integer not null, "failed_job_ids" text not null, "options" text, "cancelled_at" integer, "created_at" integer not null, "finished_at" integer, primary key ("id"))
+
+CREATE TABLE "failed_jobs" ("id" integer primary key autoincrement not null, "uuid" varchar not null, "connection" text not null, "queue" text not null, "payload" text not null, "exception" text not null, "failed_at" datetime not null default CURRENT_TIMESTAMP)
+
+CREATE TABLE "categorias" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime, "tipo_modulo" varchar, "tipo" varchar check ("tipo" in ('ganado', 'maquinaria', 'organico', 'general')) not null default 'general')
+
+CREATE TABLE "tipo_animals" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "razas" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "tipo_animal_id" integer not null, "created_at" datetime, "updated_at" datetime, foreign key("tipo_animal_id") references "tipo_animals"("id") on delete cascade)
+
+CREATE TABLE "tipo_pesos" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" varchar, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "solicitudes_vendedor" ("id" integer primary key autoincrement not null, "user_id" integer not null, "motivo" text not null, "telefono" varchar not null, "direccion" varchar not null, "documento" varchar, "archivo_documento" varchar, "estado" varchar check ("estado" in ('pendiente', 'aprobada', 'rechazada')) not null default 'pendiente', "created_at" datetime, "updated_at" datetime, "fecha_revision_admin" datetime, foreign key("user_id") references "users"("id") on delete cascade)
+
+CREATE TABLE "roles" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" varchar, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "users" ("id" integer primary key autoincrement not null, "name" varchar not null, "email" varchar not null, "email_verified_at" datetime, "password" varchar not null, "remember_token" varchar, "created_at" datetime, "updated_at" datetime, "role_id" integer, foreign key("role_id") references "roles"("id") on delete set null)
+
+CREATE TABLE "tipo_maquinarias" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "marcas_maquinarias" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "estado_maquinarias" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "maquinaria_imagenes" ("id" integer primary key autoincrement not null, "maquinaria_id" integer not null, "ruta" varchar not null, "orden" integer not null default '0', "created_at" datetime, "updated_at" datetime, foreign key("maquinaria_id") references "maquinarias"("id") on delete cascade)
+
+CREATE TABLE "unidades_organicos" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "organico_imagenes" ("id" integer primary key autoincrement not null, "organico_id" integer not null, "ruta" varchar not null, "orden" integer not null default '0', "created_at" datetime, "updated_at" datetime, foreign key("organico_id") references "organicos"("id") on delete cascade)
+
+CREATE TABLE "cart_items" ("id" integer primary key autoincrement not null, "user_id" integer not null, "product_type" varchar not null, "product_id" integer not null, "cantidad" integer not null default '1', "precio_unitario" numeric not null, "subtotal" numeric not null, "notas" text, "created_at" datetime, "updated_at" datetime, foreign key("user_id") references "users"("id") on delete cascade)
+
+CREATE TABLE "ganado_imagenes" ("id" integer primary key autoincrement not null, "ganado_id" integer not null, "ruta" varchar not null, "orden" integer not null default '0', "created_at" datetime, "updated_at" datetime, foreign key("ganado_id") references "ganados"("id") on delete cascade)
+
+CREATE TABLE "pedidos" ("id" integer primary key autoincrement not null, "user_id" integer not null, "total" numeric not null, "estado" varchar not null default 'pendiente', "metodo_pago" varchar, "observaciones" text, "created_at" datetime, "updated_at" datetime, foreign key("user_id") references "users"("id") on delete cascade)
+
+CREATE TABLE "tipo_cultivos" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "datos_sanitarios" ("id" integer primary key autoincrement not null, "ganado_id" integer, "vacuna" varchar, "tratamiento" varchar, "medicamento" varchar, "fecha_aplicacion" date, "proxima_fecha" date, "veterinario" varchar, "observaciones" text, "created_at" datetime, "updated_at" datetime, "certificado_imagen" varchar, "vacunado_fiebre_aftosa" tinyint(1) not null default ('0'), "vacunado_antirabica" tinyint(1) not null default ('0'), "destino_matadero_campo" varchar, "hoja_ruta_foto" varchar, "marca_ganado" varchar, "senal_numero" varchar, "nombre_dueno" varchar, "carnet_dueno_foto" varchar, "marca_ganado_foto" varchar, "certificado_campeon_imagen" varchar, "logro_campeon_raza" tinyint(1) not null default ('0'), "logro_gran_campeon_macho" tinyint(1) not null default ('0'), "logro_gran_campeon_hembra" tinyint(1) not null default ('0'), "logro_mejor_ubre" tinyint(1) not null default ('0'), "logro_campeona_litros_dia" tinyint(1) not null default ('0'), "logro_mejor_lactancia" tinyint(1) not null default ('0'), "logro_mejor_calidad_leche" tinyint(1) not null default ('0'), "logro_mejor_novillo" tinyint(1) not null default ('0'), "logro_gran_campeon_carne" tinyint(1) not null default ('0'), "logro_mejor_semental" tinyint(1) not null default ('0'), "logro_mejor_madre" tinyint(1) not null default ('0'), "logro_mejor_padre" tinyint(1) not null default ('0'), "logro_mejor_fertilidad" tinyint(1) not null default ('0'), "arbol_genealogico" varchar, foreign key("ganado_id") references ganados("id") on delete cascade on update no action)
+
+CREATE TABLE "ganado_logros" ("id" integer primary key autoincrement not null, "ganado_id" integer not null, "tipo_logro" varchar not null, "descripcion" text, "certificado_imagen" varchar, "fecha_logro" date, "created_at" datetime, "updated_at" datetime, foreign key("ganado_id") references "ganados"("id") on delete cascade)
+
+CREATE TABLE "ganado_documentos" ("id" integer primary key autoincrement not null, "ganado_id" integer not null, "tipo_documento" varchar not null, "ruta" varchar not null, "descripcion" text, "created_at" datetime, "updated_at" datetime, foreign key("ganado_id") references "ganados"("id") on delete cascade)
+
+CREATE TABLE "ubicaciones" ("id" integer primary key autoincrement not null, "departamento" varchar, "provincia" varchar, "municipio" varchar, "ciudad" varchar, "direccion" varchar, "latitud" numeric, "longitud" numeric, "created_at" datetime, "updated_at" datetime)
+
+CREATE TABLE "ganados" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "tipo_animal_id" integer not null, "raza_id" integer, "tipo_peso_id" integer not null, "categoria_id" integer not null, "edad" integer, "sexo" varchar, "descripcion" text, "precio" numeric, "imagen" varchar, "ubicacion" varchar, "latitud" numeric, "longitud" numeric, "fecha_publicacion" date, "created_at" datetime, "updated_at" datetime, "stock" integer not null default ('0'), "user_id" integer, "departamento" varchar, "municipio" varchar, "provincia" varchar, "ciudad" varchar, "peso_actual" numeric, "es_campeon" tinyint(1) not null default ('0'), "madre_id" integer, "padre_id" integer, "cantidad_leche_dia" numeric, "ubicacion_id" integer, foreign key("categoria_id") references categorias("id") on delete cascade on update no action, foreign key("tipo_peso_id") references tipo_pesos("id") on delete cascade on update no action, foreign key("raza_id") references razas("id") on delete set null on update no action, foreign key("tipo_animal_id") references tipo_animals("id") on delete cascade on update no action, foreign key("user_id") references users("id") on delete cascade on update no action, foreign key("madre_id") references ganados("id") on delete set null on update no action, foreign key("padre_id") references ganados("id") on delete set null on update no action, foreign key("ubicacion_id") references "ubicaciones"("id") on delete set null)
+
+CREATE TABLE "maquinarias" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "modelo" varchar, "precio_dia" numeric not null default ('0'), "descripcion" text, "categoria_id" integer not null, "created_at" datetime, "updated_at" datetime, "user_id" integer, "tipo_maquinaria_id" integer, "marca_maquinaria_id" integer, "telefono" varchar, "estado_maquinaria_id" integer, "ubicacion" varchar, "latitud" numeric, "longitud" numeric, "departamento" varchar, "municipio" varchar, "provincia" varchar, "ciudad" varchar, "ubicacion_id" integer, foreign key("estado_maquinaria_id") references estado_maquinarias("id") on delete set null on update no action, foreign key("tipo_maquinaria_id") references tipo_maquinarias("id") on delete cascade on update no action, foreign key("categoria_id") references categorias("id") on delete cascade on update no action, foreign key("user_id") references users("id") on delete cascade on update no action, foreign key("marca_maquinaria_id") references marcas_maquinarias("id") on delete cascade on update no action, foreign key("ubicacion_id") references "ubicaciones"("id") on delete set null)
+
+CREATE TABLE "organicos" ("id" integer primary key autoincrement not null, "nombre" varchar not null, "categoria_id" integer not null, "precio" numeric not null default ('0'), "stock" integer not null default ('0'), "fecha_cosecha" date, "descripcion" text, "created_at" datetime, "updated_at" datetime, "user_id" integer, "unidad_id" integer, "origen" varchar, "latitud_origen" numeric, "longitud_origen" numeric, "tipo_cultivo_id" integer, "ubicacion_id" integer, foreign key("tipo_cultivo_id") references tipo_cultivos("id") on delete set null on update no action, foreign key("user_id") references users("id") on delete cascade on update no action, foreign key("categoria_id") references categorias("id") on delete cascade on update no action, foreign key("unidad_id") references unidades_organicos("id") on delete set null on update no action, foreign key("ubicacion_id") references "ubicaciones"("id") on delete set null)
+
+CREATE TABLE "publicaciones" ("id" integer primary key autoincrement not null, "user_id" integer not null, "publicable_type" varchar not null, "publicable_id" integer not null, "titulo" varchar not null, "descripcion" text, "precio" numeric not null, "stock" integer not null default '1', "estado" varchar not null default 'activo', "created_at" datetime, "updated_at" datetime, foreign key("user_id") references "users"("id") on delete cascade)
+
+CREATE TABLE "pedido_detalles" ("id" integer primary key autoincrement not null, "pedido_id" integer not null, "product_id" integer not null, "product_type" varchar not null, "nombre_producto" varchar not null, "cantidad" integer not null, "precio_unitario" numeric not null, "subtotal" numeric not null, "notas" varchar, "created_at" datetime, "updated_at" datetime, "publicacion_id" integer, foreign key("pedido_id") references pedidos("id") on delete cascade on update no action, foreign key("publicacion_id") references "publicaciones"("id") on delete set null)
+
