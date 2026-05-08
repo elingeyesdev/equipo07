@@ -33,6 +33,8 @@ Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->na
 Route::get('/anuncios', [App\Http\Controllers\HomeController::class, 'anuncios'])->name('ads.index');
 Route::view('/publicar', 'public.ads.create')->name('ads.create');
 
+Route::view('/chat-ai-2', 'chat-ai-2')->name('chat.test');
+
 // RUTAS POR ROLES
 
 // ADMINISTRADOR 
@@ -129,7 +131,6 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role.cliente'])->group(function () {
     Route::get('/solicitar-vendedor', [SolicitudVendedorController::class, 'create'])->name('solicitar-vendedor');
     Route::post('/solicitar-vendedor', [SolicitudVendedorController::class, 'store'])->name('solicitar-vendedor.store');
-
 
 
 });

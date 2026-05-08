@@ -21,7 +21,7 @@ class RazaController extends Controller
             
         $tipos = TipoAnimal::all(); // Solo los activos para asignar nuevas razas
         
-        return view('admin.razas.index', compact('razas', 'q', 'tipos'));
+        return view('razas.index', compact('razas', 'q', 'tipos'));
     }
 
     public function store(Request $request)

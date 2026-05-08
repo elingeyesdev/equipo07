@@ -106,7 +106,7 @@
             <div class="sidebar">
                 <nav class="mt-2">
 
-                    <ul class="nav nav-pills nav-sidebar flex-column">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
                         @auth
                             {{-- ===== OPCIONES PARA VENDEDOR Y ADMIN ===== --}}
@@ -648,6 +648,50 @@
 </div>
     
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Guardamos una copia exacta de la función original de tu chat
+        const chatOriginal = window.sendChatMessage;
+        
+        // 2. Sobrescribimos la función principal
+        window.sendChatMessage = function() {
+            const chatInput = document.getElementById('chat-input');
+            if (!chatInput) return;
+            
+            const userText = chatInput.value.trim().toLowerCase();
+            const comandosSecretos = ['vamos al espacio', 'llevame al espacio', 'llévame al espacio', 'espacio'];
+            
+            // 3. Verificamos si es el código secreto
+            if (comandosSecretos.includes(userText)) {
+                const chatMessages = document.getElementById('chat-messages');
+                
+                // Imprimir mensaje del usuario
+                chatMessages.innerHTML += `<div class="bg-green-100 text-green-900 p-2 rounded-lg inline-block max-w-[80%] self-end text-right ml-auto" style="margin-left: auto; display: block; margin-top: 10px;">${chatInput.value}</div>`;
+                
+                // Imprimir Alerta de Sistema
+                chatMessages.innerHTML += `
+                    <div class="bg-black text-cyan-400 p-2 rounded-lg inline-block w-full text-center font-mono text-xs border border-cyan-500 shadow-[0_0_10px_#0ff] mt-2 animate-pulse">
+                        SISTEMA: Iniciando salto hiperespacial... 🚀
+                    </div>`;
+                    
+                chatInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Teletransporte tras 1.5 segundos
+                setTimeout(() => {
+                    window.location.href = '/chat-ai-2';
+                }, 1500);
+                
+                return; // IMPORTANTE: Cortamos la ejecución para que la IA normal no hable
+            }
+            
+            // 4. Si no es el código secreto, ejecutamos la IA normal
+            if (typeof chatOriginal === 'function') {
+                chatOriginal();
+            }
+        };
+    });
+</script>
 </body>
 
 </html>
