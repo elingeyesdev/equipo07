@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
 </head>
 
 @yield('js')
@@ -346,11 +346,13 @@
         <!-- Content -->
         <div class="content-wrapper">
 
-            <section class="content-header">
-                <div class="container-fluid">
-                    <h1>@yield('page_title', 'Panel')</h1>
-                </div>
-            </section>
+            @unless (View::hasSection('hide_page_title'))
+                <section class="content-header">
+                    <div class="container-fluid">
+                        <h1>@yield('page_title', 'Panel')</h1>
+                    </div>
+                </section>
+            @endunless
 
             <section class="content">
                 <div class="container-fluid">
