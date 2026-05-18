@@ -21,16 +21,23 @@ class Organico extends Model
         'nombre',
         'user_id',
         'categoria_id',
-        'unidad_id',
-        'precio',
-        'stock',
         'fecha_cosecha',
         'descripcion',
+        'tipo_cultivo_id',
+        'ubicacion_organico_id',
+    ];
+
+    protected $appends = [
+        'precio',
+        'stock',
+        'unidad_id',
         'origen',
         'latitud_origen',
         'longitud_origen',
-        'tipo_cultivo_id',
-        'ubicacion_id',
+        'departamento_origen',
+        'municipio_origen',
+        'provincia_origen',
+        'ciudad_origen',
     ];
 
     /**
@@ -54,7 +61,14 @@ class Organico extends Model
      */
     public function unidad()
     {
-        return $this->belongsTo(UnidadOrganico::class, 'unidad_id');
+        return $this->hasOneThrough(
+            UnidadOrganico::class,
+            DatoComercialOrganico::class,
+            'organico_id',
+            'id',
+            'id',
+            'unidad_id'
+        );
     }
 
     /**
@@ -70,24 +84,68 @@ class Organico extends Model
         return $this->belongsTo(TipoCultivo::class, 'tipo_cultivo_id');
     }
 
-    /**
-     * Relación: un orgánico pertenece a una ubicación (Nueva estructura)
-     */
-    public function ubicacionAsociada()
-    {
-        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
-    }
-
     public function unidadOrganico()
     {
-        return $this->belongsTo(\App\Models\UnidadOrganico::class, 'unidad_id');
+        return $this->unidad();
     }
 
-    /**
-     * Relación polimórfica: un orgánico puede tener una publicación centralizada
-     */
-    public function publicacion()
+    public function ubicacionOrganico()
     {
-        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
+        return $this->belongsTo(UbicacionOrganico::class, 'ubicacion_organico_id');
+    }
+
+    public function datoComercial()
+    {
+        return $this->hasOne(DatoComercialOrganico::class);
+    }
+
+    public function getPrecioAttribute($value)
+    {
+        return $this->datoComercial?->precio ?? $value;
+    }
+
+    public function getStockAttribute($value)
+    {
+        return $this->datoComercial?->stock ?? $value;
+    }
+
+    public function getUnidadIdAttribute($value)
+    {
+        return $this->datoComercial?->unidad_id ?? $value;
+    }
+
+    public function getOrigenAttribute($value)
+    {
+        return $this->ubicacionOrganico?->ubicacion ?? $value;
+    }
+
+    public function getLatitudOrigenAttribute($value)
+    {
+        return $this->ubicacionOrganico?->latitud ?? $value;
+    }
+
+    public function getLongitudOrigenAttribute($value)
+    {
+        return $this->ubicacionOrganico?->longitud ?? $value;
+    }
+
+    public function getDepartamentoOrigenAttribute()
+    {
+        return $this->ubicacionOrganico?->ubicacionGeografica?->departamento;
+    }
+
+    public function getMunicipioOrigenAttribute()
+    {
+        return $this->ubicacionOrganico?->ubicacionGeografica?->municipio;
+    }
+
+    public function getProvinciaOrigenAttribute()
+    {
+        return $this->ubicacionOrganico?->ubicacionGeografica?->provincia;
+    }
+
+    public function getCiudadOrigenAttribute()
+    {
+        return $this->ubicacionOrganico?->ubicacionGeografica?->ciudad;
     }
 }

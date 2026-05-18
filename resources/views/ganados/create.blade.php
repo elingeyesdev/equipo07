@@ -236,7 +236,17 @@
                                 <small class="form-text text-muted">Ingrese la cantidad disponible de ganado</small>
                             </div>
 
-
+                            <div class="form-group mb-3">
+                                <label for="dato_sanitario_id" class="font-weight-bold">Datos Sanitarios</label>
+                                <select name="dato_sanitario_id" class="form-control">
+                                    <option value="">Sin registro sanitario</option>
+                                    @foreach ($datosSanitarios as $ds)
+                                        <option value="{{ $ds->id }}">
+                                            {{ $ds->vacuna ?? 'Sin vacuna' }} - {{ $ds->fecha_aplicacion }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 

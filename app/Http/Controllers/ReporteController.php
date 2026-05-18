@@ -459,9 +459,13 @@ class ReporteController extends Controller
                     ($totalOrganicos > 0 && $ventasOrganico > 0 ? 1 : 0)) / 3 * 100, 2)
                 : 0;
 
-            $preciosGanado = $vendedor->ganados()->avg('precio') ?? 0;
+            $preciosGanado = $vendedor->ganados()
+                ->join('datos_comerciales_ganado', 'ganados.id', '=', 'datos_comerciales_ganado.ganado_id')
+                ->avg('datos_comerciales_ganado.precio') ?? 0;
             $preciosMaquinaria = $vendedor->maquinarias()->avg('precio_dia') ?? 0;
-            $preciosOrganico = $vendedor->organicos()->avg('precio') ?? 0;
+            $preciosOrganico = $vendedor->organicos()
+                ->join('datos_comerciales_organicos', 'organicos.id', '=', 'datos_comerciales_organicos.organico_id')
+                ->avg('datos_comerciales_organicos.precio') ?? 0;
             $precioPromedio = ($preciosGanado + $preciosMaquinaria + $preciosOrganico) / 3;
 
             $rendimientoVendedores[] = [
@@ -753,13 +757,14 @@ class ReporteController extends Controller
 
         $animales = DB::table('ganados')
             ->join('users', 'users.id', '=', 'ganados.user_id')
+            ->leftJoin('datos_comerciales_ganado', 'datos_comerciales_ganado.ganado_id', '=', 'ganados.id')
             ->select(
                 'ganados.id as product_id',
                 DB::raw("'ganado' as product_type"),
                 DB::raw("'Animales' as categoria"),
                 'ganados.nombre as producto',
                 'users.name as vendedor',
-                'ganados.precio as precio'
+                'datos_comerciales_ganado.precio as precio'
             );
 
         $maquinarias = DB::table('maquinarias')
@@ -775,13 +780,14 @@ class ReporteController extends Controller
 
         $organicos = DB::table('organicos')
             ->join('users', 'users.id', '=', 'organicos.user_id')
+            ->leftJoin('datos_comerciales_organicos', 'datos_comerciales_organicos.organico_id', '=', 'organicos.id')
             ->select(
                 'organicos.id as product_id',
                 DB::raw("'organico' as product_type"),
                 DB::raw("'Orgánicos' as categoria"),
                 'organicos.nombre as producto',
                 'users.name as vendedor',
-                'organicos.precio as precio'
+                'datos_comerciales_organicos.precio as precio'
             );
 
         $productosBase = $animales
@@ -855,13 +861,14 @@ class ReporteController extends Controller
 
         $animales = DB::table('ganados')
             ->join('users', 'users.id', '=', 'ganados.user_id')
+            ->leftJoin('datos_comerciales_ganado', 'datos_comerciales_ganado.ganado_id', '=', 'ganados.id')
             ->select(
                 'ganados.id as product_id',
                 DB::raw("'ganado' as product_type"),
                 DB::raw("'Animales' as categoria"),
                 'ganados.nombre as producto',
                 'users.name as vendedor',
-                'ganados.precio as precio'
+                'datos_comerciales_ganado.precio as precio'
             );
 
         $maquinarias = DB::table('maquinarias')
@@ -877,13 +884,14 @@ class ReporteController extends Controller
 
         $organicos = DB::table('organicos')
             ->join('users', 'users.id', '=', 'organicos.user_id')
+            ->leftJoin('datos_comerciales_organicos', 'datos_comerciales_organicos.organico_id', '=', 'organicos.id')
             ->select(
                 'organicos.id as product_id',
                 DB::raw("'organico' as product_type"),
                 DB::raw("'Orgánicos' as categoria"),
                 'organicos.nombre as producto',
                 'users.name as vendedor',
-                'organicos.precio as precio'
+                'datos_comerciales_organicos.precio as precio'
             );
 
         $productosBase = $animales

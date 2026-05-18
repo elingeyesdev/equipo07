@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Organico;
 use App\Models\OrganicoImagen;
-use App\Models\OrganicoTrazabilidad;
 use App\Models\Categoria;
 use App\Models\UnidadOrganico;
 use App\Models\TipoCultivo;
+use App\Models\UbicacionGeograficaOrganico;
+use App\Models\UbicacionOrganico;
 use App\Http\Requests\StoreOrganicoRequest;
 use App\Http\Requests\UpdateOrganicoRequest;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +19,7 @@ class OrganicoController extends Controller
     {
         $q = request('q');
 
-        $organicos = Organico::with(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes', 'trazabilidad'])
+        $organicos = Organico::with($this->relacionesOrganico())
             ->when($q, function ($qb) use ($q) {
                 $qb->where('nombre', 'ilike', "%$q%")
                     ->orWhereHas('categoria', function ($q2) use ($q) {
@@ -37,7 +38,7 @@ class OrganicoController extends Controller
 
     public function create()
     {
-        $categorias   = Categoria::whereIn('tipo', ['organico', 'general'])->orderBy('nombre')->get();
+        $categorias   = Categoria::orderBy('nombre')->get();
         $unidades     = UnidadOrganico::orderBy('nombre')->get();
         $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
 
@@ -47,47 +48,13 @@ class OrganicoController extends Controller
     public function store(StoreOrganicoRequest $request)
     {
         $data = $request->validated();
-        $trazabilidadData = [
-            'origen' => $data['origen'],
-            'finca' => $data['finca'],
-            'ubicacion' => $data['ubicacion'],
-            'fecha_siembra' => $data['fecha_siembra'],
-            'fecha_cosecha' => $data['fecha_cosecha'],
-            'tratamientos_utilizados' => $data['tratamientos_utilizados'],
-            'certificaciones' => $data['certificaciones'],
-            'observaciones' => $data['observaciones'] ?? null,
-        ];
-
-        unset(
-            $data['finca'],
-            $data['ubicacion'],
-            $data['fecha_siembra'],
-            $data['tratamientos_utilizados'],
-            $data['certificaciones'],
-            $data['observaciones']
-        );
-
         $data['user_id'] = auth()->id();
-
-        // Fase 1: Creación progresiva de Ubicación normalizada
-        $ubicacion = \App\Models\Ubicacion::create([
-            'departamento' => null,
-            'provincia' => null,
-            'municipio' => null,
-            'ciudad' => null,
-            'direccion' => $data['origen'] ?? null,
-            'latitud' => $data['latitud_origen'] ?? null,
-            'longitud' => $data['longitud_origen'] ?? null,
-        ]);
-        $data['ubicacion_id'] = $ubicacion->id;
+        $datosComerciales = $this->extraerDatosComerciales($data);
+        $this->sincronizarUbicacionNormalizada($data);
 
         // Crear el orgánico
         $organico = Organico::create($data);
-
-        OrganicoTrazabilidad::create([
-            'organico_id' => $organico->id,
-            ...$trazabilidadData,
-        ]);
+        $this->sincronizarDatosComerciales($organico, $datosComerciales);
 
         // Guardar las imágenes si existen (máximo 3)
         if ($request->hasFile('imagenes')) {
@@ -112,7 +79,7 @@ class OrganicoController extends Controller
 
     public function show(Organico $organico)
     {
-        $organico->load(['categoria', 'unidad', 'tipoCultivo', 'user', 'imagenes', 'trazabilidad']);
+        $organico->load($this->relacionesOrganico());
 
         return view('organicos.show', compact('organico'));
     }
@@ -125,9 +92,9 @@ class OrganicoController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
-        $organico->load(['imagenes', 'trazabilidad']);
+        $organico->load($this->relacionesOrganico());
 
-        $categorias   = Categoria::whereIn('tipo', ['organico', 'general'])->orderBy('nombre')->get();
+        $categorias   = Categoria::orderBy('nombre')->get();
         $unidades     = UnidadOrganico::orderBy('nombre')->get();
         $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
 
@@ -143,34 +110,11 @@ class OrganicoController extends Controller
         }
 
         $data = $request->validated();
-        // Fase 1: Actualización progresiva de Ubicación normalizada
-        if ($organico->ubicacion_id) {
-            $ubicacion = \App\Models\Ubicacion::find($organico->ubicacion_id);
-            if ($ubicacion) {
-                $ubicacion->update([
-                    'direccion' => $data['origen'] ?? null,
-                    'latitud' => $data['latitud_origen'] ?? null,
-                    'longitud' => $data['longitud_origen'] ?? null,
-                ]);
-            }
-        } else {
-            $ubicacion = \App\Models\Ubicacion::create([
-                'departamento' => null,
-                'provincia' => null,
-                'municipio' => null,
-                'ciudad' => null,
-                'direccion' => $data['origen'] ?? null,
-                'latitud' => $data['latitud_origen'] ?? null,
-                'longitud' => $data['longitud_origen'] ?? null,
-            ]);
-            $data['ubicacion_id'] = $ubicacion->id;
-        }
+        $datosComerciales = $this->extraerDatosComerciales($data);
+        $this->sincronizarUbicacionNormalizada($data, $organico);
 
         $organico->update($data);
-        $organico->trazabilidad()->updateOrCreate(
-            ['organico_id' => $organico->id],
-            $trazabilidadData
-        );
+        $this->sincronizarDatosComerciales($organico, $datosComerciales);
 
         // Eliminar imágenes marcadas para eliminar
         if ($request->has('imagenes_eliminar')) {
@@ -231,5 +175,125 @@ class OrganicoController extends Controller
         $organico->delete();
 
         return redirect()->route('organicos.index')->with('ok', 'Orgánico eliminado');
+    }
+
+    private function relacionesOrganico(): array
+    {
+        return [
+            'categoria',
+            'unidad',
+            'tipoCultivo',
+            'user',
+            'imagenes',
+            'datoComercial.unidad',
+            'ubicacionOrganico.ubicacionGeografica',
+        ];
+    }
+
+    private function extraerDatosComerciales(array &$data): array
+    {
+        $campos = ['unidad_id', 'precio', 'stock'];
+        $datos = [];
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $data)) {
+                $datos[$campo] = $data[$campo];
+                unset($data[$campo]);
+            }
+        }
+
+        return $datos;
+    }
+
+    private function sincronizarDatosComerciales(Organico $organico, array $data): void
+    {
+        if (!$data) {
+            return;
+        }
+
+        $organico->datoComercial()->updateOrCreate(
+            ['organico_id' => $organico->id],
+            [
+                'unidad_id' => $data['unidad_id'] ?? $organico->unidad_id,
+                'precio' => $data['precio'] ?? $organico->precio,
+                'stock' => $data['stock'] ?? $organico->stock ?? 0,
+            ]
+        );
+    }
+
+    private function sincronizarUbicacionNormalizada(array &$data, ?Organico $organico = null): void
+    {
+        $campos = [
+            'origen',
+            'latitud_origen',
+            'longitud_origen',
+            'departamento_origen',
+            'municipio_origen',
+            'provincia_origen',
+            'ciudad_origen',
+        ];
+
+        $recibioCamposUbicacion = collect($campos)->contains(fn ($campo) => array_key_exists($campo, $data));
+
+        if (!$recibioCamposUbicacion) {
+            return;
+        }
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $data) && $data[$campo] === '') {
+                $data[$campo] = null;
+            }
+        }
+
+        $tieneDatosUbicacion = collect($campos)->contains(fn ($campo) => !empty($data[$campo]));
+
+        if (!$tieneDatosUbicacion) {
+            $data['ubicacion_organico_id'] = null;
+            $this->quitarCamposUbicacionAntiguos($data);
+            return;
+        }
+
+        $ubicacionGeografica = UbicacionGeograficaOrganico::firstOrCreate([
+            'departamento' => $data['departamento_origen'] ?? null,
+            'municipio' => $data['municipio_origen'] ?? null,
+            'provincia' => $data['provincia_origen'] ?? null,
+            'ciudad' => $data['ciudad_origen'] ?? null,
+        ]);
+
+        $ubicacionData = [
+            'ubicacion' => $data['origen'] ?? null,
+            'latitud' => $data['latitud_origen'] ?? null,
+            'longitud' => $data['longitud_origen'] ?? null,
+            'ubicacion_geografica_organico_id' => $ubicacionGeografica->id,
+        ];
+
+        if ($organico && $organico->ubicacion_organico_id) {
+            $ubicacion = UbicacionOrganico::find($organico->ubicacion_organico_id);
+
+            if ($ubicacion) {
+                $ubicacion->update($ubicacionData);
+                $data['ubicacion_organico_id'] = $ubicacion->id;
+                $this->quitarCamposUbicacionAntiguos($data);
+                return;
+            }
+        }
+
+        $data['ubicacion_organico_id'] = UbicacionOrganico::create($ubicacionData)->id;
+        $this->quitarCamposUbicacionAntiguos($data);
+    }
+
+    private function quitarCamposUbicacionAntiguos(array &$data): void
+    {
+        foreach ([
+            'origen',
+            'latitud_origen',
+            'longitud_origen',
+            'departamento_origen',
+            'municipio_origen',
+            'provincia_origen',
+            'ciudad_origen',
+        ] as $campo) {
+            unset($data[$campo]);
+        }
     }
 }

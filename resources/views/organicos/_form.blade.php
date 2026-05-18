@@ -1,7 +1,4 @@
 @csrf
-@php
-    $trazabilidad = $organico->trazabilidad ?? null;
-@endphp
 
 {{-- ====== CARD 1: DATOS DEL PRODUCTO ====== --}}
 <div class="card card-outline card-success shadow-sm mb-4">
@@ -199,34 +196,6 @@
                     value="{{ old('provincia_origen', $organico->provincia_origen ?? '') }}">
                 <input type="hidden" name="ciudad_origen" id="ciudad_origen"
                     value="{{ old('ciudad_origen', $organico->ciudad_origen ?? '') }}">
-            </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="mb-1">Finca *</label>
-                    <input type="text" name="finca" class="form-control"
-                        value="{{ old('finca', $trazabilidad->finca ?? '') }}" required>
-                </div>
-                <div class="form-group">
-                    <label class="mb-1">Ubicación (finca/zona) *</label>
-                    <input type="text" name="ubicacion" class="form-control"
-                        value="{{ old('ubicacion', $trazabilidad->ubicacion ?? '') }}" required>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="mb-1">Tratamientos utilizados *</label>
-                    <textarea name="tratamientos_utilizados" class="form-control" rows="3" required>{{ old('tratamientos_utilizados', $trazabilidad->tratamientos_utilizados ?? '') }}</textarea>
-                </div>
-                <div class="form-group">
-                    <label class="mb-1">Certificaciones *</label>
-                    <textarea name="certificaciones" class="form-control" rows="3" required>{{ old('certificaciones', $trazabilidad->certificaciones ?? '') }}</textarea>
-                </div>
-                <div class="form-group mb-0">
-                    <label class="mb-1">Observaciones</label>
-                    <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', $trazabilidad->observaciones ?? '') }}</textarea>
-                </div>
             </div>
         </div>
     </div>

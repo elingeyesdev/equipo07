@@ -689,12 +689,11 @@
                                     style="color: inherit;">
                                     <div class="product-card-modern">
                                         @php
-                                            $imagenPrincipal =
-                                                optional($ganado->imagenes->first())->url ?? $ganado->imagen_url;
+                                            $imagenPrincipal = $ganado->imagenes->first()->ruta ?? null;
                                         @endphp
                                         @if ($imagenPrincipal)
                                             <div class="card-img-wrapper-modern">
-                                                <img src="{{ $imagenPrincipal }}"
+                                                <img src="{{ asset('storage/' . $imagenPrincipal) }}"
                                                     class="product-img" alt="{{ $ganado->nombre }}">
                                             </div>
                                         @else
@@ -823,26 +822,6 @@
                                                     <div class="status-ribbon {{ $estadoClase }}">
                                                         <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
                                                     </div>
-                                                @elseif($maquinaria->estado)
-                                                    @php
-                                                        $estadoNombre = strtolower($maquinaria->estado);
-                                                        $estadoClase = str_replace(' ', '_', $estadoNombre);
-                                                        $estadoTexto = ucfirst(str_replace('_', ' ', $estadoNombre));
-                                                        
-                                                        $iconos = [
-                                                            'disponible' => 'fa-check-circle',
-                                                            'en_mantenimiento' => 'fa-tools',
-                                                            'mantenimiento' => 'fa-tools',
-                                                            'en_uso' => 'fa-cog',
-                                                            'uso' => 'fa-cog',
-                                                            'dado_baja' => 'fa-ban',
-                                                            'dado-de-baja' => 'fa-ban'
-                                                        ];
-                                                        $icono = $iconos[$estadoClase] ?? 'fa-info-circle';
-                                                    @endphp
-                                                    <div class="status-ribbon {{ $estadoClase }}">
-                                                        <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
-                                                    </div>
                                                 @endif
                                                 <img src="{{ asset('storage/' . $imagenPrincipal) }}"
                                                     class="product-img product-img-contain" alt="{{ $maquinaria->nombre }}">
@@ -853,26 +832,6 @@
                                                 @if ($maquinaria->estadoMaquinaria)
                                                     @php
                                                         $estadoNombre = strtolower($maquinaria->estadoMaquinaria->nombre);
-                                                        $estadoClase = str_replace(' ', '_', $estadoNombre);
-                                                        $estadoTexto = ucfirst(str_replace('_', ' ', $estadoNombre));
-                                                        
-                                                        $iconos = [
-                                                            'disponible' => 'fa-check-circle',
-                                                            'en_mantenimiento' => 'fa-tools',
-                                                            'mantenimiento' => 'fa-tools',
-                                                            'en_uso' => 'fa-cog',
-                                                            'uso' => 'fa-cog',
-                                                            'dado_baja' => 'fa-ban',
-                                                            'dado-de-baja' => 'fa-ban'
-                                                        ];
-                                                        $icono = $iconos[$estadoClase] ?? 'fa-info-circle';
-                                                    @endphp
-                                                    <div class="status-ribbon {{ $estadoClase }}">
-                                                        <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
-                                                    </div>
-                                                @elseif($maquinaria->estado)
-                                                    @php
-                                                        $estadoNombre = strtolower($maquinaria->estado);
                                                         $estadoClase = str_replace(' ', '_', $estadoNombre);
                                                         $estadoTexto = ucfirst(str_replace('_', ' ', $estadoNombre));
                                                         

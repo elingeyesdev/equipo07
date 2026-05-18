@@ -141,7 +141,7 @@
                         @if ($ganado->imagenes && $ganado->imagenes->count() > 0)
                             <div class="position-relative bg-white d-flex justify-content-center align-items-center"
                                 style="height: 400px; border-radius: 8px;">
-                                <img id="imagen-principal" src="{{ $ganado->imagenes->first()->url }}"
+                                <img id="imagen-principal" src="{{ asset('storage/' . $ganado->imagenes->first()->ruta) }}"
                                     alt="{{ $ganado->nombre }}"
                                     style="max-height: 100%; max-width: 100%; object-fit: contain; cursor: pointer;"
                                     data-toggle="modal" data-target="#imageModal"
@@ -162,12 +162,12 @@
                                                 <div class="bg-white border rounded d-flex align-items-center justify-content-center"
                                                     style="height: 80px; cursor: pointer; transition: all 0.2s;"
                                                     onclick="
-                                                    document.getElementById('imagen-principal').src = '{{ $imagen->url }}';
-                                                    document.getElementById('imageModalImg').src = '{{ $imagen->url }}';
+                                                    document.getElementById('imagen-principal').src = '{{ asset('storage/' . $imagen->ruta) }}';
+                                                    document.getElementById('imageModalImg').src = '{{ asset('storage/' . $imagen->ruta) }}';
                                                  "
                                                     onmouseover="this.style.borderColor='#28a745'; this.style.transform='scale(1.05)'"
                                                     onmouseout="this.style.borderColor='#dee2e6'; this.style.transform='scale(1)'">
-                                                    <img src="{{ $imagen->url }}"
+                                                    <img src="{{ asset('storage/' . $imagen->ruta) }}"
                                                         alt="Imagen {{ $loop->iteration }}"
                                                         style="max-height: 100%; max-width: 100%; object-fit: contain;">
                                                 </div>
@@ -176,19 +176,6 @@
                                     </div>
                                 </div>
                             @endif
-                        @elseif($ganado->imagen)
-                            <div class="position-relative bg-white d-flex justify-content-center align-items-center"
-                                style="height: 400px; border-radius: 8px;">
-                                <img src="{{ $ganado->imagen_url }}" alt="Imagen de {{ $ganado->nombre }}"
-                                    style="max-height: 100%; max-width: 100%; object-fit: contain; cursor: pointer;"
-                                    onclick="window.open('{{ $ganado->imagen_url }}', '_blank')"
-                                    title="Click para ver imagen completa">
-                                <div class="position-absolute" style="top:10px; right:10px;">
-                                    <span class="badge badge-success badge-lg">
-                                        <i class="fas fa-image"></i> Click para ampliar
-                                    </span>
-                                </div>
-                            </div>
                         @else
                             <div class="d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
                                 <div class="text-center text-muted">

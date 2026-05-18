@@ -90,14 +90,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Relación: un usuario tiene muchas publicaciones (tabla centralizada)
-     */
-    public function publicaciones()
-    {
-        return $this->hasMany(Publicacion::class);
-    }
-
-    /**
      * Obtener el nombre del rol
      */
     public function getRoleNameAttribute()
@@ -119,7 +111,14 @@ class User extends Authenticatable
             }
         }
 
-
+        // Fallback: si existe el campo 'role' antiguo (string) y no es la relación
+        if (
+            isset($this->attributes['role']) &&
+            is_string($this->attributes['role']) &&
+            !$this->relationLoaded('role')
+        ) {
+            return $this->attributes['role'];
+        }
 
         return 'cliente'; // Por defecto
     }

@@ -27,6 +27,10 @@ class StoreMaquinariaRequest extends FormRequest
             'ubicacion' => 'nullable|string|max:255',
             'latitud' => 'nullable|numeric|between:-90,90',
             'longitud' => 'nullable|numeric|between:-180,180',
+            'departamento' => 'nullable|string|max:255',
+            'municipio' => 'nullable|string|max:255',
+            'provincia' => 'nullable|string|max:255',
+            'ciudad' => 'nullable|string|max:255',
         ];
     }
 

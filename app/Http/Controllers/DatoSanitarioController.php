@@ -14,13 +14,16 @@ class DatoSanitarioController extends Controller
         // Si es admin, mostrar todos. Si es vendedor, solo los de sus ganados o los que creó
         // Cargar relaciones para mostrar información completa
         if (auth()->user()->isAdmin()) {
-            $items = DatoSanitario::with(['ganado.tipoAnimal', 'ganado.raza'])
+            $items = DatoSanitario::with($this->relacionesDatoSanitario())
                 ->orderBy('id', 'desc')
                 ->get();
         } else {
             $ganadoIds = Ganado::where('user_id', auth()->id())->pluck('id');
-            $items = DatoSanitario::with(['ganado.tipoAnimal', 'ganado.raza'])
-                ->whereIn('ganado_id', $ganadoIds)
+            $items = DatoSanitario::with($this->relacionesDatoSanitario())
+                ->where(function ($query) use ($ganadoIds) {
+                    $query->whereIn('ganado_id', $ganadoIds)
+                        ->orWhere('user_id', auth()->id());
+                })
                 ->orderBy('id', 'desc')
                 ->get();
         }
@@ -89,8 +92,7 @@ class DatoSanitarioController extends Controller
             }
         }
 
-        // Preparar los datos
-        $data = $request->only([
+        $datosNormalizados = $request->only([
             'ganado_id',
             'vacuna',
             'tratamiento',
@@ -104,54 +106,43 @@ class DatoSanitarioController extends Controller
             'nombre_dueno'
         ]);
 
-
+        $data = $request->only(['ganado_id']);
+        $data['user_id'] = auth()->id();
 
         // Convertir checkboxes a boolean (si vienen como null, serán false)
-        $data['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
-        $data['vacunado_antirabica'] = $request->has('vacunado_antirabica') ? true : false;
+        $datosNormalizados['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
+        $datosNormalizados['vacunado_antirabica'] = $request->has('vacunado_antirabica') ? true : false;
 
-        // Logros
-        $data['logro_campeon_raza'] = $request->has('logro_campeon_raza') ? true : false;
-        $data['logro_gran_campeon_macho'] = $request->has('logro_gran_campeon_macho') ? true : false;
-        $data['logro_gran_campeon_hembra'] = $request->has('logro_gran_campeon_hembra') ? true : false;
-        $data['logro_mejor_ubre'] = $request->has('logro_mejor_ubre') ? true : false;
-        $data['logro_campeona_litros_dia'] = $request->has('logro_campeona_litros_dia') ? true : false;
-        $data['logro_mejor_lactancia'] = $request->has('logro_mejor_lactancia') ? true : false;
-        $data['logro_mejor_calidad_leche'] = $request->has('logro_mejor_calidad_leche') ? true : false;
-        $data['logro_mejor_novillo'] = $request->has('logro_mejor_novillo') ? true : false;
-        $data['logro_gran_campeon_carne'] = $request->has('logro_gran_campeon_carne') ? true : false;
-        $data['logro_mejor_semental'] = $request->has('logro_mejor_semental') ? true : false;
-        $data['logro_mejor_madre'] = $request->has('logro_mejor_madre') ? true : false;
-        $data['logro_mejor_padre'] = $request->has('logro_mejor_padre') ? true : false;
-        $data['logro_mejor_fertilidad'] = $request->has('logro_mejor_fertilidad') ? true : false;
+        $this->agregarLogrosReconocimientos($datosNormalizados, $request);
 
         // Manejar la imagen del certificado
         if ($request->hasFile('certificado_imagen')) {
-            $data['certificado_imagen'] = $request->file('certificado_imagen')->store('certificados_senasag', 'public');
+            $datosNormalizados['certificado_imagen'] = $request->file('certificado_imagen')->store('certificados_senasag', 'public');
         }
 
         // Manejar la imagen del certificado de campeón
         if ($request->hasFile('certificado_campeon_imagen')) {
-            $data['certificado_campeon_imagen'] = $request->file('certificado_campeon_imagen')->store('certificados_campeon', 'public');
+            $datosNormalizados['certificado_campeon_imagen'] = $request->file('certificado_campeon_imagen')->store('certificados_campeon', 'public');
         }
 
         // Manejar el archivo del árbol genealógico
         if ($request->hasFile('arbol_genealogico')) {
-            $data['arbol_genealogico'] = $request->file('arbol_genealogico')->store('arboles_genealogicos', 'public');
+            $datosNormalizados['arbol_genealogico'] = $request->file('arbol_genealogico')->store('arboles_genealogicos', 'public');
         }
 
         // Manejar la imagen de la marca del ganado
         if ($request->hasFile('marca_ganado_foto')) {
-            $data['marca_ganado_foto'] = $request->file('marca_ganado_foto')->store('marcas_ganado', 'public');
+            $datosNormalizados['marca_ganado_foto'] = $request->file('marca_ganado_foto')->store('marcas_ganado', 'public');
         }
 
         // Manejar la imagen del carnet del dueño
         if ($request->hasFile('carnet_dueno_foto')) {
-            $data['carnet_dueno_foto'] = $request->file('carnet_dueno_foto')->store('carnets_dueños', 'public');
+            $datosNormalizados['carnet_dueno_foto'] = $request->file('carnet_dueno_foto')->store('carnets_dueños', 'public');
         }
 
         // Crear el dato sanitario
         $datoSanitario = DatoSanitario::create($data);
+        $this->sincronizarDatosNormalizados($datoSanitario, $datosNormalizados);
 
         // Actualizar el ganado con el dato_sanitario_id (solo si hay ganado_id)
         if ($request->ganado_id) {
@@ -166,6 +157,15 @@ class DatoSanitarioController extends Controller
 
     public function edit(DatoSanitario $datos_sanitario)
     {
+        $datos_sanitario->load([
+            'tratamientoMedicamento',
+            'vacunacion.imagenPrincipal',
+            'marcaAnimal.imagenPrincipal',
+            'datoDueno',
+            'imagenCertificadoCampeonPrincipal',
+            'archivoArbolGenealogicoPrincipal',
+        ]);
+
         // Si es admin, mostrar todos los ganados. Si es vendedor, solo los suyos
         // Incluir todos los animales registrados, con o sin fecha de publicación
         if (auth()->user()->isAdmin()) {
@@ -248,8 +248,7 @@ class DatoSanitarioController extends Controller
             }
         }
 
-        // Preparar los datos
-        $data = $request->only([
+        $datosNormalizados = $request->only([
             'ganado_id',
             'vacuna',
             'tratamiento',
@@ -263,24 +262,13 @@ class DatoSanitarioController extends Controller
             'nombre_dueno'
         ]);
 
-        // Convertir checkboxes a boolean
-        $data['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
-        $data['vacunado_antirabica'] = $request->has('vacunado_antirabica') ? true : false;
+        $data = $request->only(['ganado_id']);
 
-        // Logros
-        $data['logro_campeon_raza'] = $request->has('logro_campeon_raza') ? true : false;
-        $data['logro_gran_campeon_macho'] = $request->has('logro_gran_campeon_macho') ? true : false;
-        $data['logro_gran_campeon_hembra'] = $request->has('logro_gran_campeon_hembra') ? true : false;
-        $data['logro_mejor_ubre'] = $request->has('logro_mejor_ubre') ? true : false;
-        $data['logro_campeona_litros_dia'] = $request->has('logro_campeona_litros_dia') ? true : false;
-        $data['logro_mejor_lactancia'] = $request->has('logro_mejor_lactancia') ? true : false;
-        $data['logro_mejor_calidad_leche'] = $request->has('logro_mejor_calidad_leche') ? true : false;
-        $data['logro_mejor_novillo'] = $request->has('logro_mejor_novillo') ? true : false;
-        $data['logro_gran_campeon_carne'] = $request->has('logro_gran_campeon_carne') ? true : false;
-        $data['logro_mejor_semental'] = $request->has('logro_mejor_semental') ? true : false;
-        $data['logro_mejor_madre'] = $request->has('logro_mejor_madre') ? true : false;
-        $data['logro_mejor_padre'] = $request->has('logro_mejor_padre') ? true : false;
-        $data['logro_mejor_fertilidad'] = $request->has('logro_mejor_fertilidad') ? true : false;
+        // Convertir checkboxes a boolean
+        $datosNormalizados['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
+        $datosNormalizados['vacunado_antirabica'] = $request->has('vacunado_antirabica') ? true : false;
+
+        $this->agregarLogrosReconocimientos($datosNormalizados, $request);
 
         // Manejar la imagen del certificado
         if ($request->hasFile('certificado_imagen')) {
@@ -288,7 +276,7 @@ class DatoSanitarioController extends Controller
             if ($datos_sanitario->certificado_imagen && Storage::disk('public')->exists($datos_sanitario->certificado_imagen)) {
                 Storage::disk('public')->delete($datos_sanitario->certificado_imagen);
             }
-            $data['certificado_imagen'] = $request->file('certificado_imagen')->store('certificados_senasag', 'public');
+            $datosNormalizados['certificado_imagen'] = $request->file('certificado_imagen')->store('certificados_senasag', 'public');
         }
 
         // Manejar la imagen del certificado de campeón
@@ -297,7 +285,7 @@ class DatoSanitarioController extends Controller
             if ($datos_sanitario->certificado_campeon_imagen && Storage::disk('public')->exists($datos_sanitario->certificado_campeon_imagen)) {
                 Storage::disk('public')->delete($datos_sanitario->certificado_campeon_imagen);
             }
-            $data['certificado_campeon_imagen'] = $request->file('certificado_campeon_imagen')->store('certificados_campeon', 'public');
+            $datosNormalizados['certificado_campeon_imagen'] = $request->file('certificado_campeon_imagen')->store('certificados_campeon', 'public');
         }
 
         // Manejar el archivo del árbol genealógico
@@ -306,7 +294,7 @@ class DatoSanitarioController extends Controller
             if ($datos_sanitario->arbol_genealogico && Storage::disk('public')->exists($datos_sanitario->arbol_genealogico)) {
                 Storage::disk('public')->delete($datos_sanitario->arbol_genealogico);
             }
-            $data['arbol_genealogico'] = $request->file('arbol_genealogico')->store('arboles_genealogicos', 'public');
+            $datosNormalizados['arbol_genealogico'] = $request->file('arbol_genealogico')->store('arboles_genealogicos', 'public');
         }
 
         // Manejar la imagen de la marca del ganado
@@ -315,7 +303,7 @@ class DatoSanitarioController extends Controller
             if ($datos_sanitario->marca_ganado_foto && Storage::disk('public')->exists($datos_sanitario->marca_ganado_foto)) {
                 Storage::disk('public')->delete($datos_sanitario->marca_ganado_foto);
             }
-            $data['marca_ganado_foto'] = $request->file('marca_ganado_foto')->store('marcas_ganado', 'public');
+            $datosNormalizados['marca_ganado_foto'] = $request->file('marca_ganado_foto')->store('marcas_ganado', 'public');
         }
 
         // Manejar la imagen del carnet del dueño
@@ -324,10 +312,11 @@ class DatoSanitarioController extends Controller
             if ($datos_sanitario->carnet_dueno_foto && Storage::disk('public')->exists($datos_sanitario->carnet_dueno_foto)) {
                 Storage::disk('public')->delete($datos_sanitario->carnet_dueno_foto);
             }
-            $data['carnet_dueno_foto'] = $request->file('carnet_dueno_foto')->store('carnets_dueños', 'public');
+            $datosNormalizados['carnet_dueno_foto'] = $request->file('carnet_dueno_foto')->store('carnets_dueños', 'public');
         }
 
         $datos_sanitario->update($data);
+        $this->sincronizarDatosNormalizados($datos_sanitario, $datosNormalizados);
 
         return redirect()->route('admin.datos-sanitarios.index')
             ->with('success', 'Registro sanitario actualizado correctamente.');
@@ -340,9 +329,16 @@ class DatoSanitarioController extends Controller
         if (!auth()->user()->isAdmin()) {
             $tienePermiso = false;
 
-            // Verificar si el ganado pertenece al usuario
-            if ($datos_sanitario->ganado && $datos_sanitario->ganado->user_id === auth()->id()) {
+            // Verificar si el usuario creó el registro
+            if ($datos_sanitario->user_id === auth()->id()) {
                 $tienePermiso = true;
+            }
+
+            // Verificar si el ganado pertenece al usuario
+            if (!$tienePermiso && $datos_sanitario->ganado) {
+                if ($datos_sanitario->ganado->user_id === auth()->id()) {
+                    $tienePermiso = true;
+                }
             }
 
             if (!$tienePermiso) {
@@ -372,5 +368,203 @@ class DatoSanitarioController extends Controller
 
         return redirect()->route('admin.datos-sanitarios.index')
             ->with('success', 'Registro sanitario eliminado.');
+    }
+
+    private function relacionesDatoSanitario(): array
+    {
+        return [
+            'ganado.tipoAnimal',
+            'ganado.raza',
+            'tratamientoMedicamento',
+            'vacunacion.imagenPrincipal',
+            'marcaAnimal.imagenPrincipal',
+            'datoDueno',
+            'logroReconocimiento.bellezaEstructura',
+            'logroReconocimiento.produccionLeche',
+            'logroReconocimiento.produccionCarne',
+            'logroReconocimiento.reproduccionLogro',
+            'imagenCertificadoCampeonPrincipal',
+            'archivoArbolGenealogicoPrincipal',
+        ];
+    }
+
+    private function sincronizarDatosNormalizados(DatoSanitario $datoSanitario, array $data): void
+    {
+        $tratamientoData = [
+            'tratamiento' => $data['tratamiento'] ?? null,
+            'medicamento' => $data['medicamento'] ?? null,
+            'fecha_aplicacion' => $data['fecha_aplicacion'] ?? null,
+            'proxima_fecha' => $data['proxima_fecha'] ?? null,
+            'veterinario' => $data['veterinario'] ?? null,
+            'observaciones' => $data['observaciones'] ?? null,
+        ];
+
+        if ($datoSanitario->tratamientoMedicamento || $this->tieneDatos($tratamientoData)) {
+            $datoSanitario->tratamientoMedicamento()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $tratamientoData
+            );
+        }
+
+        $vacunacion = $datoSanitario->vacunacion()->updateOrCreate(
+            ['dato_sanitario_id' => $datoSanitario->id],
+            [
+                'vacuna' => $data['vacuna'] ?? null,
+                'vacunado_fiebre_aftosa' => $data['vacunado_fiebre_aftosa'] ?? false,
+                'vacunado_antirabica' => $data['vacunado_antirabica'] ?? false,
+            ]
+        );
+
+        if (!empty($data['certificado_imagen'])) {
+            foreach ($vacunacion->imagenes as $imagen) {
+                if (Storage::disk('public')->exists($imagen->ruta)) {
+                    Storage::disk('public')->delete($imagen->ruta);
+                }
+                $imagen->delete();
+            }
+
+            $vacunacion->imagenes()->create([
+                'ruta' => $data['certificado_imagen'],
+                'orden' => 0,
+            ]);
+        }
+
+        $marcaData = [
+            'marca_ganado' => $data['marca_ganado'] ?? null,
+            'senal_numero' => $data['senal_numero'] ?? null,
+        ];
+        $marcaFoto = $data['marca_ganado_foto'] ?? null;
+
+        if ($datoSanitario->marcaAnimal || $this->tieneDatos($marcaData) || filled($marcaFoto)) {
+            $marcaAnimal = $datoSanitario->marcaAnimal()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $marcaData
+            );
+
+            if (filled($marcaFoto) && (array_key_exists('marca_ganado_foto', $data) || !$marcaAnimal->imagenes()->exists())) {
+                foreach ($marcaAnimal->imagenes as $imagen) {
+                    if (Storage::disk('public')->exists($imagen->ruta)) {
+                        Storage::disk('public')->delete($imagen->ruta);
+                    }
+                    $imagen->delete();
+                }
+
+                $marcaAnimal->imagenes()->create([
+                    'ruta' => $marcaFoto,
+                    'orden' => 0,
+                ]);
+            }
+        }
+
+        $duenoData = [
+            'nombre_dueno' => $data['nombre_dueno'] ?? null,
+        ];
+
+        if (array_key_exists('carnet_dueno_foto', $data)) {
+            $duenoData['carnet_dueno_foto'] = $data['carnet_dueno_foto'];
+        }
+
+        if ($datoSanitario->datoDueno || $this->tieneDatos($duenoData)) {
+            $datoSanitario->datoDueno()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $duenoData
+            );
+        }
+
+        if (!empty($data['certificado_campeon_imagen'])) {
+            foreach ($datoSanitario->imagenesCertificadoCampeon as $imagen) {
+                if (Storage::disk('public')->exists($imagen->ruta)) {
+                    Storage::disk('public')->delete($imagen->ruta);
+                }
+                $imagen->delete();
+            }
+
+            $datoSanitario->imagenesCertificadoCampeon()->create([
+                'ruta' => $data['certificado_campeon_imagen'],
+                'orden' => 0,
+            ]);
+        }
+
+        if (!empty($data['arbol_genealogico'])) {
+            foreach ($datoSanitario->archivosArbolGenealogico as $archivo) {
+                if (Storage::disk('public')->exists($archivo->ruta)) {
+                    Storage::disk('public')->delete($archivo->ruta);
+                }
+                $archivo->delete();
+            }
+
+            $datoSanitario->archivosArbolGenealogico()->create([
+                'ruta' => $data['arbol_genealogico'],
+                'orden' => 0,
+            ]);
+        }
+
+        $logroReconocimiento = $datoSanitario->logroReconocimiento()->updateOrCreate(
+            ['dato_sanitario_id' => $datoSanitario->id],
+            []
+        );
+
+        $logroReconocimiento->bellezaEstructura()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_campeon_raza' => $data['logro_campeon_raza'] ?? false,
+                'logro_gran_campeon_macho' => $data['logro_gran_campeon_macho'] ?? false,
+                'logro_gran_campeon_hembra' => $data['logro_gran_campeon_hembra'] ?? false,
+                'logro_mejor_ubre' => $data['logro_mejor_ubre'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->produccionLeche()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_campeona_litros_dia' => $data['logro_campeona_litros_dia'] ?? false,
+                'logro_mejor_lactancia' => $data['logro_mejor_lactancia'] ?? false,
+                'logro_mejor_calidad_leche' => $data['logro_mejor_calidad_leche'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->produccionCarne()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_mejor_novillo' => $data['logro_mejor_novillo'] ?? false,
+                'logro_gran_campeon_carne' => $data['logro_gran_campeon_carne'] ?? false,
+                'logro_mejor_semental' => $data['logro_mejor_semental'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->reproduccionLogro()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_mejor_madre' => $data['logro_mejor_madre'] ?? false,
+                'logro_mejor_padre' => $data['logro_mejor_padre'] ?? false,
+                'logro_mejor_fertilidad' => $data['logro_mejor_fertilidad'] ?? false,
+            ]
+        );
+    }
+
+    private function agregarLogrosReconocimientos(array &$data, Request $request): void
+    {
+        foreach ([
+            'logro_campeon_raza',
+            'logro_gran_campeon_macho',
+            'logro_gran_campeon_hembra',
+            'logro_mejor_ubre',
+            'logro_campeona_litros_dia',
+            'logro_mejor_lactancia',
+            'logro_mejor_calidad_leche',
+            'logro_mejor_novillo',
+            'logro_gran_campeon_carne',
+            'logro_mejor_semental',
+            'logro_mejor_madre',
+            'logro_mejor_padre',
+            'logro_mejor_fertilidad',
+        ] as $campo) {
+            $data[$campo] = $request->has($campo);
+        }
+    }
+
+    private function tieneDatos(array $data): bool
+    {
+        return collect($data)->contains(fn($value) => filled($value));
     }
 }
