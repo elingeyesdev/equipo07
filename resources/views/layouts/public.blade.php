@@ -7,16 +7,20 @@
     <title>@yield('title', 'AgroVida')</title>
 
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
 
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    @if (View::hasSection('standalone_public'))
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @else
+        <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    @endif
 </head>
 
-<body class="hold-transition layout-top-nav {{ request()->routeIs('login', 'register') ? 'no-topbar' : '' }}">
+<body class="hold-transition layout-top-nav {{ request()->routeIs('login', 'register') ? 'no-topbar' : '' }} {{ View::hasSection('standalone_public') ? 'public-standalone-shell' : '' }}">
     <div class="wrapper">
 
-        @if (!request()->routeIs('login', 'register'))
+        @if (!View::hasSection('standalone_public') && !request()->routeIs('login', 'register'))
             <nav class="main-header navbar navbar-expand navbar-white navbar-light border-0 project-topbar">
                 <div class="container">
                     <a href="{{ route('home') }}" class="navbar-brand d-flex align-items-center">
@@ -136,22 +140,26 @@
         @endif
 
 
-        <div class="content-wrapper bg-white">
+        <div class="{{ View::hasSection('standalone_public') ? 'public-standalone-content' : 'content-wrapper bg-white' }}">
             @yield('content')
         </div>
 
-        <footer class="main-footer text-sm">
-            <div class="container">
-                <strong>© {{ date('Y') }} AgroVida.</strong> Tu mercado agrícola.
-                <span class="float-right d-none d-sm-inline">Hecho con AdminLTE 3</span>
-            </div>
-        </footer>
+        @unless (View::hasSection('standalone_public'))
+            <footer class="main-footer text-sm">
+                <div class="container">
+                    <strong>© {{ date('Y') }} AgroVida.</strong> Tu mercado agrícola.
+                    <span class="float-right d-none d-sm-inline">Hecho con AdminLTE 3</span>
+                </div>
+            </footer>
+        @endunless
     </div>
 
-    <script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
-    <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('vendor/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
-    <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+    @unless (View::hasSection('standalone_public'))
+        <script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
+        <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+        <script src="{{ asset('vendor/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
+        <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+    @endunless
 </body>
 
 </html>
