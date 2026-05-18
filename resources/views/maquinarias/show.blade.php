@@ -499,7 +499,6 @@
                                 <div class="status-ribbon {{ $estadoClase }}">
                                     <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
                                 </div>
-
                             @endif
                             
                             <img id="mainImage" 
@@ -556,7 +555,6 @@
                                 <div class="status-ribbon {{ $estadoClase }}">
                                     <i class="fas {{ $icono }}"></i>{{ $estadoTexto }}
                                 </div>
-
                             @endif
                             <div class="text-center text-muted">
                                 <i class="fas fa-image fa-4x mb-3 pulse-animation"></i>

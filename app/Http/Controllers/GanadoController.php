@@ -8,6 +8,8 @@ use App\Models\TipoAnimal;
 use App\Models\TipoPeso;
 use App\Models\Raza;
 use App\Models\GanadoImagen;
+use App\Models\UbicacionGanado;
+use App\Models\UbicacionGeograficaGanado;
 use App\Services\GeocodificacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +22,7 @@ class GanadoController extends Controller
      */
     public function index()
     {
-        $ganados = Ganado::with(['categoria', 'raza', 'tipoAnimal', 'tipoPeso', 'datoSanitario', 'imagenes'])
+        $ganados = Ganado::with($this->relacionesGanado())
             ->orderBy('id', 'desc')
             ->paginate(10);
 
@@ -32,7 +34,7 @@ class GanadoController extends Controller
      */
     public function show(Ganado $ganado)
     {
-        $ganado->load(['categoria', 'tipoAnimal', 'tipoPeso', 'raza', 'datoSanitario', 'imagenes', 'user.role']);
+        $ganado->load(array_merge($this->relacionesGanado(), ['user.role']));
         return view('ganados.show', compact('ganado'));
     }
 
@@ -42,7 +44,7 @@ class GanadoController extends Controller
     public function create()
     {
         $tipo_animals = TipoAnimal::orderBy('nombre')->get();
-        $categorias   = Categoria::whereIn('tipo', ['ganado', 'general'])->orderBy('nombre')->get();
+        $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
         $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
@@ -65,7 +67,7 @@ class GanadoController extends Controller
         $request->validate([
             'nombre'          => 'required|string|max:255',
             'tipo_animal_id'  => 'required|exists:tipo_animals,id',
-            'raza_id'         => 'nullable|exists:razas,id,tipo_animal_id,' . $request->tipo_animal_id,
+            'raza_id'         => 'nullable|exists:razas,id',
             'edad_anos'       => 'required|integer|min:0|max:25',
             'edad_meses'      => 'required|integer|min:0|max:11',
             'edad_dias'       => 'required|integer|min:0|max:30',
@@ -81,8 +83,7 @@ class GanadoController extends Controller
             'ubicacion' => 'nullable|string|max:255',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-            'madre_id' => 'nullable|exists:ganados,id',
-            'padre_id' => 'nullable|exists:ganados,id',
+            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
         ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
@@ -91,19 +92,15 @@ class GanadoController extends Controller
             $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
         }
 
-        // Sincronización automática de tipo_animal_id basado en raza_id para mantener consistencia
-        $tipo_animal_id = $request->tipo_animal_id;
-        if ($request->raza_id) {
-            $raza = \App\Models\Raza::find($request->raza_id);
-            if ($raza) {
-                $tipo_animal_id = $raza->tipo_animal_id;
-            }
-        }
-
         $data = [
             'nombre' => $request->nombre,
-            'tipo_animal_id' => $tipo_animal_id,
+            'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id' => $request->raza_id,
+            'categoria_id' => $request->categoria_id,
+            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
+        ];
+
+        $datosNormalizados = [
             'edad' => $edadMeses,
             'tipo_peso_id' => $request->tipo_peso_id,
             'peso_actual' => $request->peso_actual,
@@ -112,56 +109,19 @@ class GanadoController extends Controller
             'descripcion' => $request->descripcion,
             'precio' => $request->precio,
             'stock' => $request->stock,
-            'categoria_id' => $request->categoria_id,
-            'fecha_publicacion' => now(), // Fecha automática al crear
-            'ubicacion' => $request->ubicacion,
-            'latitud' => $request->latitud,
-            'longitud' => $request->longitud,
-            'departamento' => $request->departamento,
-            'municipio' => $request->municipio,
-            'provincia' => $request->provincia,
-            'ciudad' => $request->ciudad,
-            'madre_id' => $request->madre_id,
-            'padre_id' => $request->padre_id,
+            'fecha_publicacion' => now(),
         ];
+
+        $this->agregarDatosUbicacion($data, $request);
 
         // Asignar el usuario autenticado
         $data['user_id'] = auth()->id();
 
-        // Fase 1: Creación progresiva de Ubicación normalizada
-        $ubicacion = \App\Models\Ubicacion::create([
-            'departamento' => $data['departamento'] ?? null,
-            'provincia' => $data['provincia'] ?? null,
-            'municipio' => $data['municipio'] ?? null,
-            'ciudad' => $data['ciudad'] ?? null,
-            'direccion' => $data['ubicacion'] ?? null,
-            'latitud' => $data['latitud'] ?? null,
-            'longitud' => $data['longitud'] ?? null,
-        ]);
-        $data['ubicacion_id'] = $ubicacion->id;
+        $this->sincronizarUbicacionNormalizada($data);
 
         // Crear el ganado
         $ganado = Ganado::create($data);
-
-        // Sincronizar madre en tabla normalizada
-        if ($ganado->madre_id) {
-            \App\Models\GanadoGenealogia::updateOrCreate(
-                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'madre'],
-                ['pariente_id' => $ganado->madre_id]
-            );
-        } else {
-            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'madre')->delete();
-        }
-
-        // Sincronizar padre en tabla normalizada
-        if ($ganado->padre_id) {
-            \App\Models\GanadoGenealogia::updateOrCreate(
-                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'padre'],
-                ['pariente_id' => $ganado->padre_id]
-            );
-        } else {
-            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'padre')->delete();
-        }
+        $this->sincronizarDatosNormalizados($ganado, $datosNormalizados);
 
         // Guardar las imágenes si existen (máximo 3)
         if ($request->hasFile('imagenes')) {
@@ -169,7 +129,7 @@ class GanadoController extends Controller
             $imagenes = array_slice($request->file('imagenes'), 0, 3); // Limitar a 3 imágenes
             foreach ($imagenes as $imagen) {
                 if ($imagen && $imagen->isValid()) {
-                    $ruta = Ganado::normalizeStoredPathValue($imagen->store('ganados', 'public'));
+                    $ruta = $imagen->store('ganados', 'public');
                     GanadoImagen::create([
                         'ganado_id' => $ganado->id,
                         'ruta' => $ruta,
@@ -178,8 +138,6 @@ class GanadoController extends Controller
                 }
             }
         }
-
-        $this->sincronizarImagenPrincipal($ganado);
 
         return redirect()->route('ganados.index')
             ->with('success', 'Ganado registrado correctamente.');
@@ -197,8 +155,9 @@ class GanadoController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
+        $ganado->load($this->relacionesGanado());
         $tipo_animals = TipoAnimal::orderBy('nombre')->get();
-        $categorias   = Categoria::whereIn('tipo', ['ganado', 'general'])->orderBy('nombre')->get();
+        $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
         $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
@@ -228,7 +187,7 @@ class GanadoController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
-            'raza_id' => 'nullable|exists:razas,id,tipo_animal_id,' . $request->tipo_animal_id,
+            'raza_id' => 'nullable|exists:razas,id',
             'edad_anos' => 'required|integer|min:0|max:25',
             'edad_meses' => 'required|integer|min:0|max:11',
             'edad_dias' => 'required|integer|min:0|max:30',
@@ -244,8 +203,7 @@ class GanadoController extends Controller
             'ubicacion' => 'nullable|string|max:255',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-            'madre_id' => 'nullable|exists:ganados,id',
-            'padre_id' => 'nullable|exists:ganados,id',
+            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
         ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
@@ -254,19 +212,15 @@ class GanadoController extends Controller
             $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
         }
 
-        // Sincronización automática de tipo_animal_id basado en raza_id para mantener consistencia
-        $tipo_animal_id = $request->tipo_animal_id;
-        if ($request->raza_id) {
-            $raza = \App\Models\Raza::find($request->raza_id);
-            if ($raza) {
-                $tipo_animal_id = $raza->tipo_animal_id;
-            }
-        }
-
         $data = [
             'nombre' => $request->nombre,
-            'tipo_animal_id' => $tipo_animal_id,
+            'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id' => $request->raza_id,
+            'categoria_id' => $request->categoria_id,
+            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
+        ];
+
+        $datosNormalizados = [
             'edad' => $edadMeses,
             'tipo_peso_id' => $request->tipo_peso_id,
             'peso_actual' => $request->peso_actual,
@@ -275,28 +229,19 @@ class GanadoController extends Controller
             'descripcion' => $request->descripcion,
             'precio' => $request->precio,
             'stock' => $request->stock,
-            'categoria_id' => $request->categoria_id,
-            'ubicacion' => $request->ubicacion,
-            'latitud' => $request->latitud,
-            'longitud' => $request->longitud,
-            'departamento' => $request->departamento,
-            'municipio' => $request->municipio,
-            'provincia' => $request->provincia,
-            'ciudad' => $request->ciudad,
-            'madre_id' => $request->madre_id,
-            'padre_id' => $request->padre_id,
-            // Mantener la fecha de publicación existente, o establecerla si no existe
             'fecha_publicacion' => $ganado->fecha_publicacion ?? now(),
         ];
+
+        $this->agregarDatosUbicacion($data, $request);
+        $this->sincronizarUbicacionNormalizada($data, $ganado);
 
         // Eliminar imágenes marcadas para eliminar
         if ($request->has('imagenes_eliminar')) {
             foreach ($request->imagenes_eliminar as $imagenId) {
                 $imagen = GanadoImagen::find($imagenId);
                 if ($imagen && $imagen->ganado_id === $ganado->id) {
-                    $rutaImagen = GanadoImagen::normalizeStoredPathValue($imagen->ruta);
-                    if ($rutaImagen && Storage::disk('public')->exists($rutaImagen)) {
-                        Storage::disk('public')->delete($rutaImagen);
+                    if (Storage::disk('public')->exists($imagen->ruta)) {
+                        Storage::disk('public')->delete($imagen->ruta);
                     }
                     $imagen->delete();
                 }
@@ -314,7 +259,7 @@ class GanadoController extends Controller
                 $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
                 foreach ($imagenes as $imagen) {
                     if ($imagen && $imagen->isValid()) {
-                        $ruta = Ganado::normalizeStoredPathValue($imagen->store('ganados', 'public'));
+                        $ruta = $imagen->store('ganados', 'public');
                         GanadoImagen::create([
                             'ganado_id' => $ganado->id,
                             'ruta' => $ruta,
@@ -325,55 +270,8 @@ class GanadoController extends Controller
             }
         }
 
-        // Fase 1: Actualización progresiva de Ubicación normalizada
-        if ($ganado->ubicacion_id) {
-            $ubicacion = \App\Models\Ubicacion::find($ganado->ubicacion_id);
-            if ($ubicacion) {
-                $ubicacion->update([
-                    'departamento' => $data['departamento'] ?? null,
-                    'provincia' => $data['provincia'] ?? null,
-                    'municipio' => $data['municipio'] ?? null,
-                    'ciudad' => $data['ciudad'] ?? null,
-                    'direccion' => $data['ubicacion'] ?? null,
-                    'latitud' => $data['latitud'] ?? null,
-                    'longitud' => $data['longitud'] ?? null,
-                ]);
-            }
-        } else {
-            $ubicacion = \App\Models\Ubicacion::create([
-                'departamento' => $data['departamento'] ?? null,
-                'provincia' => $data['provincia'] ?? null,
-                'municipio' => $data['municipio'] ?? null,
-                'ciudad' => $data['ciudad'] ?? null,
-                'direccion' => $data['ubicacion'] ?? null,
-                'latitud' => $data['latitud'] ?? null,
-                'longitud' => $data['longitud'] ?? null,
-            ]);
-            $data['ubicacion_id'] = $ubicacion->id;
-        }
-
         $ganado->update($data);
-        $this->sincronizarImagenPrincipal($ganado);
-
-        // Sincronizar madre en tabla normalizada
-        if ($ganado->madre_id) {
-            \App\Models\GanadoGenealogia::updateOrCreate(
-                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'madre'],
-                ['pariente_id' => $ganado->madre_id]
-            );
-        } else {
-            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'madre')->delete();
-        }
-
-        // Sincronizar padre en tabla normalizada
-        if ($ganado->padre_id) {
-            \App\Models\GanadoGenealogia::updateOrCreate(
-                ['ganado_id' => $ganado->id, 'tipo_relacion' => 'padre'],
-                ['pariente_id' => $ganado->padre_id]
-            );
-        } else {
-            \App\Models\GanadoGenealogia::where('ganado_id', $ganado->id)->where('tipo_relacion', 'padre')->delete();
-        }
+        $this->sincronizarDatosNormalizados($ganado, $datosNormalizados);
 
         return redirect()->route('ganados.index')
             ->with('success', 'Registro actualizado correctamente.');
@@ -457,16 +355,9 @@ class GanadoController extends Controller
 
         // Eliminar todas las imágenes asociadas
         foreach ($ganado->imagenes as $imagen) {
-            $rutaImagen = GanadoImagen::normalizeStoredPathValue($imagen->ruta);
-            if ($rutaImagen && Storage::disk('public')->exists($rutaImagen)) {
-                Storage::disk('public')->delete($rutaImagen);
+            if (Storage::disk('public')->exists($imagen->ruta)) {
+                Storage::disk('public')->delete($imagen->ruta);
             }
-        }
-
-        // Eliminar imagen antigua si existe
-        $rutaImagenPrincipal = Ganado::normalizeStoredPathValue($ganado->imagen);
-        if ($rutaImagenPrincipal && Storage::disk('public')->exists($rutaImagenPrincipal)) {
-            Storage::disk('public')->delete($rutaImagenPrincipal);
         }
 
         $ganado->delete();
@@ -474,13 +365,126 @@ class GanadoController extends Controller
             ->with('success', 'Ganado eliminado correctamente.');
     }
 
-    private function sincronizarImagenPrincipal(Ganado $ganado): void
+    private function sincronizarUbicacionNormalizada(array &$data, ?Ganado $ganado = null): void
     {
-        $rutaPrincipal = $ganado->imagenes()->orderBy('orden')->value('ruta');
-        $rutaPrincipal = Ganado::normalizeStoredPathValue($rutaPrincipal);
+        $campos = ['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'];
 
-        if ($ganado->imagen !== $rutaPrincipal) {
-            $ganado->updateQuietly(['imagen' => $rutaPrincipal]);
+        $recibioCamposUbicacion = collect($campos)->contains(fn($campo) => array_key_exists($campo, $data));
+
+        if (!$recibioCamposUbicacion) {
+            return;
         }
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $data) && $data[$campo] === '') {
+                $data[$campo] = null;
+            }
+        }
+
+        $tieneDatosUbicacion = collect($campos)->contains(fn($campo) => !empty($data[$campo]));
+
+        if (!$tieneDatosUbicacion) {
+            $data['ubicacion_ganado_id'] = null;
+            $this->quitarCamposUbicacionAntiguos($data);
+            return;
+        }
+
+        $ubicacionGeografica = UbicacionGeograficaGanado::firstOrCreate([
+            'departamento' => $data['departamento'] ?? null,
+            'municipio' => $data['municipio'] ?? null,
+            'provincia' => $data['provincia'] ?? null,
+            'ciudad' => $data['ciudad'] ?? null,
+        ]);
+
+        $ubicacionData = [
+            'ubicacion' => $data['ubicacion'] ?? null,
+            'latitud' => $data['latitud'] ?? null,
+            'longitud' => $data['longitud'] ?? null,
+            'ubicacion_geografica_ganado_id' => $ubicacionGeografica->id,
+        ];
+
+        if ($ganado && $ganado->ubicacion_ganado_id) {
+            $ubicacion = UbicacionGanado::find($ganado->ubicacion_ganado_id);
+
+            if ($ubicacion) {
+                $ubicacion->update($ubicacionData);
+                $data['ubicacion_ganado_id'] = $ubicacion->id;
+                $this->quitarCamposUbicacionAntiguos($data);
+                return;
+            }
+        }
+
+        $data['ubicacion_ganado_id'] = UbicacionGanado::create($ubicacionData)->id;
+        $this->quitarCamposUbicacionAntiguos($data);
+    }
+
+    private function agregarDatosUbicacion(array &$data, Request $request): void
+    {
+        foreach (['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'] as $campo) {
+            $data[$campo] = $request->{$campo};
+        }
+    }
+
+    private function quitarCamposUbicacionAntiguos(array &$data): void
+    {
+        foreach (['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'] as $campo) {
+            unset($data[$campo]);
+        }
+    }
+
+    private function relacionesGanado(): array
+    {
+        return [
+            'categoria',
+            'raza',
+            'tipoAnimal',
+            'tipoPeso',
+            'datoSanitario',
+            'imagenes',
+            'ubicacionGanado.ubicacionGeografica',
+            'datoProductivo.tipoPeso',
+            'datoComercial',
+            'caracteristica',
+            'genealogia.madre',
+            'genealogia.padre',
+        ];
+    }
+
+    private function sincronizarDatosNormalizados(Ganado $ganado, array $data): void
+    {
+        $ganado->caracteristica()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'edad' => $data['edad'] ?? null,
+                'sexo' => $data['sexo'] ?? null,
+                'descripcion' => $data['descripcion'] ?? null,
+            ]
+        );
+
+        $ganado->datoProductivo()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'tipo_peso_id' => $data['tipo_peso_id'] ?? null,
+                'peso_actual' => $data['peso_actual'] ?? null,
+                'cantidad_leche_dia' => $data['cantidad_leche_dia'] ?? null,
+            ]
+        );
+
+        $ganado->datoComercial()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'precio' => $data['precio'] ?? null,
+                'stock' => $data['stock'] ?? 0,
+                'fecha_publicacion' => $data['fecha_publicacion'] ?? null,
+            ]
+        );
+
+        $ganado->genealogia()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'madre_id' => $data['madre_id'] ?? null,
+                'padre_id' => $data['padre_id'] ?? null,
+            ]
+        );
     }
 }

@@ -2,42 +2,32 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\NormalizesStoredPaths;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Ganado extends Model
 {
     use HasFactory;
-    use NormalizesStoredPaths;
 
     protected $fillable = [
         'nombre',
         'user_id',
         'tipo_animal_id',
         'raza_id',
-        'edad',
-        'tipo_peso_id',
-        'peso_actual',
-        'sexo',
-        'cantidad_leche_dia',
-        'precio',
-        'stock',
-        'imagen',
-        'descripcion',
         'categoria_id',
-        'fecha_publicacion',
+        'dato_sanitario_id',
+        'ubicacion_ganado_id',
+        'es_campeon',
+    ];
+
+    protected $appends = [
         'ubicacion',
+        'latitud',
+        'longitud',
         'departamento',
         'municipio',
         'provincia',
         'ciudad',
-        'latitud',
-        'longitud',
-        'es_campeon',     // 👈 nuevo
-        'madre_id',       // 👈 nuevo
-        'padre_id',       // 👈 nuevo
-        'ubicacion_id',
     ];
 
 
@@ -53,7 +43,34 @@ class Ganado extends Model
 
     public function tipoPeso()
     {
-        return $this->belongsTo(\App\Models\TipoPeso::class, 'tipo_peso_id');
+        return $this->hasOneThrough(
+            \App\Models\TipoPeso::class,
+            DatoProductivoGanado::class,
+            'ganado_id',
+            'id',
+            'id',
+            'tipo_peso_id'
+        );
+    }
+
+    public function datoProductivo()
+    {
+        return $this->hasOne(DatoProductivoGanado::class);
+    }
+
+    public function datoComercial()
+    {
+        return $this->hasOne(DatoComercialGanado::class);
+    }
+
+    public function caracteristica()
+    {
+        return $this->hasOne(CaracteristicaGanado::class);
+    }
+
+    public function genealogia()
+    {
+        return $this->hasOne(GenealogiaGanado::class);
     }
 
     public function raza()
@@ -64,7 +81,15 @@ class Ganado extends Model
     // ✅ RELACIÓN CORRECTA (uno a uno)
     public function datoSanitario()
     {
-        return $this->hasOne(DatoSanitario::class, 'ganado_id');
+        return $this->belongsTo(DatoSanitario::class, 'dato_sanitario_id');
+    }
+
+    /**
+     * Relación: un ganado tiene una ubicación normalizada
+     */
+    public function ubicacionGanado()
+    {
+        return $this->belongsTo(UbicacionGanado::class, 'ubicacion_ganado_id');
     }
 
     /**
@@ -88,7 +113,14 @@ class Ganado extends Model
      */
     public function madre()
     {
-        return $this->belongsTo(Ganado::class, 'madre_id');
+        return $this->hasOneThrough(
+            Ganado::class,
+            GenealogiaGanado::class,
+            'ganado_id',
+            'id',
+            'id',
+            'madre_id'
+        );
     }
 
     /**
@@ -96,7 +128,14 @@ class Ganado extends Model
      */
     public function padre()
     {
-        return $this->belongsTo(Ganado::class, 'padre_id');
+        return $this->hasOneThrough(
+            Ganado::class,
+            GenealogiaGanado::class,
+            'ganado_id',
+            'id',
+            'id',
+            'padre_id'
+        );
     }
 
     /**
@@ -104,7 +143,14 @@ class Ganado extends Model
      */
     public function hijosMadre()
     {
-        return $this->hasMany(Ganado::class, 'madre_id');
+        return $this->hasManyThrough(
+            Ganado::class,
+            GenealogiaGanado::class,
+            'madre_id',
+            'id',
+            'id',
+            'ganado_id'
+        );
     }
 
     /**
@@ -112,40 +158,103 @@ class Ganado extends Model
      */
     public function hijosPadre()
     {
-        return $this->hasMany(Ganado::class, 'padre_id');
+        return $this->hasManyThrough(
+            Ganado::class,
+            GenealogiaGanado::class,
+            'padre_id',
+            'id',
+            'id',
+            'ganado_id'
+        );
     }
 
-    public function logros()
+    public function getUbicacionAttribute($value)
     {
-        return $this->hasMany(GanadoLogro::class);
+        return $this->ubicacionGanado?->ubicacion;
     }
 
-    public function documentos()
+    public function getEdadAttribute($value)
     {
-        return $this->hasMany(GanadoDocumento::class);
+        return $this->caracteristica?->edad ?? $value;
     }
 
-    /**
-     * Relación: un ganado pertenece a una ubicación (Nueva estructura)
-     */
-    public function ubicacionAsociada()
+    public function getSexoAttribute($value)
     {
-        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
+        return $this->caracteristica?->sexo ?? $value;
     }
 
-    /**
-     * Relación polimórfica: un ganado puede tener una publicación centralizada
-     */
-    public function publicacion()
+    public function getDescripcionAttribute($value)
     {
-        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
+        return $this->caracteristica?->descripcion ?? $value;
     }
 
-    /**
-     * Relación para la nueva tabla de árbol genealógico (normalizado)
-     */
-    public function genealogias()
+    public function getTipoPesoIdAttribute($value)
     {
-        return $this->hasMany(GanadoGenealogia::class, 'ganado_id');
+        return $this->datoProductivo?->tipo_peso_id ?? $value;
+    }
+
+    public function getPesoActualAttribute($value)
+    {
+        return $this->datoProductivo?->peso_actual ?? $value;
+    }
+
+    public function getCantidadLecheDiaAttribute($value)
+    {
+        return $this->datoProductivo?->cantidad_leche_dia ?? $value;
+    }
+
+    public function getPrecioAttribute($value)
+    {
+        return $this->datoComercial?->precio ?? $value;
+    }
+
+    public function getStockAttribute($value)
+    {
+        return $this->datoComercial?->stock ?? $value;
+    }
+
+    public function getFechaPublicacionAttribute($value)
+    {
+        return $this->datoComercial?->fecha_publicacion ?? $value;
+    }
+
+    public function getMadreIdAttribute($value)
+    {
+        return $this->genealogia?->madre_id ?? $value;
+    }
+
+    public function getPadreIdAttribute($value)
+    {
+        return $this->genealogia?->padre_id ?? $value;
+    }
+
+    public function getLatitudAttribute($value)
+    {
+        return $this->ubicacionGanado?->latitud;
+    }
+
+    public function getLongitudAttribute($value)
+    {
+        return $this->ubicacionGanado?->longitud;
+    }
+
+    public function getDepartamentoAttribute($value)
+    {
+        return $this->ubicacionGanado?->ubicacionGeografica?->departamento;
+    }
+
+    public function getMunicipioAttribute($value)
+    {
+        return $this->ubicacionGanado?->ubicacionGeografica?->municipio;
+    }
+
+    public function getProvinciaAttribute($value)
+    {
+        return $this->ubicacionGanado?->ubicacionGeografica?->provincia;
+    }
+
+    public function getCiudadAttribute($value)
+    {
+        return $this->ubicacionGanado?->ubicacionGeografica?->ciudad;
     }
 }

@@ -2,13 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Maquinaria extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'nombre',
         'user_id',
@@ -18,16 +15,9 @@ class Maquinaria extends Model
         'telefono',
         'precio_dia',
         'estado_maquinaria_id',
+        'ubicacion_maquinaria_id',
         'descripcion',
         'categoria_id',
-        'ubicacion',
-        'departamento',
-        'municipio',
-        'provincia',
-        'ciudad',
-        'latitud',
-        'longitud',
-        'ubicacion_id',
     ];
 
     /**
@@ -71,6 +61,14 @@ class Maquinaria extends Model
     }
 
     /**
+     * Relación: una maquinaria tiene una ubicación normalizada
+     */
+    public function ubicacionMaquinaria()
+    {
+        return $this->belongsTo(UbicacionMaquinaria::class, 'ubicacion_maquinaria_id');
+    }
+
+    /**
      * Relación: una maquinaria tiene muchas imágenes
      */
     public function imagenes()
@@ -78,19 +76,38 @@ class Maquinaria extends Model
         return $this->hasMany(MaquinariaImagen::class)->orderBy('orden');
     }
 
-    /**
-     * Relación: una maquinaria pertenece a una ubicación (Nueva estructura)
-     */
-    public function ubicacionAsociada()
+    public function getUbicacionAttribute($value)
     {
-        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
+        return $this->ubicacionMaquinaria?->ubicacion ?? $value;
     }
 
-    /**
-     * Relación polimórfica: una maquinaria puede tener una publicación centralizada
-     */
-    public function publicacion()
+    public function getLatitudAttribute($value)
     {
-        return $this->morphOne(\App\Models\Publicacion::class, 'publicable');
+        return $this->ubicacionMaquinaria?->latitud ?? $value;
+    }
+
+    public function getLongitudAttribute($value)
+    {
+        return $this->ubicacionMaquinaria?->longitud ?? $value;
+    }
+
+    public function getDepartamentoAttribute($value)
+    {
+        return $this->ubicacionMaquinaria?->ubicacionGeografica?->departamento ?? $value;
+    }
+
+    public function getMunicipioAttribute($value)
+    {
+        return $this->ubicacionMaquinaria?->ubicacionGeografica?->municipio ?? $value;
+    }
+
+    public function getProvinciaAttribute($value)
+    {
+        return $this->ubicacionMaquinaria?->ubicacionGeografica?->provincia ?? $value;
+    }
+
+    public function getCiudadAttribute($value)
+    {
+        return $this->ubicacionMaquinaria?->ubicacionGeografica?->ciudad ?? $value;
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Maquinaria;
 use App\Models\MaquinariaImagen;
+use App\Models\UbicacionGeograficaMaquinaria;
+use App\Models\UbicacionMaquinaria;
 use App\Services\GeocodificacionService;
 use App\Http\Requests\StoreMaquinariaRequest;
 use App\Http\Requests\UpdateMaquinariaRequest;
@@ -14,7 +16,7 @@ class MaquinariaController extends Controller
     public function index()
     {
         $q = request('q');
-        $maquinarias = Maquinaria::with(['tipoMaquinaria', 'marcaMaquinaria', 'categoria', 'user', 'estadoMaquinaria'])
+        $maquinarias = Maquinaria::with(['tipoMaquinaria', 'marcaMaquinaria', 'categoria', 'user', 'estadoMaquinaria', 'ubicacionMaquinaria.ubicacionGeografica'])
             ->when($q, fn($qb) =>
             $qb->where('nombre', 'ilike', "%$q%")
                 ->orWhereHas('tipoMaquinaria', function ($query) use ($q) {
@@ -32,7 +34,7 @@ class MaquinariaController extends Controller
 
     public function create()
     {
-        $categorias = \App\Models\Categoria::whereIn('tipo', ['maquinaria', 'general'])->orderBy('nombre')->get();
+        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
@@ -65,17 +67,7 @@ class MaquinariaController extends Controller
             }
         }
 
-        // Fase 1: Creación progresiva de Ubicación normalizada
-        $ubicacion = \App\Models\Ubicacion::create([
-            'departamento' => $data['departamento'] ?? null,
-            'provincia' => $data['provincia'] ?? null,
-            'municipio' => $data['municipio'] ?? null,
-            'ciudad' => $data['ciudad'] ?? null,
-            'direccion' => $data['ubicacion'] ?? null,
-            'latitud' => $data['latitud'] ?? null,
-            'longitud' => $data['longitud'] ?? null,
-        ]);
-        $data['ubicacion_id'] = $ubicacion->id;
+        $this->sincronizarUbicacionNormalizada($data);
 
         // Crear la maquinaria
         $maquinaria = Maquinaria::create($data);
@@ -101,7 +93,7 @@ class MaquinariaController extends Controller
 
     public function show(Maquinaria $maquinaria)
     {
-        $maquinaria->load(['tipoMaquinaria', 'marcaMaquinaria', 'categoria', 'user.role', 'estadoMaquinaria', 'imagenes']);
+        $maquinaria->load(['tipoMaquinaria', 'marcaMaquinaria', 'categoria', 'user.role', 'estadoMaquinaria', 'imagenes', 'ubicacionMaquinaria.ubicacionGeografica']);
         return view('maquinarias.show', compact('maquinaria'));
     }
 
@@ -113,8 +105,8 @@ class MaquinariaController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
-        $maquinaria->load('imagenes');
-        $categorias = \App\Models\Categoria::whereIn('tipo', ['maquinaria', 'general'])->orderBy('nombre')->get();
+        $maquinaria->load(['imagenes', 'ubicacionMaquinaria.ubicacionGeografica']);
+        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
@@ -156,32 +148,7 @@ class MaquinariaController extends Controller
             }
         }
 
-        // Fase 1: Actualización progresiva de Ubicación normalizada
-        if ($maquinaria->ubicacion_id) {
-            $ubicacion = \App\Models\Ubicacion::find($maquinaria->ubicacion_id);
-            if ($ubicacion) {
-                $ubicacion->update([
-                    'departamento' => $data['departamento'] ?? null,
-                    'provincia' => $data['provincia'] ?? null,
-                    'municipio' => $data['municipio'] ?? null,
-                    'ciudad' => $data['ciudad'] ?? null,
-                    'direccion' => $data['ubicacion'] ?? null,
-                    'latitud' => $data['latitud'] ?? null,
-                    'longitud' => $data['longitud'] ?? null,
-                ]);
-            }
-        } else {
-            $ubicacion = \App\Models\Ubicacion::create([
-                'departamento' => $data['departamento'] ?? null,
-                'provincia' => $data['provincia'] ?? null,
-                'municipio' => $data['municipio'] ?? null,
-                'ciudad' => $data['ciudad'] ?? null,
-                'direccion' => $data['ubicacion'] ?? null,
-                'latitud' => $data['latitud'] ?? null,
-                'longitud' => $data['longitud'] ?? null,
-            ]);
-            $data['ubicacion_id'] = $ubicacion->id;
-        }
+        $this->sincronizarUbicacionNormalizada($data, $maquinaria);
 
         $maquinaria->update($data);
 
@@ -240,5 +207,58 @@ class MaquinariaController extends Controller
 
         $maquinaria->delete();
         return redirect()->route('maquinarias.index')->with('ok', 'Maquinaria eliminada');
+    }
+
+    private function sincronizarUbicacionNormalizada(array &$data, ?Maquinaria $maquinaria = null): void
+    {
+        $campos = ['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'];
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $data) && $data[$campo] === '') {
+                $data[$campo] = null;
+            }
+        }
+
+        $tieneDatosUbicacion = collect($campos)->contains(fn($campo) => !empty($data[$campo]));
+
+        if (!$tieneDatosUbicacion) {
+            $this->quitarCamposUbicacionAntiguos($data);
+            return;
+        }
+
+        $ubicacionGeografica = UbicacionGeograficaMaquinaria::firstOrCreate([
+            'departamento' => $data['departamento'] ?? null,
+            'municipio' => $data['municipio'] ?? null,
+            'provincia' => $data['provincia'] ?? null,
+            'ciudad' => $data['ciudad'] ?? null,
+        ]);
+
+        $ubicacionData = [
+            'ubicacion' => $data['ubicacion'] ?? null,
+            'latitud' => $data['latitud'] ?? null,
+            'longitud' => $data['longitud'] ?? null,
+            'ubicacion_geografica_maquinaria_id' => $ubicacionGeografica->id,
+        ];
+
+        if ($maquinaria && $maquinaria->ubicacion_maquinaria_id) {
+            $ubicacion = UbicacionMaquinaria::find($maquinaria->ubicacion_maquinaria_id);
+
+            if ($ubicacion) {
+                $ubicacion->update($ubicacionData);
+                $data['ubicacion_maquinaria_id'] = $ubicacion->id;
+                $this->quitarCamposUbicacionAntiguos($data);
+                return;
+            }
+        }
+
+        $data['ubicacion_maquinaria_id'] = UbicacionMaquinaria::create($ubicacionData)->id;
+        $this->quitarCamposUbicacionAntiguos($data);
+    }
+
+    private function quitarCamposUbicacionAntiguos(array &$data): void
+    {
+        foreach (['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'] as $campo) {
+            unset($data[$campo]);
+        }
     }
 }
