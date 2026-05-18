@@ -13,7 +13,7 @@
     @else
         <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
         <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
     @endif
 </head>
 
@@ -148,7 +148,9 @@
             <footer class="main-footer text-sm">
                 <div class="container">
                     <strong>© {{ date('Y') }} AgroVida.</strong> Tu mercado agrícola.
-                    <span class="float-right d-none d-sm-inline">Hecho con AdminLTE 3</span>
+                    @unless (request()->routeIs('login', 'register'))
+                        <span class="float-right d-none d-sm-inline">Hecho con AdminLTE 3</span>
+                    @endunless
                 </div>
             </footer>
         @endunless
