@@ -6,14 +6,14 @@
 
     {{-- Cabecera verde Agro --}}
     <div class="mb-3">
-        <div class="bg-agro rounded-lg p-3 d-flex align-items-center text-white">
+        <div class="module-list-header">
             <div>
-                <h3 class="mb-0">Listado de Orgánicos</h3>
-                <small>{{ $organicos->total() }} producto(s) registrado(s)</small>
+                <h3 class="module-list-header__title">Listado de Orgánicos</h3>
+                <small class="module-list-header__meta">{{ $organicos->total() }} producto(s) registrado(s)</small>
             </div>
 
-            <div class="ml-auto d-flex">
-                <form method="get" class="form-inline mr-2">
+            <div class="module-list-header__actions">
+                <form method="get" class="form-inline">
                     <div class="input-group input-group-sm">
                         <input type="text" name="q" value="{{ $q ?? '' }}" class="form-control"
                             placeholder="Buscar...">
@@ -24,7 +24,7 @@
                 </form>
 
                 @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
-                    <a href="{{ route('organicos.create') }}" class="btn btn-outline-light btn-sm mr-2">
+                    <a href="{{ route('organicos.create') }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-plus-circle"></i> Nuevo Registro
                     </a>
                 @endif
@@ -59,7 +59,7 @@
             @foreach ($organicos as $o)
                 <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
 
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card shadow-sm border-0 h-100 project-card">
 
                         {{-- Imagen --}}
                         @php

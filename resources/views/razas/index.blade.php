@@ -147,7 +147,6 @@
                 <table class="table table-hover table-breeds mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 70px;">ID</th>
                             <th>Nombre</th>
                             <th>Tipo de animal</th>
                             <th>Descripción</th>
@@ -157,7 +156,6 @@
                     <tbody>
                         @forelse($razas as $raza)
                             <tr>
-                                <td>{{ $raza->id }}</td>
                                 <td>{{ $raza->nombre }}</td>
                                 <td>{{ $raza->tipoAnimal->nombre ?? '—' }}</td>
                                 <td>{{ $raza->descripcion ?? '—' }}</td>
@@ -181,7 +179,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="4" class="text-center text-muted py-4">
                                     No hay razas registradas.
                                 </td>
                             </tr>

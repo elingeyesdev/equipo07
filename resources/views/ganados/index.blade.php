@@ -5,42 +5,32 @@
 
 @section('content')
     <style>
-        .animals-header {
-            background: var(--agro) !important;
-            color: white;
-            padding: 2rem;
-            border-radius: 15px 15px 0 0;
-            margin-bottom: 0;
-        }
-
         .animal-card {
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border: 0;
+            border-radius: .75rem;
             transition: all 0.3s ease;
             background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--app-shadow-sm);
             display: flex;
             flex-direction: column;
             height: 100%;
+            overflow: hidden;
         }
 
         .animal-card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            transform: translateY(-4px);
+            box-shadow: var(--app-shadow-md);
+            transform: translateY(-2px);
         }
 
         .animal-image-wrapper {
             width: 100%;
-            height: 220px;
+            height: 230px;
             background: #f8f9fa;
-            border-radius: 12px;
-            border: 1px solid #e9ecef;
+            border-radius: 0;
+            border: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1rem;
             overflow: hidden;
             cursor: pointer;
         }
@@ -59,8 +49,8 @@
 
         .animal-info h5 {
             font-size: 1.1rem;
-            font-weight: 700;
-            color: #2c3e50;
+            font-weight: 600;
+            color: #1f2a1f;
             margin-bottom: 0.5rem;
         }
 
@@ -75,9 +65,9 @@
         }
 
         .price-tag {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            color: #28a745;
+            color: #0f9f3d;
         }
 
         .stock-badge {
@@ -101,17 +91,13 @@
 
         .action-buttons {
             display: flex;
-            gap: 0.4rem;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0.35rem;
         }
 
         .btn-action {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: .45rem;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
 
@@ -131,10 +117,6 @@
         }
 
         @media (max-width: 768px) {
-            .animal-card {
-                padding: 1rem;
-            }
-
             .animal-image-wrapper {
                 height: 180px;
             }
@@ -142,50 +124,47 @@
     </style>
 
     <div class="container-fluid">
-        <div class="card shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
-            <div class="animals-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h3 class="mb-1" style="font-weight: 700;">
-                            <i class="fas fa-cow mr-2"></i>Listado de Animales
-                        </h3>
-                        <p class="mb-0 text-white-50">
-                            <i class="fas fa-list mr-1"></i>{{ $ganados->total() ?? $ganados->count() }}
-                            {{ ($ganados->total() ?? $ganados->count()) == 1 ? 'animal registrado' : 'animales registrados' }}
-                        </p>
-                    </div>
-                    @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
-                        <a href="{{ route('ganados.create') }}" class="btn btn-light btn-lg">
-                            <i class="fas fa-plus-circle mr-2"></i>Nuevo Registro
-                        </a>
-                    @endif
-                </div>
+        <div class="module-list-header">
+            <div>
+                <h3 class="module-list-header__title">Listado de Animales</h3>
+                <small class="module-list-header__meta">
+                    {{ $ganados->total() ?? $ganados->count() }}
+                    {{ ($ganados->total() ?? $ganados->count()) == 1 ? 'animal registrado' : 'animales registrados' }}
+                </small>
             </div>
 
-            <div class="card-body p-4">
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
+            <div class="module-list-header__actions">
+                @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
+                    <a href="{{ route('ganados.create') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-plus-circle mr-1"></i> Nuevo Registro
+                    </a>
                 @endif
+            </div>
+        </div>
 
-                @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                @endif
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
 
-                @if ($ganados->count() > 0)
-                    <div class="row">
-                        @foreach ($ganados as $ganado)
-                            <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="animal-card">
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        @endif
+
+        @if ($ganados->count() > 0)
+            <div class="row">
+                @foreach ($ganados as $ganado)
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="animal-card project-card">
 
                                     {{-- Imagen --}}
                                     @php
@@ -203,12 +182,11 @@
                                     </div>
 
                                     {{-- Info principal --}}
-                                    <div class="animal-info mb-3">
-                                        <h5 class="d-flex align-items-center justify-content-between">
+                                    <div class="animal-info mb-3 px-3 pt-3">
+                                        <h5 class="module-card-title">
                                             <span>
                                                 <i class="fas fa-tag text-primary mr-2"></i>{{ $ganado->nombre }}
                                             </span>
-                                            <span class="badge badge-secondary ml-2">#{{ $ganado->id }}</span>
                                         </h5>
 
                                         <div class="mb-2">
@@ -285,7 +263,7 @@
                                     </div>
 
                                     {{-- Footer: precio + acciones --}}
-                                    <div class="mt-auto">
+                                    <div class="mt-auto px-3 pb-3">
                                         @if ($ganado->precio)
                                             <div class="mb-2">
                                                 <span class="text-muted small d-block">Precio</span>
@@ -303,24 +281,24 @@
 
                                         <div class="action-buttons">
                                             <a href="{{ route('ganados.show', $ganado->id) }}"
-                                                class="btn btn-info btn-action" title="Ver detalles">
-                                                <i class="fas fa-eye"></i>
+                                                class="btn btn-outline-success btn-action btn-block" title="Ver detalles">
+                                                <i class="fas fa-eye mr-1"></i> Ver
                                             </a>
 
                                             @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
                                                 @if (auth()->user()->isAdmin() || $ganado->user_id == auth()->id())
                                                     <a href="{{ route('ganados.edit', $ganado->id) }}"
-                                                        class="btn btn-warning btn-action" title="Editar">
-                                                        <i class="fas fa-edit"></i>
+                                                        class="btn btn-outline-primary btn-action btn-block" title="Editar">
+                                                        <i class="fas fa-edit mr-1"></i> Editar
                                                     </a>
 
                                                     <form action="{{ route('ganados.destroy', $ganado->id) }}"
                                                         method="POST" class="d-inline" id="deleteForm{{ $ganado->id }}">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="button" class="btn btn-danger btn-action"
+                                                        <button type="button" class="btn btn-outline-danger btn-action btn-block"
                                                             onclick="confirmDelete({{ $ganado->id }})" title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
+                                                            <i class="fas fa-trash mr-1"></i> Eliminar
                                                         </button>
                                                     </form>
                                                 @endif
@@ -328,28 +306,26 @@
                                         </div>
                                     </div>
 
-                                </div>
-                            </div>
-                        @endforeach
+                        </div>
                     </div>
+                @endforeach
+            </div>
 
-                    <div class="mt-4">
-                        {{ $ganados->links() }}
-                    </div>
-                @else
-                    <div class="empty-state">
-                        <i class="fas fa-cow"></i>
-                        <h3 class="text-muted mb-3">No hay animales registrados</h3>
-                        <p class="text-muted mb-4">Comienza agregando tu primer animal al sistema</p>
-                        @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
-                            <a href="{{ route('ganados.create') }}" class="btn btn-success btn-lg">
-                                <i class="fas fa-plus-circle mr-2"></i>Agregar Primer Animal
-                            </a>
-                        @endif
-                    </div>
+            <div class="mt-4">
+                {{ $ganados->links() }}
+            </div>
+        @else
+            <div class="empty-state">
+                <i class="fas fa-cow"></i>
+                <h3 class="text-muted mb-3">No hay animales registrados</h3>
+                <p class="text-muted mb-4">Comienza agregando tu primer animal al sistema</p>
+                @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
+                    <a href="{{ route('ganados.create') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus-circle mr-2"></i>Agregar Primer Animal
+                    </a>
                 @endif
             </div>
-        </div>
+        @endif
     </div>
 
     <script>

@@ -1,6 +1,39 @@
 :root {
   --agro: #3f7e2a;     
   --agro-700: #2f621f;
+  --app-font: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --app-text: #1f2a1f;
+  --app-muted: #6c757d;
+  --app-radius: .75rem;
+  --app-shadow-sm: 0 2px 8px rgba(31, 42, 27, 0.06);
+  --app-shadow-md: 0 8px 24px rgba(31, 42, 27, 0.08);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--app-font);
+}
+
+body {
+  color: var(--app-text);
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.content-header h1,
+.content-wrapper h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.card-title,
+.card h5,
+.card h3 {
+  letter-spacing: 0;
 }
 
 /* Barra superior */
@@ -28,9 +61,93 @@
 /* Tarjetas */
 .project-card {
   border-radius: .75rem;
+  border: 0 !important;
+  box-shadow: var(--app-shadow-sm);
+  overflow: hidden;
+  transition: all .2s ease;
+}
+.project-card:hover {
+  box-shadow: var(--app-shadow-md);
+  transform: translateY(-2px);
 }
 .rounded-lg {
   border-radius: .75rem !important;
+}
+
+.module-list-header {
+  align-items: center;
+  background: var(--agro);
+  border-radius: var(--app-radius);
+  color: #fff;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.module-list-header__title {
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.module-list-header__meta {
+  color: rgba(255, 255, 255, .85);
+  display: block;
+  font-size: .86rem;
+  margin-top: .25rem;
+}
+
+.module-list-header__actions {
+  align-items: center;
+  display: flex;
+  gap: .5rem;
+  margin-left: auto;
+}
+
+.module-card-title {
+  color: #1f2a1f;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.module-card-meta {
+  color: var(--app-muted);
+  font-size: .86rem;
+}
+
+.module-card-price {
+  color: #0f9f3d;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.module-action-stack .btn {
+  border-radius: .45rem;
+  font-weight: 500;
+}
+
+@media (max-width: 767.98px) {
+  .module-list-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .module-list-header__actions {
+    align-items: stretch;
+    flex-direction: column;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .module-list-header__actions .form-inline,
+  .module-list-header__actions .input-group,
+  .module-list-header__actions .btn {
+    width: 100%;
+  }
 }
 
 /* === THEME AGROVIDA para panel (AdminLTE) === */

@@ -6,6 +6,120 @@
     <div class="container-fluid">
 
         <style>
+            :root {
+                --detail-primary: #007bff;
+                --detail-success: #28a745;
+                --detail-danger: #dc3545;
+                --detail-warning: #ffc107;
+                --detail-info: #17a2b8;
+                --detail-radius: 12px;
+                --detail-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+                --detail-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+                --detail-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+            }
+
+            .detail-card {
+                border: 0;
+                border-radius: var(--detail-radius);
+                box-shadow: var(--detail-shadow-md);
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .detail-card:hover {
+                box-shadow: var(--detail-shadow-lg);
+                transform: translateY(-2px);
+            }
+
+            .detail-card-header {
+                border: 0;
+                border-radius: var(--detail-radius) var(--detail-radius) 0 0;
+                color: #fff;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
+            .detail-card-header h5 {
+                color: #fff;
+                font-size: 1.15rem;
+                font-weight: 600;
+                line-height: 1.3;
+            }
+
+            .detail-card-header-primary {
+                background: linear-gradient(135deg, var(--detail-primary) 0%, #0056b3 100%);
+            }
+
+            .detail-card-header-danger {
+                background: linear-gradient(135deg, var(--detail-danger) 0%, #c82333 100%);
+            }
+
+            .detail-card-header-success {
+                background: linear-gradient(135deg, var(--detail-success) 0%, #218838 100%);
+            }
+
+            .detail-info-icon {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                font-size: 1.15rem;
+                margin-right: 1rem;
+            }
+
+            .detail-info-icon-primary {
+                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+                color: var(--detail-primary);
+            }
+
+            .detail-info-icon-success {
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                color: var(--detail-success);
+            }
+
+            .detail-info-icon-warning {
+                background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+                color: #f57c00;
+            }
+
+            .detail-info-icon-danger {
+                background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+                color: var(--detail-danger);
+            }
+
+            .detail-section-title {
+                color: #6c757d;
+                font-size: 0.875rem;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                margin-bottom: 0.5rem;
+                text-transform: uppercase;
+            }
+
+            .detail-section-value {
+                color: #343a40;
+                font-size: 1rem;
+                font-weight: 600;
+                line-height: 1.5;
+            }
+
+            .detail-btn {
+                border: 0;
+                border-radius: 8px;
+                box-shadow: var(--detail-shadow-sm);
+                font-weight: 600;
+                padding: 0.75rem 1.5rem;
+                transition: all 0.3s ease;
+            }
+
+            .detail-btn:hover {
+                box-shadow: var(--detail-shadow-md);
+                transform: translateY(-2px);
+            }
+
             .panel-info-card {
                 min-height: 360px;
                 display: flex;
@@ -224,10 +338,10 @@
             {{-- INFORMACIÓN DETALLADA --}}
             <div class="col-lg-8">
 
-                <div class="card shadow-sm border-0 mb-4 panel-equal-card">
-                    <div class="card-header bg-white border-bottom">
+                <div class="card detail-card mb-4 panel-equal-card">
+                    <div class="detail-card-header detail-card-header-primary">
                         <h5 class="mb-0">
-                            <i class="fas fa-info-circle text-primary"></i> Información Detallada
+                            <i class="fas fa-info-circle mr-2"></i> Información Detallada
                         </h5>
                     </div>
                     <div class="card-body">
@@ -235,10 +349,12 @@
 
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex align-items-start">
-                                    <i class="fas fa-calendar-alt fa-2x text-primary mr-3"></i>
+                                    <div class="detail-info-icon detail-info-icon-primary">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
                                     <div>
-                                        <small class="text-muted d-block">Fecha de Cosecha</small>
-                                        <div class="font-weight-bold">
+                                        <small class="detail-section-title d-block">Fecha de Cosecha</small>
+                                        <div class="detail-section-value">
                                             {{ $organico->fecha_cosecha ? \Carbon\Carbon::parse($organico->fecha_cosecha)->format('d/m/Y') : '—' }}
                                         </div>
                                     </div>
@@ -247,10 +363,12 @@
 
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex align-items-start">
-                                    <i class="fas fa-clipboard-check fa-2x text-success mr-3"></i>
+                                    <div class="detail-info-icon detail-info-icon-success">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </div>
                                     <div>
-                                        <small class="text-muted d-block">Stock</small>
-                                        <div class="font-weight-bold">
+                                        <small class="detail-section-title d-block">Stock</small>
+                                        <div class="detail-section-value">
                                             {{ $organico->stock }}
                                             {{ $organico->unidad ? strtolower($organico->unidad->nombre) : 'unidades' }}
                                         </div>
@@ -260,10 +378,12 @@
 
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex align-items-start">
-                                    <i class="fas fa-seedling fa-2x text-warning mr-3"></i>
+                                    <div class="detail-info-icon detail-info-icon-warning">
+                                        <i class="fas fa-seedling"></i>
+                                    </div>
                                     <div>
-                                        <small class="text-muted d-block">Tipo de Cultivo</small>
-                                        <div class="font-weight-bold">
+                                        <small class="detail-section-title d-block">Tipo de Cultivo</small>
+                                        <div class="detail-section-value">
                                             {{ $organico->tipoCultivo->nombre ?? '—' }}
                                         </div>
                                     </div>
@@ -273,7 +393,7 @@
                         </div>
 
                         <div class="mt-4 pt-3 border-top">
-                            <h6 class="text-muted mb-2">
+                            <h6 class="detail-section-title mb-2">
                                 <i class="fas fa-align-left mr-1"></i> Descripción
                             </h6>
                             <p class="text-dark mb-0">
@@ -289,27 +409,35 @@
             {{-- UBICACIÓN --}}
             <div class="col-lg-4">
 
-                <div class="card shadow-sm border-0 mb-4 panel-equal-card">
-                    <div class="card-header bg-white border-bottom">
+                <div class="card detail-card mb-4 panel-equal-card">
+                    <div class="detail-card-header detail-card-header-danger">
                         <h5 class="mb-0">
-                            <i class="fas fa-map-marker-alt text-danger"></i> Ubicación
+                            <i class="fas fa-map-marker-alt mr-2"></i> Ubicación
                         </h5>
                     </div>
 
                     <div class="card-body">
 
-                        <p class="mb-2">
-                            @if ($organico->origen)
-                                {{ $organico->origen }}
-                            @elseif($organico->latitud_origen && $organico->longitud_origen)
-                                Lat: {{ $organico->latitud_origen }}, Lng: {{ $organico->longitud_origen }}
-                            @else
-                                <span class="text-muted">No registrada</span>
-                            @endif
-                        </p>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="detail-info-icon detail-info-icon-danger">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div>
+                                <div class="detail-section-title">Origen</div>
+                                <div class="detail-section-value">
+                                    @if ($organico->origen)
+                                        {{ $organico->origen }}
+                                    @elseif($organico->latitud_origen && $organico->longitud_origen)
+                                        Lat: {{ $organico->latitud_origen }}, Lng: {{ $organico->longitud_origen }}
+                                    @else
+                                        <span class="text-muted">No registrada</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
 
                         @if ($organico->latitud_origen && $organico->longitud_origen)
-                            <button class="btn btn-danger btn-block" data-toggle="modal" data-target="#mapModal">
+                            <button class="btn btn-danger btn-block detail-btn" data-toggle="modal" data-target="#mapModal">
                                 <i class="fas fa-map mr-1"></i> Ver Mapa
                             </button>
                         @endif

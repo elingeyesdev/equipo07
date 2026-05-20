@@ -128,6 +128,16 @@
                 border: none;
             }
 
+            .card-header-success,
+            .card-header-danger,
+            .card-header-warning {
+                border: none;
+                border-radius: var(--border-radius) var(--border-radius) 0 0;
+                color: white;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
             .card-header-success {
                 background: linear-gradient(135deg, var(--success-color) 0%, #218838 100%);
             }
@@ -138,6 +148,15 @@
 
             .card-header-warning {
                 background: linear-gradient(135deg, var(--warning-color) 0%, #e0a800 100%);
+            }
+
+            .card-header-success h5,
+            .card-header-danger h5,
+            .card-header-warning h5 {
+                color: white;
+                font-size: 1.15rem;
+                font-weight: 600;
+                line-height: 1.3;
             }
 
             .price-box {
@@ -249,9 +268,11 @@
             }
 
             .seller-card {
-                border: 3px solid var(--success-color);
+                background: white;
+                border: none;
                 border-radius: var(--border-radius);
                 box-shadow: var(--shadow-md);
+                overflow: hidden;
                 transition: var(--transition);
             }
 
@@ -295,6 +316,7 @@
                 position: absolute;
                 top: 15px;
                 right: 15px;
+                border: 0;
                 background: rgba(40, 167, 69, 0.9);
                 backdrop-filter: blur(10px);
                 color: white;
@@ -304,6 +326,47 @@
                 font-weight: 500;
                 box-shadow: var(--shadow-md);
                 z-index: 10;
+                cursor: pointer;
+                transition: var(--transition);
+            }
+
+            .zoom-badge:hover,
+            .zoom-badge:focus {
+                background: rgba(33, 136, 56, 0.98);
+                color: white;
+                outline: none;
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-lg);
+            }
+
+            .machinery-image-modal .modal-dialog {
+                max-width: min(1200px, calc(100vw - 24px));
+            }
+
+            .machinery-image-modal .modal-content {
+                border: 0;
+                border-radius: var(--border-radius);
+                overflow: hidden;
+                background: rgba(15, 23, 15, 0.94);
+                box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+            }
+
+            .machinery-image-modal .modal-body {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+                min-height: min(78vh, 820px);
+                padding: 1rem;
+            }
+
+            .machinery-image-modal__image {
+                background: #111;
+                border-radius: 10px;
+                box-shadow: var(--shadow-lg);
+                max-height: 82vh;
+                max-width: 100%;
+                object-fit: contain;
+                width: auto;
             }
 
             /* Cinta de Estado */
@@ -510,9 +573,14 @@
                                 onclick="document.getElementById('imageModalImg').src = this.src"
                                 title="Click para ver imagen completa">
                             
-                            <div class="zoom-badge">
+                            <button type="button"
+                                class="zoom-badge"
+                                data-toggle="modal"
+                                data-target="#imageModal"
+                                onclick="document.getElementById('imageModalImg').src = document.getElementById('mainImage').src"
+                                aria-label="Ampliar imagen de maquinaria">
                                 <i class="fas fa-search-plus mr-1"></i> Click para ampliar
-                            </div>
+                            </button>
                         </div>
                     </div>
 
@@ -1014,16 +1082,16 @@
     @endif
 
     {{-- MODAL PARA VER IMAGEN EN GRANDE --}}
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content bg-transparent border-0">
-                <button type="button" class="close text-white ml-auto mr-2 mt-2" data-dismiss="modal"
-                    aria-label="Close" style="font-size: 2rem; z-index: 1051; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+    <div class="modal fade machinery-image-modal" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <button type="button" class="close text-white ml-auto mr-3 mt-3" data-dismiss="modal"
+                    aria-label="Cerrar" style="font-size: 2rem; z-index: 1051; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <div class="modal-body p-0 text-center">
-                    <img id="imageModalImg" src="" class="img-fluid rounded"
-                        style="max-height: 80vh; object-fit: contain; box-shadow: var(--shadow-lg);">
+                <div class="modal-body text-center">
+                    <img id="imageModalImg" src="" alt="Imagen ampliada de maquinaria"
+                        class="machinery-image-modal__image">
                 </div>
             </div>
         </div>

@@ -277,15 +277,18 @@
                                             <i class="fas fa-image text-primary fa-2x mr-3"></i>
                                             <div>
                                                 <strong>Imagen Actual</strong>
-                                                <p class="text-muted mb-0 small">Click en la imagen para ver en tamaño
-                                                    completo</p>
+                                                <p class="text-muted mb-0 small">Click en la imagen para abrir la vista
+                                                    previa</p>
                                             </div>
                                         </div>
                                         <img src="{{ asset('storage/' . $datoSanitario->marca_ganado_foto) }}"
                                             alt="Foto de la Marca" class="img-thumbnail"
                                             style="max-width: 300px; max-height: 300px; cursor: pointer;"
-                                            onclick="window.open('{{ asset('storage/' . $datoSanitario->marca_ganado_foto) }}', '_blank')"
-                                            title="Click para ver imagen completa">
+                                            data-sanitary-image-viewer
+                                            data-image-url="{{ asset('storage/' . $datoSanitario->marca_ganado_foto) }}"
+                                            data-image-title="Foto de marca"
+                                            data-download-name="{{ basename($datoSanitario->marca_ganado_foto) }}"
+                                            title="Click para abrir vista previa">
                                     </div>
                                 @endif
                                 <div class="file-upload-modern">
@@ -338,15 +341,18 @@
                                             <i class="fas fa-image text-info fa-2x mr-3"></i>
                                             <div>
                                                 <strong>Imagen Actual</strong>
-                                                <p class="text-muted mb-0 small">Click en la imagen para ver en tamaño
-                                                    completo</p>
+                                                <p class="text-muted mb-0 small">Click en la imagen para abrir la vista
+                                                    previa</p>
                                             </div>
                                         </div>
                                         <img src="{{ asset('storage/' . $datoSanitario->carnet_dueno_foto) }}"
                                             alt="Carnet Dueño" class="img-thumbnail"
                                             style="max-width: 300px; max-height: 300px; cursor: pointer;"
-                                            onclick="window.open('{{ asset('storage/' . $datoSanitario->carnet_dueno_foto) }}', '_blank')"
-                                            title="Click para ver imagen completa">
+                                            data-sanitary-image-viewer
+                                            data-image-url="{{ asset('storage/' . $datoSanitario->carnet_dueno_foto) }}"
+                                            data-image-title="Carnet del dueño"
+                                            data-download-name="{{ basename($datoSanitario->carnet_dueno_foto) }}"
+                                            title="Click para abrir vista previa">
                                     </div>
                                 @endif
                                 <div class="file-upload-modern">
@@ -388,15 +394,18 @@
                                         <i class="fas fa-image text-warning fa-2x mr-3"></i>
                                         <div>
                                             <strong>Certificado Actual</strong>
-                                            <p class="text-muted mb-0 small">Click en la imagen para ver en tamaño completo
+                                            <p class="text-muted mb-0 small">Click en la imagen para abrir la vista previa
                                             </p>
                                         </div>
                                     </div>
                                     <img src="{{ asset('storage/' . $datoSanitario->certificado_imagen) }}"
                                         alt="Certificado SENASAG" class="img-thumbnail"
                                         style="max-width: 300px; max-height: 300px; cursor: pointer;"
-                                        onclick="window.open('{{ asset('storage/' . $datoSanitario->certificado_imagen) }}', '_blank')"
-                                        title="Click para ver imagen completa">
+                                        data-sanitary-image-viewer
+                                        data-image-url="{{ asset('storage/' . $datoSanitario->certificado_imagen) }}"
+                                        data-image-title="Certificado sanitario"
+                                        data-download-name="{{ basename($datoSanitario->certificado_imagen) }}"
+                                        title="Click para abrir vista previa">
                                 </div>
                             @endif
                             <div class="form-group-modern">
@@ -450,15 +459,18 @@
                                         <i class="fas fa-trophy text-warning fa-2x mr-3"></i>
                                         <div>
                                             <strong>Certificado Actual</strong>
-                                            <p class="text-muted mb-0 small">Click en la imagen para ver en tamaño completo
+                                            <p class="text-muted mb-0 small">Click en la imagen para abrir la vista previa
                                             </p>
                                         </div>
                                     </div>
                                     <img src="{{ asset('storage/' . $datoSanitario->certificado_campeon_imagen) }}"
                                         alt="Certificado Campeón" class="img-thumbnail"
                                         style="max-width: 300px; max-height: 300px; cursor: pointer;"
-                                        onclick="window.open('{{ asset('storage/' . $datoSanitario->certificado_campeon_imagen) }}', '_blank')"
-                                        title="Click para ver imagen completa">
+                                        data-sanitary-image-viewer
+                                        data-image-url="{{ asset('storage/' . $datoSanitario->certificado_campeon_imagen) }}"
+                                        data-image-title="Certificado de campeón"
+                                        data-download-name="{{ basename($datoSanitario->certificado_campeon_imagen) }}"
+                                        title="Click para abrir vista previa">
                                 </div>
                             @endif
                             <div class="form-group-modern">
@@ -730,6 +742,8 @@
             }
         });
     </script>
+
+    @include('datos_sanitarios.partials.image-viewer-modal')
 
     <style>
         /* Variables CSS */
