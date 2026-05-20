@@ -343,6 +343,17 @@
         </aside>
         <!-- /.sidebar -->
 
+        <script>
+            (function() {
+                const savedTop = sessionStorage.getItem('agrovida.sidebar.scrollTop');
+                const sidebar = document.querySelector('.main-sidebar .sidebar');
+
+                if (sidebar && savedTop !== null) {
+                    sidebar.scrollTop = Number(savedTop) || 0;
+                }
+            })();
+        </script>
+
         <!-- Content -->
         <div class="content-wrapper">
 
@@ -408,6 +419,72 @@
     <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('vendor/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
     <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+
+    <script>
+        (function() {
+            const sidebar = document.querySelector('.main-sidebar .sidebar');
+            const storageKey = 'agrovida.sidebar.scrollTop';
+
+            if (!sidebar) {
+                return;
+            }
+
+            function getScrollElement() {
+                return sidebar.querySelector('.os-viewport') ||
+                    document.querySelector('.main-sidebar .os-viewport') ||
+                    sidebar;
+            }
+
+            function saveSidebarScroll() {
+                const scrollElement = getScrollElement();
+
+                if (scrollElement) {
+                    sessionStorage.setItem(storageKey, String(scrollElement.scrollTop || 0));
+                }
+            }
+
+            function restoreSidebarScroll() {
+                const scrollElement = getScrollElement();
+
+                if (!scrollElement) {
+                    return;
+                }
+
+                const savedTop = sessionStorage.getItem(storageKey);
+
+                if (savedTop !== null) {
+                    scrollElement.scrollTop = Number(savedTop) || 0;
+                } else {
+                    const activeLink = sidebar.querySelector('.nav-link.active');
+
+                    if (!activeLink) {
+                        return;
+                    }
+
+                    const targetTop = activeLink.offsetTop - (scrollElement.clientHeight / 2) +
+                        (activeLink.offsetHeight / 2);
+                    scrollElement.scrollTop = Math.max(targetTop, 0);
+                }
+            }
+
+            sidebar.querySelectorAll('a.nav-link[href]').forEach(function(link) {
+                link.addEventListener('click', saveSidebarScroll);
+            });
+
+            window.addEventListener('beforeunload', saveSidebarScroll);
+
+            restoreSidebarScroll();
+            window.requestAnimationFrame(function() {
+                restoreSidebarScroll();
+            });
+            window.setTimeout(function() {
+                restoreSidebarScroll();
+            }, 80);
+            window.setTimeout(function() {
+                restoreSidebarScroll();
+            }, 180);
+        })();
+    </script>
 
     <script>
         // Script para reemplazar confirm() con modal de confirmación

@@ -4,7 +4,23 @@
 @section('standalone_public', true)
 
 @section('content')
-    <main class="min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .landing-page section[id] {
+            scroll-margin-top: 5rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+        }
+    </style>
+
+    <main class="landing-page min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
         <nav class="sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl">
             <div class="mx-auto flex min-h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                 <a href="{{ route('landing') }}" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">

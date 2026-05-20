@@ -112,7 +112,6 @@
                         <table class="table table-hover table-striped mb-0">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 60px;">ID</th>
                                     <th>Animal</th>
                                     <th>Dueño</th>
                                     <th>Vacunaciones</th>
@@ -125,9 +124,6 @@
                             <tbody>
                                 @foreach ($items as $item)
                                     <tr>
-                                        <td>
-                                            <span class="badge badge-secondary badge-lg">#{{ $item->id }}</span>
-                                        </td>
                                         <td>
                                             @if ($item->ganado)
                                                 <div class="d-flex align-items-center">
@@ -163,7 +159,11 @@
                                                         <strong class="d-block">{{ $item->nombre_dueno }}</strong>
                                                         @if ($item->carnet_dueno_foto)
                                                             <a href="{{ asset('storage/' . $item->carnet_dueno_foto) }}"
-                                                                target="_blank" class="btn btn-sm btn-info mt-1">
+                                                                class="sanitary-doc-btn mt-2"
+                                                                data-sanitary-image-viewer
+                                                                data-image-url="{{ asset('storage/' . $item->carnet_dueno_foto) }}"
+                                                                data-image-title="Carnet del dueño"
+                                                                data-download-name="{{ basename($item->carnet_dueno_foto) }}">
                                                                 <i class="fas fa-id-card"></i> Ver Carnet
                                                             </a>
                                                         @else
@@ -202,7 +202,11 @@
                                             <div class="d-flex flex-column">
                                                 @if ($item->certificado_imagen)
                                                     <a href="{{ asset('storage/' . $item->certificado_imagen) }}"
-                                                        target="_blank" class="btn btn-sm btn-info mb-1">
+                                                        class="sanitary-doc-btn"
+                                                        data-sanitary-image-viewer
+                                                        data-image-url="{{ asset('storage/' . $item->certificado_imagen) }}"
+                                                        data-image-title="Certificado sanitario"
+                                                        data-download-name="{{ basename($item->certificado_imagen) }}">
                                                         <i class="fas fa-certificate"></i> Certificado
                                                     </a>
                                                 @else
@@ -229,7 +233,11 @@
                                                     @if ($item->marca_ganado_foto)
                                                         <div class="mb-1">
                                                             <a href="{{ asset('storage/' . $item->marca_ganado_foto) }}"
-                                                                target="_blank" class="btn btn-sm btn-primary">
+                                                                class="sanitary-doc-btn"
+                                                                data-sanitary-image-viewer
+                                                                data-image-url="{{ asset('storage/' . $item->marca_ganado_foto) }}"
+                                                                data-image-title="Foto de marca"
+                                                                data-download-name="{{ basename($item->marca_ganado_foto) }}">
                                                                 <i class="fas fa-image"></i> Ver Foto Marca
                                                             </a>
                                                         </div>
@@ -252,9 +260,9 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="btn-group" role="group">
+                                            <div class="sanitary-action-group" role="group">
                                                 <a href="{{ route('admin.datos-sanitarios.edit', $item->id) }}"
-                                                    class="btn btn-sm btn-warning" title="Editar">
+                                                    class="sanitary-action-btn sanitary-action-btn-edit" title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <form action="{{ route('admin.datos-sanitarios.destroy', $item->id) }}"
@@ -262,7 +270,7 @@
                                                     onsubmit="return confirm('¿Está seguro de eliminar este registro sanitario?');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"
+                                                    <button type="submit" class="sanitary-action-btn sanitary-action-btn-delete"
                                                         title="Eliminar">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
@@ -306,5 +314,91 @@
             border-bottom: 2px solid #dee2e6;
             font-weight: 600;
         }
+
+        .sanitary-doc-btn {
+            align-items: center;
+            background: #f8fbf7;
+            border: 1px solid #2f7d32;
+            border-radius: 8px;
+            color: #2f7d32;
+            display: inline-flex;
+            font-size: 0.84rem;
+            font-weight: 600;
+            gap: .4rem;
+            line-height: 1.2;
+            max-width: 100%;
+            padding: .45rem .75rem;
+            text-decoration: none;
+            transition: all .2s ease;
+            white-space: nowrap;
+        }
+
+        .sanitary-doc-btn:hover,
+        .sanitary-doc-btn:focus {
+            background: #2f7d32;
+            color: #fff;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .sanitary-doc-btn i {
+            font-size: .85rem;
+        }
+
+        .sanitary-action-group {
+            align-items: center;
+            display: inline-flex;
+            gap: .35rem;
+            justify-content: center;
+        }
+
+        .sanitary-action-btn {
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            display: inline-flex;
+            height: 34px;
+            justify-content: center;
+            transition: all .2s ease;
+            width: 34px;
+        }
+
+        .sanitary-action-btn:hover,
+        .sanitary-action-btn:focus {
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .sanitary-action-btn-edit {
+            background: #fff8e1;
+            border-color: #ffd45a;
+            color: #8a6200;
+        }
+
+        .sanitary-action-btn-edit:hover {
+            background: #ffc107;
+            color: #1f2a1f;
+        }
+
+        .sanitary-action-btn-delete {
+            background: #fff0f1;
+            border-color: #f2a6b0;
+            color: #dc3545;
+        }
+
+        .sanitary-action-btn-delete:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        @media (max-width: 767.98px) {
+            .sanitary-doc-btn {
+                justify-content: center;
+                white-space: normal;
+                width: 100%;
+            }
+        }
     </style>
+
+    @include('datos_sanitarios.partials.image-viewer-modal')
 @endsection

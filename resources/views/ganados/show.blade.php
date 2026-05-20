@@ -18,6 +18,19 @@
                 transition: all 0.3s ease;
             }
 
+            .detail-card {
+                border: 0 !important;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .detail-card:hover {
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-2px);
+            }
+
             .card:hover {
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
             }
@@ -25,6 +38,125 @@
             .card-header {
                 padding: 0.75rem 1rem;
                 font-size: 0.95rem;
+            }
+
+            .detail-card-header {
+                border: 0;
+                border-radius: 12px 12px 0 0;
+                color: #fff;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
+            .detail-card-header h5 {
+                color: #fff;
+                font-size: 1.15rem;
+                font-weight: 600;
+                line-height: 1.3;
+            }
+
+            .detail-card-header-primary {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            }
+
+            .detail-card-header-success {
+                background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            }
+
+            .detail-card-header-danger {
+                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            }
+
+            .detail-card-header-info {
+                background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);
+            }
+
+            .detail-card-header-warning {
+                background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            }
+
+            .card-header.bg-primary,
+            .card-header.bg-success,
+            .card-header.bg-danger,
+            .card-header.bg-info,
+            .card-header.bg-warning {
+                border: 0;
+                border-radius: 12px 12px 0 0;
+                color: #fff !important;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
+            .card-header.bg-primary {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+            }
+
+            .card-header.bg-success {
+                background: linear-gradient(135deg, #28a745 0%, #218838 100%) !important;
+            }
+
+            .card-header.bg-danger {
+                background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+            }
+
+            .card-header.bg-info {
+                background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%) !important;
+            }
+
+            .card-header.bg-warning {
+                background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+            }
+
+            .card-header.bg-primary h5,
+            .card-header.bg-success h5,
+            .card-header.bg-danger h5,
+            .card-header.bg-info h5,
+            .card-header.bg-warning h5 {
+                color: #fff !important;
+                font-size: 1.15rem;
+                font-weight: 600;
+                line-height: 1.3;
+            }
+
+            .detail-info-icon {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                font-size: 1.15rem;
+                margin-right: 1rem;
+            }
+
+            .detail-info-icon-warning {
+                background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+                color: #f57c00;
+            }
+
+            .detail-info-icon-success {
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                color: #28a745;
+            }
+
+            .detail-info-icon-danger {
+                background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+                color: #dc3545;
+            }
+
+            .detail-btn {
+                border: 0;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+                font-weight: 600;
+                padding: 0.75rem 1.5rem;
+                transition: all 0.3s ease;
+            }
+
+            .detail-btn:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+                transform: translateY(-2px);
             }
 
             .card-body {
@@ -65,9 +197,50 @@
             }
 
             .btn-inline-img {
+                align-items: center;
+                background: #f8fbf7;
+                border: 1px solid #e2eadf;
+                border-radius: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: .75rem;
+                padding: .75rem;
+                width: fit-content;
+                max-width: 100%;
+            }
+
+            .doc-preview-btn {
+                border: 1px solid #2f7d32;
+                border-radius: 8px;
+                color: #2f7d32;
                 display: inline-flex;
                 align-items: center;
-                gap: 0.5rem;
+                gap: .45rem;
+                font-weight: 600;
+                padding: .45rem .85rem;
+                transition: all .2s ease;
+            }
+
+            .doc-preview-btn:hover {
+                background: #2f7d32;
+                color: #fff;
+                text-decoration: none;
+                transform: translateY(-1px);
+            }
+
+            .doc-preview-thumb {
+                border: 1px solid #dbe5d7;
+                border-radius: 8px;
+                box-shadow: none;
+                height: 64px;
+                margin-left: 0;
+                max-width: 96px;
+                object-fit: cover;
+                padding: 2px;
+            }
+
+            .image-preview-trigger {
+                cursor: pointer;
             }
 
             .info-icon {
@@ -396,13 +569,18 @@
                         <div class="card-body">
                             <div class="btn-inline-img">
                                 <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
-                                    target="_blank" class="btn btn-success btn-sm">
+                                    class="doc-preview-btn"
+                                    data-toggle="modal"
+                                    data-target="#imageModal"
+                                    onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}';">
                                     <i class="fas fa-file-image"></i> Ver Certificado
                                 </a>
                                 <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
-                                    alt="Certificado SENASAG" class="img-thumbnail img-preview-inline"
-                                    style="max-width: 120px; max-height: 80px; cursor: pointer; object-fit: cover;"
-                                    onclick="window.open('{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}', '_blank')"
+                                    alt="Certificado SENASAG"
+                                    class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
+                                    data-toggle="modal"
+                                    data-target="#imageModal"
+                                    onclick="document.getElementById('imageModalImg').src = this.src"
                                     title="Click para ver imagen completa">
                             </div>
                         </div>
@@ -420,13 +598,18 @@
                         <div class="card-body">
                             <div class="btn-inline-img">
                                 <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
-                                    target="_blank" class="btn btn-success btn-sm">
+                                    class="doc-preview-btn"
+                                    data-toggle="modal"
+                                    data-target="#imageModal"
+                                    onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}';">
                                     <i class="fas fa-trophy"></i> Ver Certificado Campeón
                                 </a>
                                 <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
-                                    alt="Certificado Campeón" class="img-thumbnail img-preview-inline"
-                                    style="max-width: 120px; max-height: 80px; cursor: pointer; object-fit: cover;"
-                                    onclick="window.open('{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}', '_blank')"
+                                    alt="Certificado Campeón"
+                                    class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
+                                    data-toggle="modal"
+                                    data-target="#imageModal"
+                                    onclick="document.getElementById('imageModalImg').src = this.src"
                                     title="Click para ver imagen completa">
                             </div>
                         </div>
@@ -644,18 +827,23 @@
                 </div>
 
                 <!-- Fechas -->
-                <div class="card shadow-sm border-0 mb-3">
-                    <div class="card-header bg-primary text-white">
+                <div class="card detail-card mb-3">
+                    <div class="detail-card-header detail-card-header-primary">
                         <h5 class="mb-0">
-                            <i class="fas fa-calendar-alt"></i> Fechas
+                            <i class="fas fa-calendar-alt mr-2"></i> Fechas
                         </h5>
                     </div>
                     <div class="card-body">
                         @if ($ganado->fecha_publicacion)
-                            <div>
-                                <small class="text-muted d-block mb-0 section-title">Fecha de Publicación</small>
-                                <strong
-                                    class="info-value">{{ \Carbon\Carbon::parse($ganado->fecha_publicacion)->format('d/m/Y') }}</strong>
+                            <div class="d-flex align-items-center">
+                                <div class="detail-info-icon detail-info-icon-warning">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block mb-0 section-title">Fecha de Publicación</small>
+                                    <strong
+                                        class="info-value">{{ \Carbon\Carbon::parse($ganado->fecha_publicacion)->format('d/m/Y') }}</strong>
+                                </div>
                             </div>
                         @else
                             <p class="text-muted mb-0 info-value">Sin fecha de publicación</p>
@@ -665,18 +853,25 @@
 
                 <!-- Información del Vendedor -->
                 @if ($ganado->user)
-                    <div class="card shadow-sm border-0 border-success" style="border-width: 3px !important;">
-                        <div class="card-header bg-success text-white">
+                    <div class="card detail-card mb-3">
+                        <div class="detail-card-header detail-card-header-success">
                             <h5 class="mb-0 font-weight-bold">
-                                <i class="fas fa-user"></i> Información del Vendedor
+                                <i class="fas fa-user mr-2"></i> Información del Vendedor
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="info-row-item">
-                                <h6 class="mb-1 font-weight-bold text-dark">{{ $ganado->user->name }}</h6>
-                                <small class="text-muted d-block info-value">
-                                    <i class="fas fa-envelope text-success"></i> {{ $ganado->user->email }}
-                                </small>
+                                <div class="d-flex align-items-center">
+                                    <div class="detail-info-icon detail-info-icon-success">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 font-weight-bold text-dark">{{ $ganado->user->name }}</h6>
+                                        <small class="text-muted d-block info-value">
+                                            <i class="fas fa-envelope text-success"></i> {{ $ganado->user->email }}
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="border-top pt-2">
@@ -714,14 +909,14 @@
                                 @if (auth()->id() !== $ganado->user_id)
                                     <div class="mt-2 pt-2 border-top">
                                         <a href="mailto:{{ $ganado->user->email }}"
-                                            class="btn btn-success btn-sm btn-block shadow-sm">
+                                            class="btn btn-success btn-block detail-btn">
                                             <i class="fas fa-envelope mr-1"></i> Contactar Vendedor
                                         </a>
                                     </div>
                                 @endif
                             @else
                                 <div class="mt-2 pt-2 border-top">
-                                    <a href="{{ route('login') }}" class="btn btn-outline-success btn-sm btn-block">
+                                    <a href="{{ route('login') }}" class="btn btn-outline-success btn-block detail-btn">
                                         <i class="fas fa-sign-in-alt mr-1"></i> Inicia sesión para contactar
                                     </a>
                                 </div>
@@ -774,13 +969,18 @@
                                         <small class="text-muted d-block mb-1 section-title">Foto de la Marca</small>
                                         <div class="btn-inline-img">
                                             <a href="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
-                                                target="_blank" class="btn btn-success btn-sm">
+                                                class="doc-preview-btn"
+                                                data-toggle="modal"
+                                                data-target="#imageModal"
+                                                onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}';">
                                                 <i class="fas fa-image"></i> Ver Foto
                                             </a>
                                             <img src="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
-                                                alt="Foto de la Marca" class="img-thumbnail img-preview-inline"
-                                                style="max-width: 100px; max-height: 70px; cursor: pointer; object-fit: cover;"
-                                                onclick="window.open('{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}', '_blank')"
+                                                alt="Foto de la Marca"
+                                                class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
+                                                data-toggle="modal"
+                                                data-target="#imageModal"
+                                                onclick="document.getElementById('imageModalImg').src = this.src"
                                                 title="Click para ver imagen completa">
                                         </div>
                                     </div>
@@ -819,13 +1019,18 @@
                                     <small class="text-muted d-block mb-1 section-title">Carnet del Dueño</small>
                                     <div class="btn-inline-img">
                                         <a href="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
-                                            target="_blank" class="btn btn-success btn-sm">
+                                            class="doc-preview-btn"
+                                            data-toggle="modal"
+                                            data-target="#imageModal"
+                                            onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}';">
                                             <i class="fas fa-id-card"></i> Ver Carnet
                                         </a>
                                         <img src="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
-                                            alt="Carnet Dueño" class="img-thumbnail img-preview-inline"
-                                            style="max-width: 100px; max-height: 70px; cursor: pointer; object-fit: cover;"
-                                            onclick="window.open('{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}', '_blank')"
+                                            alt="Carnet Dueño"
+                                            class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
+                                            data-toggle="modal"
+                                            data-target="#imageModal"
+                                            onclick="document.getElementById('imageModalImg').src = this.src"
                                             title="Click para ver imagen completa">
                                     </div>
                                 </div>
@@ -835,17 +1040,19 @@
                 @endif
 
                 {{-- Ubicación --}}
-                <div class="card shadow-sm border-0 mb-3">
-                    <div class="card-header bg-danger text-white">
+                <div class="card detail-card mb-3">
+                    <div class="detail-card-header detail-card-header-danger">
                         <h5 class="mb-0">
-                            <i class="fas fa-map-marker-alt"></i> Ubicación
+                            <i class="fas fa-map-marker-alt mr-2"></i> Ubicación
                         </h5>
                     </div>
                     <div class="card-body">
                         @if ($ganado->ciudad || $ganado->municipio || $ganado->departamento)
                             <div class="info-row-item">
                                 <div class="d-flex align-items-center">
-                                    <i class="fas fa-building text-danger info-icon"></i>
+                                    <div class="detail-info-icon detail-info-icon-danger">
+                                        <i class="fas fa-building"></i>
+                                    </div>
                                     <div class="flex-grow-1">
                                         <small class="text-muted d-block mb-0 section-title">Ciudad</small>
                                         <strong
@@ -873,15 +1080,19 @@
                             </div>
                         @elseif($ganado->ubicacion)
                             <div class="info-row-item">
-                                <i class="fas fa-location-dot text-danger info-icon"></i>
-                                <strong class="info-value">{{ $ganado->ubicacion }}</strong>
+                                <div class="d-flex align-items-center">
+                                    <div class="detail-info-icon detail-info-icon-danger">
+                                        <i class="fas fa-location-dot"></i>
+                                    </div>
+                                    <strong class="info-value">{{ $ganado->ubicacion }}</strong>
+                                </div>
                             </div>
                         @else
                             <p class="text-muted mb-0 info-value">Sin ubicación especificada</p>
                         @endif
                         @if ($ganado->latitud && $ganado->longitud)
                             <div class="mt-2">
-                                <button type="button" class="btn btn-danger btn-sm btn-block" data-toggle="modal"
+                                <button type="button" class="btn btn-danger btn-block detail-btn" data-toggle="modal"
                                     data-target="#mapModal">
                                     <i class="fas fa-map"></i> Ver Mapa
                                 </button>

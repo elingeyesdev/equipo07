@@ -162,6 +162,94 @@
             margin-right: 3px;
             font-size: 0.7rem;
         }
+
+        .hero-search-panel {
+            background: rgba(255, 255, 255, 0.46);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 18px 45px rgba(17, 36, 14, 0.14);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 1.15rem !important;
+        }
+
+        .hero-filter-form.form-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px 12px;
+            align-items: end;
+            margin-right: 0;
+            margin-left: 0;
+        }
+
+        .hero-filter-form > [class*="col-"] {
+            width: 100%;
+            max-width: none;
+            flex: none;
+            padding-right: 0;
+            padding-left: 0;
+            margin-bottom: 0 !important;
+        }
+
+        .hero-filter-form > [class*="col-"] > .form-control,
+        .hero-filter-form .input-group {
+            width: 100%;
+        }
+
+        .hero-filter-form .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .hero-filter-form .input-group .form-control {
+            width: 1%;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .hero-filter-form .input-group-text {
+            height: calc(1.5em + .75rem + 2px);
+        }
+
+        .hero-filter-form__submit {
+            grid-column: 1 / -1;
+            margin-top: 2px;
+        }
+
+        .hero-clear-filters {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 38px;
+            padding: 0 13px;
+            border: 1px solid rgba(47, 98, 31, 0.28);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            color: #2f621f;
+            font-weight: 700;
+            font-size: 0.92rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .hero-clear-filters:hover {
+            background: rgba(255, 255, 255, 0.75);
+            color: #214817;
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(17, 36, 14, 0.12);
+        }
+
+        @media (max-width: 991.98px) {
+            .hero-filter-form.form-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .hero-filter-form.form-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 
     <section class="hero"
@@ -172,8 +260,20 @@
                 Tu mercado de animales, maquinaria y<br>orgánicos en un solo lugar
             </h1>
 
-            <div class="bg-white p-4 rounded mt-4 shadow-lg">
-                <form method="GET" action="{{ route('home') }}" id="searchForm" class="form-row align-items-end">
+            <div class="hero-search-panel p-4 rounded mt-4">
+                @php
+                    $hasActiveFilters = collect([
+                        'q',
+                        'categoria_id',
+                        'tipo_animal_id',
+                        'raza_id',
+                        'tipo_maquinaria_id',
+                        'marca_maquinaria_id',
+                        'tipo_cultivo_id',
+                    ])->contains(fn ($key) => request()->filled($key));
+                @endphp
+
+                <form method="GET" action="{{ route('home') }}" id="searchForm" class="hero-filter-form form-row align-items-end">
                     <div class="col-md-3 mb-2">
                         <label class="text-dark small font-weight-bold mb-1">Categoría</label>
                         <select name="categoria_id" id="categoria_id" class="form-control"
@@ -270,19 +370,16 @@
                         </div>
                     </div>
 
-                    <div class="col-md-12 mb-2">
+                    <div class="col-md-12 mb-2 hero-filter-form__submit">
                         <button type="submit" class="btn btn-success btn-block">
                             <i class="fas fa-search"></i> Buscar
                         </button>
                     </div>
                 </form>
 
-                @if (request()->has('q') ||
-                        request()->has('categoria_id') ||
-                        request()->has('tipo_animal_id') ||
-                        request()->has('raza_id'))
+                @if ($hasActiveFilters)
                     <div class="mt-2">
-                        <a href="{{ route('home') }}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{{ route('home') }}" class="hero-clear-filters">
                             <i class="fas fa-times"></i> Limpiar filtros
                         </a>
                     </div>
@@ -292,10 +389,7 @@
         <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:1;"></div>
     </section>
 
-    @if (request()->has('q') ||
-            request()->has('categoria_id') ||
-            request()->has('tipo_animal_id') ||
-            request()->has('raza_id'))
+    @if ($hasActiveFilters)
         <section class="container my-5">
             <h2 class="text-success mb-4">
                 <i class="fas fa-search"></i> Resultados de búsqueda
