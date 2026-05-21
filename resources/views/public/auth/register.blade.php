@@ -1,16 +1,17 @@
 @extends('layouts.public')
 @section('title', 'Crear cuenta')
+@section('standalone_public', true)
 
 @section('content')
     <main class="auth-page">
         <div class="auth-shell auth-shell--register" aria-label="Registro en AgroVida">
             <section class="auth-hero" aria-label="Crear cuenta en AgroVida Bolivia">
-                <img src="{{ asset('img/bg-agrovida.jpg') }}" alt="" class="auth-hero-image">
+                <img src="/img/bg-agrovida.jpg" alt="" class="auth-hero-image">
                 <div class="auth-hero-overlay"></div>
 
                 <div class="auth-hero-content">
                     <div class="auth-hero-brand">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="auth-hero-logo">
+                        <img src="/img/logo-agrovida.png" alt="AgroVida" class="auth-hero-logo">
                         <span>AgroVida Bolivia</span>
                     </div>
 
@@ -34,7 +35,7 @@
             <section class="auth-form-panel" aria-label="Formulario de registro">
                 <div class="auth-login-card auth-register-card">
                     <div class="auth-login-brand">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="auth-login-logo">
+                        <img src="/img/logo-agrovida.png" alt="AgroVida" class="auth-login-logo">
                     </div>
 
                     <div class="auth-login-header">
@@ -77,7 +78,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('register.post') }}" method="POST" class="auth-login-form">
+                    <form action="/registro" method="POST" class="auth-login-form">
                         @csrf
 
                         <div class="form-group auth-field">
@@ -135,7 +136,7 @@
                         </button>
 
                         <p class="auth-login-footer">
-                            ¿Ya tienes cuenta? <a href="{{ route('login') }}">Inicia sesión</a>
+                            ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
                         </p>
                     </form>
                 </div>

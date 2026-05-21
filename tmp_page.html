@@ -1,15 +1,28 @@
-@extends('layouts.public')
+<!doctype html>
+<html lang="es">
 
-@section('title', 'Mercado Agrícola')
-@section('standalone_public', true)
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mercado Agrícola</title>
 
-@section('content')
-    <main class="min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
+    <link rel="stylesheet" href="http://localhost/vendor/adminlte/plugins/fontawesome-free/css/all.min.css">
+
+            <link rel="preload" as="style" href="http://localhost/build/assets/app-BiJeSvih.css" /><link rel="modulepreload" as="script" href="http://localhost/build/assets/app-taXXq4rK.js" /><link rel="stylesheet" href="http://localhost/build/assets/app-BiJeSvih.css" /><script type="module" src="http://localhost/build/assets/app-taXXq4rK.js"></script>        <link rel="stylesheet" href="http://localhost/css/custom.css?v=1779138410">
+</head>
+
+<body class="hold-transition layout-top-nav  public-standalone-shell">
+    <div class="wrapper">
+
+        
+
+        <div class="public-standalone-content">
+                <main class="min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
         <nav class="sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl">
             <div class="mx-auto flex min-h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                <a href="/" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
+                <a href="http://localhost" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
                     <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white shadow-lg shadow-[#2f621f]/10">
-                        <img src="/img/logo-agrovida.png" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
+                        <img src="http://localhost/img/logo-agrovida.png" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
                     </span>
                     <span>Mercado Agrícola</span>
                 </a>
@@ -22,10 +35,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="/login" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                    <a href="http://localhost/login" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                         Iniciar sesión
                     </a>
-                    <a href="/registro" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-4 text-sm font-black text-white no-underline shadow-xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5 hover:shadow-2xl">
+                    <a href="http://localhost/registro" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-4 text-sm font-black text-white no-underline shadow-xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5 hover:shadow-2xl">
                         Registrarse
                     </a>
                 </div>
@@ -53,11 +66,11 @@
                     </p>
 
                     <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="/registro" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
+                        <a href="http://localhost/registro" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
                             Comenzar ahora
                             <i class="fas fa-arrow-right text-sm"></i>
                         </a>
-                        <a href="/login" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white px-6 text-base font-black text-[#183b18] no-underline shadow-lg shadow-black/5 transition hover:-translate-y-0.5">
+                        <a href="http://localhost/login" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white px-6 text-base font-black text-[#183b18] no-underline shadow-lg shadow-black/5 transition hover:-translate-y-0.5">
                             Iniciar sesión
                         </a>
                     </div>
@@ -76,7 +89,7 @@
 
                 <div class="relative min-h-[380px] sm:min-h-[500px]">
                     <div class="absolute inset-8 overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20 sm:inset-y-8 sm:right-0 sm:left-8">
-                        <img src="/img/hero-agrovida.png" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
+                        <img src="http://localhost/img/hero-agrovida.png" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#142112]/70"></div>
                         <div class="absolute right-5 bottom-5 max-w-xs rounded-2xl border border-white/20 bg-[#142112]/75 p-5 text-white shadow-xl backdrop-blur">
                             <span class="block text-sm text-white/70">Publicaciones activas</span>
@@ -116,21 +129,35 @@
                 </div>
 
                 <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                    @foreach ([
-                        ['icon' => 'fa-box-open', 'title' => 'Publicación de productos', 'text' => 'Presenta productos agrícolas con información clara, imágenes y detalles comerciales.'],
-                        ['icon' => 'fa-horse', 'title' => 'Gestión de animales', 'text' => 'Organiza información de ganado, características, ubicación y datos relevantes.'],
-                        ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Publica maquinaria para venta, alquiler o consulta con una presentación profesional.'],
-                        ['icon' => 'fa-handshake', 'title' => 'Contacto comercial', 'text' => 'Facilita la conexión entre compradores, vendedores y operadores del sector.'],
-                    ] as $benefit)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
                             <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $benefit['icon'] }}"></i>
+                                <i class="fas fa-box-open"></i>
                             </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $benefit['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $benefit['text'] }}</p>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Publicación de productos</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Presenta productos agrícolas con información clara, imágenes y detalles comerciales.</p>
                         </article>
-                    @endforeach
-                </div>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-horse"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Gestión de animales</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Organiza información de ganado, características, ubicación y datos relevantes.</p>
+                        </article>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-tractor"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Maquinaria agrícola</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Publica maquinaria para venta, alquiler o consulta con una presentación profesional.</p>
+                        </article>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-handshake"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Contacto comercial</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Facilita la conexión entre compradores, vendedores y operadores del sector.</p>
+                        </article>
+                                    </div>
             </div>
         </section>
 
@@ -145,21 +172,35 @@
                 </div>
 
                 <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                    @foreach ([
-                        ['icon' => 'fa-horse', 'title' => 'Animales', 'text' => 'Ganado y publicaciones pecuarias con datos útiles para evaluar cada oportunidad.'],
-                        ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Equipos, marcas, estados y opciones para trabajo agrícola o productivo.'],
-                        ['icon' => 'fa-carrot', 'title' => 'Productos orgánicos', 'text' => 'Producción fresca, trazabilidad y productos naturales para el mercado local.'],
-                        ['icon' => 'fa-bullhorn', 'title' => 'Servicios y anuncios', 'text' => 'Publicaciones relacionadas con operaciones, oferta y demanda del sector.'],
-                    ] as $category)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
                             <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $category['icon'] }}"></i>
+                                <i class="fas fa-horse"></i>
                             </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $category['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $category['text'] }}</p>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Animales</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Ganado y publicaciones pecuarias con datos útiles para evaluar cada oportunidad.</p>
                         </article>
-                    @endforeach
-                </div>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-tractor"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Maquinaria agrícola</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Equipos, marcas, estados y opciones para trabajo agrícola o productivo.</p>
+                        </article>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-carrot"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Productos orgánicos</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Producción fresca, trazabilidad y productos naturales para el mercado local.</p>
+                        </article>
+                                            <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas fa-bullhorn"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">Servicios y anuncios</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">Publicaciones relacionadas con operaciones, oferta y demanda del sector.</p>
+                        </article>
+                                    </div>
             </div>
         </section>
 
@@ -172,20 +213,28 @@
                 </div>
 
                 <div class="grid gap-5">
-                    @foreach ([
-                        ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
-                        ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
-                        ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
-                    ] as $item)
-                        <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">{{ $item['step'] }}</span>
+                                            <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
+                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">01</span>
                             <div>
-                                <h3 class="text-xl font-black text-[#142112]">{{ $item['title'] }}</h3>
-                                <p class="mt-2 leading-7 text-[#66735f]">{{ $item['text'] }}</p>
+                                <h3 class="text-xl font-black text-[#142112]">Crea tu cuenta</h3>
+                                <p class="mt-2 leading-7 text-[#66735f]">Regístrate para acceder a las funcionalidades del mercado agrícola.</p>
                             </div>
                         </article>
-                    @endforeach
-                </div>
+                                            <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
+                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">02</span>
+                            <div>
+                                <h3 class="text-xl font-black text-[#142112]">Publica o explora productos</h3>
+                                <p class="mt-2 leading-7 text-[#66735f]">Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.</p>
+                            </div>
+                        </article>
+                                            <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
+                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">03</span>
+                            <div>
+                                <h3 class="text-xl font-black text-[#142112]">Contacta y gestiona operaciones</h3>
+                                <p class="mt-2 leading-7 text-[#66735f]">Ordena oportunidades, administra información y da seguimiento desde tu panel.</p>
+                            </div>
+                        </article>
+                                    </div>
             </div>
         </section>
 
@@ -197,8 +246,8 @@
                     <p class="mt-5 max-w-2xl text-lg leading-8 text-white/75">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                    <a href="/registro" class="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#183b18] no-underline shadow-xl transition hover:-translate-y-0.5">Registrarse</a>
-                    <a href="/login" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 font-black text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15">Iniciar sesión</a>
+                    <a href="http://localhost/registro" class="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#183b18] no-underline shadow-xl transition hover:-translate-y-0.5">Registrarse</a>
+                    <a href="http://localhost/login" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 font-black text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15">Iniciar sesión</a>
                 </div>
             </div>
         </section>
@@ -214,8 +263,14 @@
                     <a href="#categorias" class="font-bold text-[#dfeada] no-underline hover:text-white">Categorías</a>
                     <a href="#como-funciona" class="font-bold text-[#dfeada] no-underline hover:text-white">Cómo funciona</a>
                 </div>
-                <span class="text-white/60">© {{ date('Y') }} Mercado Agrícola</span>
+                <span class="text-white/60">© 2026 Mercado Agrícola</span>
             </div>
         </footer>
     </main>
-@endsection
+        </div>
+
+            </div>
+
+    </body>
+
+</html>

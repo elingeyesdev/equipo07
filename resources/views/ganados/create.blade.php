@@ -1,614 +1,431 @@
 @extends('layouts.adminlte')
 
-@section('title', 'Registrar Ganado')
+@section('title', 'Publicar Ganado')
 
 @section('content')
-    <style>
-        .form-section-title {
-            color: #28a745;
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #28a745;
-        }
+<style>
+    /* Estilos del Stepper Moderno (Verde y Blanco) idéntico a tu versión */
+    .form-step { display: none; animation: fadeIn 0.5s ease-in-out; }
+    .form-step.active { display: block; }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-        .card-header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        }
+    .step-indicator {
+        width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; border: 2px solid #e9ecef;
+        background-color: white; color: #6c757d; transition: all 0.3s;
+        z-index: 2;
+    }
+    .step-indicator.active {
+        background-color: #28a745; color: white; border-color: #28a745;
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); transform: scale(1.1);
+    }
+    .step-indicator.completed {
+        background-color: #20c997; color: white; border-color: #20c997;
+    }
+    .progress-line {
+        height: 4px; background-color: #e9ecef; flex-grow: 1; margin: 0 -10px; border-radius: 2px; z-index: 1;
+    }
+    .progress-line .fill {
+        height: 100%; background-color: #28a745; width: 0%; transition: width 0.4s ease;
+    }
 
-        .form-group label {
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
+    /* Tarjetas de Selección (Botones Gigantes) */
+    .selection-card {
+        border: 2px solid #e9ecef; border-radius: 15px; padding: 20px;
+        cursor: pointer; transition: all 0.3s; background: white; text-align: center; height: 100%;
+    }
+    .selection-card:hover { border-color: #28a745; background-color: #f8fff9; }
+    .selection-card.selected {
+        border-color: #28a745; background-color: #eafaf1; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.15);
+    }
+    
+    .card-modern { border-radius: 15px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .input-modern { border-radius: 10px; border: 1px solid #ced4da; padding: 10px 15px; }
+    .input-modern:focus { border-color: #28a745; box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25); }
+</style>
 
-        .input-group .btn {
-            border-color: #28a745;
-        }
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success font-weight-bold"><i class="fas fa-bullhorn"></i> Nueva Publicación</h2>
+        <a href="{{ route('ganados.index') }}" class="btn btn-outline-secondary rounded-pill">Cancelar</a>
+    </div>
 
-        .input-group .btn:hover {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .form-control:focus {
-            border-color: #28a745;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-        }
-
-        select.form-control:focus {
-            border-color: #28a745;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-        }
-    </style>
-
-    <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="h3 mb-0 text-success">
-                <i class="fas fa-cow"></i> Registrar Nuevo Ganado
-            </h1>
-            <a href="{{ route('ganados.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
+    <div class="card card-modern mb-4 p-4">
+        <div class="d-flex align-items-center justify-content-between position-relative">
+            <div class="step-indicator active" id="indicator-1">1</div>
+            <div class="progress-line"><div class="fill" id="line-1"></div></div>
+            <div class="step-indicator" id="indicator-2">2</div>
+            <div class="progress-line"><div class="fill" id="line-2"></div></div>
+            <div class="step-indicator" id="indicator-3">3</div>
+            <div class="progress-line"><div class="fill" id="line-3"></div></div>
+            <div class="step-indicator" id="indicator-4">4</div>
         </div>
-
-        <div class="card shadow-lg border-success border-3">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-cow"></i> Información del Animal</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('ganados.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-
-                    <div class="row">
-                        <!-- COLUMNA IZQUIERDA -->
-                        <div class="col-lg-6">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Datos
-                                Básicos</h6>
-
-                            <div class="form-group mb-3">
-                                <label for="nombre" class="font-weight-bold">Nombre *</label>
-                                <input type="text" name="nombre" id="nombre" class="form-control"
-                                    value="{{ old('nombre') }}" required>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="tipo_animal_id" class="font-weight-bold">Tipo de Animal *</label>
-                                <select name="tipo_animal_id" id="tipo_animal_id" class="form-control" required>
-                                    <option value="">Seleccione...</option>
-                                    @foreach ($tipo_animals as $item)
-                                        <option value="{{ $item->id }}">{{ $item->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="raza_id" class="font-weight-bold">Raza</label>
-                                <select name="raza_id" id="raza_id" class="form-control" disabled>
-                                    <option value="">Seleccione un tipo de animal primero</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label class="font-weight-bold">Edad</label>
-                                <div class="row">
-                                    <div class="col-4">
-                                        <label class="small text-muted mb-1">Años</label>
-                                        <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="decrementValue('edad_anos')">
-                                                    <i class="fas fa-minus"></i>
-                                                </button>
-                                            </div>
-                                            <input type="number" name="edad_anos" id="edad_anos"
-                                                class="form-control text-center" value="{{ old('edad_anos', 0) }}"
-                                                min="0" max="25" required>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="incrementValue('edad_anos', 25)">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <label class="small text-muted mb-1">Meses</label>
-                                        <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="decrementValue('edad_meses')">
-                                                    <i class="fas fa-minus"></i>
-                                                </button>
-                                            </div>
-                                            <input type="number" name="edad_meses" id="edad_meses"
-                                                class="form-control text-center" value="{{ old('edad_meses', 0) }}"
-                                                min="0" max="11" required>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="incrementValue('edad_meses', 11)">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <label class="small text-muted mb-1">Días</label>
-                                        <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="decrementValue('edad_dias')">
-                                                    <i class="fas fa-minus"></i>
-                                                </button>
-                                            </div>
-                                            <input type="number" name="edad_dias" id="edad_dias"
-                                                class="form-control text-center" value="{{ old('edad_dias', 0) }}"
-                                                min="0" max="30" required>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                                    onclick="incrementValue('edad_dias', 30)">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="sexo" class="font-weight-bold">Sexo</label>
-                                <select name="sexo" id="sexo" class="form-control">
-                                    <option value="">Seleccione</option>
-                                    <option value="Macho">Macho</option>
-                                    <option value="Hembra">Hembra</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group mb-3" id="cantidad_leche_group" style="display: none;">
-                                <label for="cantidad_leche_dia" class="font-weight-bold">Cantidad de Leche por Día
-                                    (litros)</label>
-                                <div class="input-group">
-                                    <input type="number" name="cantidad_leche_dia" id="cantidad_leche_dia"
-                                        class="form-control" step="0.01" min="0"
-                                        value="{{ old('cantidad_leche_dia') }}" placeholder="Ej: 15.5">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">litros/día</span>
-                                    </div>
-                                </div>
-                                <small class="form-text text-muted">Ingrese la producción diaria de leche (solo para
-                                    hembras en producción)</small>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="categoria_id" class="font-weight-bold">Categoría *</label>
-                                <select name="categoria_id" id="categoria_id" class="form-control" required>
-                                    <option value="">Seleccione una categoría</option>
-                                    @foreach ($categorias as $categoria)
-                                        <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- COLUMNA DERECHA -->
-                        <div class="col-lg-6">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-chart-line"></i> Información
-                                Comercial</h6>
-
-                            <div class="form-group mb-3">
-                                <label for="tipo_peso_id" class="font-weight-bold">Método de Venta / Tipo de Peso
-                                    *</label>
-                                <select name="tipo_peso_id" class="form-control" required>
-                                    @foreach ($tipoPesos as $peso)
-                                        <option value="{{ $peso->id }}">{{ $peso->nombre }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="peso_actual" class="font-weight-bold">Peso Actual (kg)</label>
-                                <div class="input-group">
-                                    <input type="number" name="peso_actual" id="peso_actual" class="form-control"
-                                        step="0.01" min="0" value="{{ old('peso_actual') }}"
-                                        placeholder="Ej: 250.50">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">kg</span>
-                                    </div>
-                                </div>
-                                <small class="form-text text-muted">Ingrese el peso actual del animal en kilogramos</small>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="precio" class="font-weight-bold">Precio (Bs)</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Bs</span>
-                                    </div>
-                                    <input type="number" name="precio" id="precio" class="form-control"
-                                        step="0.01" min="0" value="{{ old('precio') }}" placeholder="0.00">
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="stock" class="font-weight-bold">Stock (Cantidad) *</label>
-                                <input type="number" name="stock" id="stock" class="form-control" min="0"
-                                    value="{{ old('stock', 0) }}" required>
-                                <small class="form-text text-muted">Ingrese la cantidad disponible de ganado</small>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="dato_sanitario_id" class="font-weight-bold">Datos Sanitarios</label>
-                                <select name="dato_sanitario_id" class="form-control">
-                                    <option value="">Sin registro sanitario</option>
-                                    @foreach ($datosSanitarios as $ds)
-                                        <option value="{{ $ds->id }}">
-                                            {{ $ds->vacuna ?? 'Sin vacuna' }} - {{ $ds->fecha_aplicacion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SECCIÓN DE DESCRIPCIÓN (ANCHO COMPLETO) -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-align-left"></i> Descripción
-                            </h6>
-                            <div class="form-group mb-3">
-                                <label for="descripcion" class="font-weight-bold">Descripción del Animal</label>
-                                <textarea name="descripcion" id="descripcion" class="form-control" rows="4"
-                                    placeholder="Describa las características del animal...">{{ old('descripcion') }}</textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-3">
-                    </div>
-
-                    <!-- SECCIÓN DE UBICACIÓN (ANCHO COMPLETO) -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-map-marker-alt"></i>
-                                Ubicación</h6>
-                            <div class="form-group mb-3">
-                                <label for="map" class="font-weight-bold">Seleccione la ubicación en el mapa</label>
-                                <div id="map"
-                                    style="height: 400px; border-radius: 10px; border: 2px solid #28a745;"></div>
-
-                                <input type="hidden" name="latitud" id="latitud">
-                                <input type="hidden" name="longitud" id="longitud">
-                                <input type="hidden" name="departamento" id="departamento">
-                                <input type="hidden" name="municipio" id="municipio">
-                                <input type="hidden" name="provincia" id="provincia">
-                                <input type="hidden" name="ciudad" id="ciudad">
-
-                                <div id="info-ubicacion" class="mt-3" style="display: none;">
-                                    <div class="card border-success">
-                                        <div class="card-body">
-                                            <h6 class="mb-3 text-success"><strong><i class="fas fa-info-circle"></i>
-                                                    Ubicación Seleccionada</strong></h6>
-                                            <div class="row mb-2">
-                                                <div class="col-md-3">
-                                                    <strong>Ciudad:</strong>
-                                                </div>
-                                                <div class="col-md-9" id="ciudad-texto">
-                                                    -
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-3">
-                                                    <strong>Dirección:</strong>
-                                                </div>
-                                                <div class="col-md-9" id="direccion-texto">
-                                                    -
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <input type="text" name="ubicacion" id="ubicacion" class="form-control mt-2"
-                                    placeholder="Ubicación seleccionada" readonly>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SECCIÓN DE IMÁGENES (ANCHO COMPLETO) -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6 class="text-success border-bottom pb-2 mb-3"><i class="fas fa-images"></i> Imágenes del
-                                Animal</h6>
-                            <div class="form-group mb-3">
-                                <label class="font-weight-bold">Imágenes (máximo 3)</label>
-
-                                <div id="preview-container" class="row mb-3"></div>
-
-                                <input type="file" name="imagenes[]" class="form-control" accept="image/*" multiple
-                                    id="imagenes-input">
-                                <small class="form-text text-muted">Puedes seleccionar hasta 3 imágenes. Formatos
-                                    permitidos: JPG, PNG, GIF. Tamaño máximo por imagen: 2MB</small>
-                                <div id="imagenes-count" class="text-muted mt-2"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- BOTÓN DE GUARDAR -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ route('ganados.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Cancelar
-                                </a>
-                                <button type="submit" class="btn btn-success btn-lg shadow-sm">
-                                    <i class="fas fa-save"></i> Guardar Registro
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
+        <div class="d-flex justify-content-between mt-2 text-muted small font-weight-bold">
+            <span>Categoría</span>
+            <span>Detalles</span>
+            <span>Precio</span>
+            <span>Sanidad</span>
         </div>
     </div>
-    <script>
-        document.getElementById('tipo_animal_id').addEventListener('change', function() {
-            let tipoID = this.value;
 
-            fetch('/razas-por-tipo/' + tipoID)
-                .then(response => response.json())
-                .then(data => {
-                    let selectRaza = document.getElementById('raza_id');
-                    selectRaza.innerHTML = '<option value="">Seleccione raza</option>';
+    <form action="/api/ganados" method="POST" enctype="multipart/form-data" id="ganadoForm" class="card card-modern p-4 p-md-5">
+        @csrf
+        <input type="hidden" name="modality" id="modalityInput" value="">
+        <input type="hidden" name="species" id="speciesInput" value="">
 
-                    data.forEach(function(raza) {
-                        selectRaza.innerHTML += `<option value="${raza.id}">${raza.nombre}</option>`;
-                    });
-                });
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tipoAnimalSelect = document.getElementById('tipo_animal_id');
-            const razaSelect = document.getElementById('raza_id');
+        <div class="form-step active" id="step-1">
+            <h4 class="text-success font-weight-bold mb-4"><i class="fas fa-tags"></i> 1. Selecciona la Modalidad</h4>
+            
+            <div class="row mb-5">
+                <div class="col-md-4 mb-3">
+                    <div class="selection-card" id="card-lote" onclick="selectModality('Lote')">
+                        <h1 class="mb-3">🐄</h1>
+                        <h5 class="font-weight-bold">Venta por Lote</h5>
+                        <p class="text-muted small mb-0">Grupo de animales</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="selection-card" id="card-indiv" onclick="selectModality('Individual')">
+                        <h1 class="mb-3">🐂</h1>
+                        <h5 class="font-weight-bold">Animal Individual</h5>
+                        <p class="text-muted small mb-0">Un solo animal</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="selection-card" id="card-gen" onclick="selectModality('Genetica')">
+                        <h1 class="mb-3">🧬</h1>
+                        <h5 class="font-weight-bold">Material Genético</h5>
+                        <p class="text-muted small mb-0">Semen o Embriones</p>
+                    </div>
+                </div>
+            </div>
 
-            // Cargar todas las razas desde PHP (ya las enviaste desde el controlador)
-            const razas = @json($razas);
+            <div id="especie-container" class="d-none">
+                <h5 class="font-weight-bold mb-3">Especie del Animal</h5>
+                <div class="d-flex flex-wrap gap-2 mb-4" id="botones-especie">
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4 btn-especie" onclick="selectSpecies(this, 'Bovino')">Bovino</button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4 btn-especie" onclick="selectSpecies(this, 'Equino')">Equino</button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4 btn-especie" onclick="selectSpecies(this, 'Ovino')">Ovino</button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4 btn-especie" onclick="selectSpecies(this, 'Porcino')">Porcino</button>
+                </div>
 
-            tipoAnimalSelect.addEventListener('change', function() {
-                const tipoAnimalID = this.value;
+                <div class="row d-none" id="detalles-categoria">
+                    <div class="col-md-6 form-group" id="caja-proposito">
+                        <label class="font-weight-bold">Propósito Principal *</label>
+                        <select name="purpose" id="purposeInput" class="form-control input-modern">
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 form-group d-none" id="caja-genetica">
+                        <label class="font-weight-bold">Tipo de Material *</label>
+                        <select name="geneticType" id="geneticTypeInput" class="form-control input-modern">
+                            <option value="">Seleccione...</option>
+                            <option value="Semen">Semen</option>
+                            <option value="Embrion">Embrión</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="font-weight-bold">Raza Principal *</label>
+                        <select name="breed" id="breedInput" class="form-control input-modern">
+                            <option value="">Seleccione raza...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                // Limpiar el select de raza
-                razaSelect.innerHTML = '';
+        <div class="form-step" id="step-2">
+            <h4 class="text-success font-weight-bold mb-4"><i class="fas fa-info-circle"></i> 2. Detalles de la Publicación</h4>
+            
+            <div class="form-group mb-4">
+                <label class="font-weight-bold">Título de la publicación *</label>
+                <input type="text" name="title" id="titleInput" class="form-control input-modern" placeholder="Ej: Lote de Novillos Brahman" required>
+            </div>
 
-                if (!tipoAnimalID) {
-                    razaSelect.disabled = true;
-                    razaSelect.innerHTML = '<option value="">Seleccione un tipo de animal primero</option>';
-                    return;
-                }
+            <div class="row">
+                <div class="col-md-6 form-group mb-4">
+                    <label class="font-weight-bold">Cantidad / Stock *</label>
+                    <input type="number" name="stock" id="stockInput" class="form-control input-modern" min="1" required>
+                </div>
+                <div class="col-md-6 form-group mb-4" id="caja-sexo">
+                    <label class="font-weight-bold">Sexo *</label>
+                    <select name="sex" id="sexInput" class="form-control input-modern">
+                        <option value="">Seleccione...</option>
+                        <option value="Macho">Macho</option>
+                        <option value="Hembra">Hembra</option>
+                        <option value="Mixto">Mixto</option>
+                    </select>
+                </div>
+            </div>
 
-                // Filtrar razas del tipo seleccionado
-                const filtradas = razas.filter(r => r.tipo_animal_id == tipoAnimalID);
+            <div class="card bg-light border-0 mb-4" id="caja-edad">
+                <div class="card-body">
+                    <label class="font-weight-bold">Edad del animal (o promedio del lote) *</label>
+                    <div class="d-flex align-items-center">
+                        <input type="number" name="ageValue" id="ageValueInput" class="form-control input-modern w-50 mr-2" placeholder="Ej: 15">
+                        <select name="ageUnit" class="form-control input-modern w-50">
+                            <option value="Meses">Meses</option>
+                            <option value="Años">Años</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-                // Rellenar el select
-                if (filtradas.length > 0) {
-                    razaSelect.disabled = false;
-                    razaSelect.innerHTML = '<option value="">Seleccione una raza...</option>';
+            <div class="form-group">
+                <label class="font-weight-bold">Descripción Adicional</label>
+                <textarea name="description" class="form-control input-modern" rows="3" placeholder="Dietas, historial, etc..."></textarea>
+            </div>
+        </div>
 
-                    filtradas.forEach(r => {
-                        razaSelect.innerHTML += `<option value="${r.id}">${r.nombre}</option>`;
-                    });
+        <div class="form-step" id="step-3">
+            <h4 class="text-success font-weight-bold mb-4"><i class="fas fa-dollar-sign"></i> 3. Precio y Pesaje</h4>
+            
+            <div class="card border-0 bg-light mb-4 p-3" id="caja-peso">
+                <h5 class="font-weight-bold"><i class="fas fa-weight"></i> Información Física</h5>
+                <div class="row mt-3">
+                    <div class="col-md-4 form-group">
+                        <label>Peso Actual *</label>
+                        <input type="number" name="weight" id="weightInput" class="form-control input-modern" placeholder="Ej: 250">
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label>Unidad</label>
+                        <select name="weightUnit" class="form-control input-modern">
+                            <option value="kg">Kilogramos (kg)</option>
+                            <option value="lb">Libras (lb)</option>
+                            <option value="@">Arroba (@)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label>Tipo</label>
+                        <select name="weightType" class="form-control input-modern">
+                            <option value="Vivo Estimado">Vivo Estimado</option>
+                            <option value="En Báscula">En Báscula</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-                } else {
-                    razaSelect.disabled = true;
-                    razaSelect.innerHTML =
-                        '<option value="">No hay razas registradas para este tipo</option>';
-                }
-            });
-        });
-    </script>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-        // Crear el mapa centrado en Bolivia
-        var map = L.map('map').setView([-17.7833, -63.1821], 6);
-
-        // Capa gratuita de OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'OpenStreetMap'
-        }).addTo(map);
-
-        var marker;
-
-        // Evento click en mapa
-        map.on('click', function(e) {
-            var lat = e.latlng.lat.toFixed(7);
-            var lng = e.latlng.lng.toFixed(7);
-
-            if (marker) map.removeLayer(marker);
-
-            marker = L.marker([lat, lng]).addTo(map);
-
-            document.getElementById('latitud').value = lat;
-            document.getElementById('longitud').value = lng;
-            document.getElementById('ubicacion').value = "Lat: " + lat + " - Lng: " + lng;
-
-            // Obtener información geográfica
-            obtenerInformacionGeografica(lat, lng);
-        });
-
-        // Función para obtener información geográfica
-        function obtenerInformacionGeografica(lat, lng) {
-            // Mostrar contenedor de información
-            document.getElementById('info-ubicacion').style.display = 'block';
-            document.getElementById('ciudad-texto').textContent = 'Cargando...';
-            document.getElementById('direccion-texto').textContent = 'Cargando...';
-
-            fetch('/api/geocodificacion?latitud=' + lat + '&longitud=' + lng)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.data) {
-                        var info = data.data;
-
-                        // Guardar en campos ocultos
-                        document.getElementById('departamento').value = info.departamento || '';
-                        document.getElementById('municipio').value = info.municipio || '';
-                        document.getElementById('provincia').value = info.provincia || '';
-                        document.getElementById('ciudad').value = info.ciudad || '';
-
-                        // Mostrar en la interfaz
-                        document.getElementById('ciudad-texto').textContent = info.ciudad || info.municipio ||
-                            'No disponible';
-
-                        // Construir dirección completa: Municipio, Provincia, Departamento, Bolivia
-                        var direccion = [];
-                        if (info.municipio) direccion.push(info.municipio);
-                        if (info.provincia) direccion.push('Provincia ' + info.provincia);
-                        if (info.departamento) direccion.push(info.departamento);
-                        direccion.push('Bolivia');
-
-                        var direccionCompleta = direccion.join(', ');
-                        document.getElementById('direccion-texto').textContent = direccionCompleta || 'No disponible';
-
-                        // Actualizar campo ubicación
-                        if (direccionCompleta) {
-                            document.getElementById('ubicacion').value = direccionCompleta;
-                        }
-                    } else {
-                        document.getElementById('ciudad-texto').textContent = 'No disponible';
-                        document.getElementById('direccion-texto').textContent = 'No disponible';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al obtener información geográfica:', error);
-                    document.getElementById('ciudad-texto').textContent = 'Error';
-                    document.getElementById('direccion-texto').textContent = 'Error';
-                });
-        }
-    </script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const input = document.getElementById('imagenes-input');
-            const previewContainer = document.getElementById('preview-container');
-            const countDisplay = document.getElementById('imagenes-count');
-            let imagenesNuevas = 0;
-
-            function updateCount() {
-                countDisplay.textContent = `Total de imágenes: ${imagenesNuevas} / 3`;
-
-                if (imagenesNuevas > 3) {
-                    countDisplay.className = 'text-danger mt-2';
-                    countDisplay.textContent += ' (Excede el límite de 3 imágenes)';
-                } else {
-                    countDisplay.className = 'text-muted mt-2';
-                }
-            }
-
-            let fileMap = new Map();
-
-            input.addEventListener('change', function(e) {
-                previewContainer.innerHTML = '';
-                imagenesNuevas = 0;
-                fileMap.clear();
-
-                const files = Array.from(e.target.files);
-                const maxFiles = 3;
-
-                files.slice(0, maxFiles).forEach((file, index) => {
-                    if (file.type.startsWith('image/')) {
-                        const fileId = Date.now() + '-' + index;
-                        fileMap.set(fileId, file);
-
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const col = document.createElement('div');
-                            col.className = 'col-md-4 mb-3';
-                            col.setAttribute('data-file-id', fileId);
-                            col.innerHTML = `
-                        <div class="position-relative">
-                            <img src="${e.target.result}" 
-                                 alt="Preview ${index + 1}" 
-                                 class="img-thumbnail" 
-                                 style="width: 100%; height: 150px; object-fit: cover;">
-                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 eliminar-preview" 
-                                    data-file-id="${fileId}">
-                                <i class="fas fa-times"></i>
-                            </button>
+            <div class="row align-items-center">
+                <div class="col-md-6 form-group">
+                    <label class="font-weight-bold">Precio Base (Bs) *</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-dollar-sign text-success"></i></span>
                         </div>
-                    `;
-                            previewContainer.appendChild(col);
-                            imagenesNuevas++;
-                            updateCount();
+                        <input type="number" name="price" id="priceInput" class="form-control input-modern border-left-0 pl-0 text-success font-weight-bold text-lg" placeholder="0.00" required>
+                    </div>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label class="font-weight-bold">Tipo de Cobro *</label>
+                    <select name="chargeType" id="chargeTypeInput" class="form-control input-modern" required>
+                        <option value="">Seleccione...</option>
+                        </select>
+                </div>
+            </div>
+        </div>
 
-                            // Agregar evento para eliminar preview
-                            col.querySelector('.eliminar-preview').addEventListener('click',
-                                function() {
-                                    const fileIdToRemove = this.getAttribute(
-                                    'data-file-id');
-                                    fileMap.delete(fileIdToRemove);
+        <div class="form-step" id="step-4">
+            <h4 class="text-success font-weight-bold mb-4"><i class="fas fa-shield-alt"></i> 4. Sanidad y Multimedia</h4>
 
-                                    const dataTransfer = new DataTransfer();
-                                    fileMap.forEach(file => dataTransfer.items.add(file));
-                                    input.files = dataTransfer.files;
+            <div class="card border-success mb-4" id="sanidad-card">
+                <div class="card-body">
+                    <div class="custom-control custom-switch custom-switch-lg mb-2">
+                        <input type="checkbox" class="custom-control-input" id="switch_sanidad" name="hasSanity">
+                        <label class="custom-control-label font-weight-bold h5 text-success" for="switch_sanidad" id="label-sanidad">¿Cuenta con Sanidad al día?</label>
+                    </div>
+                    
+                    <div id="caja_archivo_sanidad" class="mt-3 d-none p-3 bg-light rounded border border-success">
+                        <label class="font-weight-bold"><i class="fas fa-file-pdf text-danger"></i> Sube el documento (PDF/Foto) *</label>
+                        <input type="file" name="sanityFiles[]" id="sanityFileInput" class="form-control-file" accept=".pdf,image/*">
+                    </div>
+                </div>
+            </div>
 
-                                    col.remove();
-                                    imagenesNuevas--;
-                                    updateCount();
-                                });
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
+            <div class="form-group mb-4">
+                <label class="font-weight-bold"><i class="fas fa-camera"></i> Galería Multimedia *</label>
+                <div class="border p-4 rounded text-center bg-light">
+                    <p class="text-muted mb-2">Sube al menos 1 fotografía clara del animal o lote.</p>
+                    <input type="file" name="media[]" id="mediaInput" class="form-control-file mx-auto" accept="image/*,video/mp4" multiple required>
+                </div>
+            </div>
+        </div>
 
-                updateCount();
-            });
+        <hr class="my-4">
+        
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary px-4 py-2 font-weight-bold rounded-pill" id="btn-prev" onclick="changeStep(-1)" style="display: none;">
+                <i class="fas fa-arrow-left"></i> Atrás
+            </button>
+            <button type="button" class="btn btn-success px-5 py-2 font-weight-bold rounded-pill ml-auto" id="btn-next" onclick="changeStep(1)" disabled>
+                Siguiente <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="submit" class="btn btn-dark px-5 py-2 font-weight-bold rounded-pill ml-auto" id="btn-submit" style="display: none;" disabled>
+                Finalizar y Publicar <i class="fas fa-check"></i>
+            </button>
+        </div>
+    </form>
+</div>
 
-            updateCount();
-        });
-    </script>
+<script>
+    // --- DATOS SIMULADOS (Reemplazar por variables de Blade $especies, $razas) ---
+    const dataCat = {
+        'Bovino': {
+            propositos: ['Carne', 'Lechería', 'Doble Propósito'],
+            razas: ['Brahman', 'Nelore', 'Angus']
+        },
+        'Equino': {
+            propositos: ['Trabajo', 'Deporte'],
+            razas: ['Cuarto de Milla', 'Paso Fino']
+        }
+    };
 
-    <script>
-        function incrementValue(fieldId, max) {
-            const field = document.getElementById(fieldId);
-            let value = parseInt(field.value) || 0;
-            if (value < max) {
-                value++;
-                field.value = value;
-            }
+    // --- VARIABLES Y ELEMENTOS ---
+    let currentStep = 1;
+    const totalSteps = 4;
+    const btnNext = document.getElementById('btn-next');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    // --- FUNCIONES DEL STEPPER ---
+    function changeStep(direction) {
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`indicator-${currentStep}`).classList.remove('active');
+        
+        if(direction === 1) {
+            document.getElementById(`indicator-${currentStep}`).classList.add('completed');
+            document.getElementById(`line-${currentStep}`).style.width = '100%';
+        } else {
+            document.getElementById(`indicator-${currentStep-1}`).classList.remove('completed');
+            document.getElementById(`line-${currentStep-1}`).style.width = '0%';
         }
 
-        function decrementValue(fieldId) {
-            const field = document.getElementById(fieldId);
-            let value = parseInt(field.value) || 0;
-            if (value > 0) {
-                value--;
-                field.value = value;
+        currentStep += direction;
+
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`indicator-${currentStep}`).classList.add('active');
+
+        document.getElementById('btn-prev').style.display = currentStep === 1 ? 'none' : 'block';
+        
+        if(currentStep === totalSteps) {
+            btnNext.style.display = 'none';
+            btnSubmit.style.display = 'block';
+        } else {
+            btnNext.style.display = 'block';
+            btnSubmit.style.display = 'none';
+        }
+        validarPaso();
+    }
+
+    // --- LÓGICA DE NEGOCIO ---
+    function selectModality(tipo) {
+        document.getElementById('modalityInput').value = tipo;
+        document.querySelectorAll('.selection-card').forEach(c => c.classList.remove('selected'));
+        if(tipo === 'Lote') document.getElementById('card-lote').classList.add('selected');
+        if(tipo === 'Individual') document.getElementById('card-indiv').classList.add('selected');
+        if(tipo === 'Genetica') document.getElementById('card-gen').classList.add('selected');
+
+        document.getElementById('especie-container').classList.remove('d-none');
+        
+        // Reglas de negocio según modalidad
+        const stockInput = document.getElementById('stockInput');
+        const selectCobro = document.getElementById('chargeTypeInput');
+
+        if(tipo === 'Genetica') {
+            document.getElementById('caja-proposito').classList.add('d-none');
+            document.getElementById('caja-genetica').classList.remove('d-none');
+            document.getElementById('caja-edad').classList.add('d-none');
+            document.getElementById('caja-sexo').classList.add('d-none');
+            document.getElementById('caja-peso').classList.add('d-none');
+            
+            document.getElementById('label-sanidad').innerText = '¿Cuenta con Registro Genealógico?';
+            
+            stockInput.value = ''; stockInput.readOnly = false;
+            selectCobro.innerHTML = '<option value="Por Dosis/Embrión">Por Dosis / Embrión</option>';
+        } else {
+            document.getElementById('caja-proposito').classList.remove('d-none');
+            document.getElementById('caja-genetica').classList.add('d-none');
+            document.getElementById('caja-edad').classList.remove('d-none');
+            document.getElementById('caja-sexo').classList.remove('d-none');
+            document.getElementById('caja-peso').classList.remove('d-none');
+            
+            document.getElementById('label-sanidad').innerText = '¿Cuenta con Sanidad al día?';
+
+            if(tipo === 'Individual') {
+                stockInput.value = 1; stockInput.readOnly = true;
+                selectCobro.innerHTML = '<option value="">Seleccione...</option><option value="Por Cabeza">Por Cabeza</option><option value="Por Kilo">Por Kilo Vivo</option>';
+            } else {
+                stockInput.value = ''; stockInput.readOnly = false;
+                selectCobro.innerHTML = '<option value="">Seleccione...</option><option value="Por Cabeza">Por Cabeza</option><option value="Por Kilo">Por Kilo Vivo</option><option value="Por Lote">Por Lote Completo</option>';
             }
         }
-    </script>
-    <script>
-        // Mostrar/ocultar campo de cantidad de leche según el sexo
-        document.addEventListener('DOMContentLoaded', function() {
-            const sexoSelect = document.getElementById('sexo');
-            const cantidadLecheGroup = document.getElementById('cantidad_leche_group');
+        validarPaso();
+    }
 
-            function toggleCantidadLeche() {
-                if (sexoSelect.value === 'Hembra') {
-                    cantidadLecheGroup.style.display = 'block';
-                } else {
-                    cantidadLecheGroup.style.display = 'none';
-                    document.getElementById('cantidad_leche_dia').value = '';
-                }
-            }
-
-            sexoSelect.addEventListener('change', toggleCantidadLeche);
-
-            // Ejecutar al cargar la página si hay un valor previo
-            toggleCantidadLeche();
+    function selectSpecies(btn, especie) {
+        document.getElementById('speciesInput').value = especie;
+        document.querySelectorAll('.btn-especie').forEach(b => {
+            b.classList.remove('btn-success', 'text-white');
+            b.classList.add('btn-outline-success');
         });
-    </script>
+        btn.classList.remove('btn-outline-success');
+        btn.classList.add('btn-success', 'text-white');
+
+        document.getElementById('detalles-categoria').classList.remove('d-none');
+
+        // Llenar selects
+        const propSelect = document.getElementById('purposeInput');
+        const razaSelect = document.getElementById('breedInput');
+        
+        propSelect.innerHTML = '<option value="">Seleccione...</option>';
+        razaSelect.innerHTML = '<option value="">Seleccione...</option>';
+
+        if(dataCat[especie]) {
+            dataCat[especie].propositos.forEach(p => propSelect.innerHTML += `<option value="${p}">${p}</option>`);
+            dataCat[especie].razas.forEach(r => razaSelect.innerHTML += `<option value="${r}">${r}</option>`);
+        }
+        validarPaso();
+    }
+
+    // Toggle Sanidad
+    document.getElementById('switch_sanidad').addEventListener('change', function() {
+        document.getElementById('caja_archivo_sanidad').classList.toggle('d-none', !this.checked);
+        validarPaso();
+    });
+
+    // --- VALIDACIÓN EN TIEMPO REAL ---
+    function validarPaso() {
+        let valido = true;
+        const mod = document.getElementById('modalityInput').value;
+
+        if(currentStep === 1) {
+            if(!mod || !document.getElementById('speciesInput').value || !document.getElementById('breedInput').value) valido = false;
+            if(mod === 'Genetica' && !document.getElementById('geneticTypeInput').value) valido = false;
+            if(mod !== 'Genetica' && !document.getElementById('purposeInput').value) valido = false;
+        }
+        else if(currentStep === 2) {
+            if(!document.getElementById('titleInput').value || !document.getElementById('stockInput').value) valido = false;
+            if(mod !== 'Genetica' && (!document.getElementById('sexInput').value || !document.getElementById('ageValueInput').value)) valido = false;
+        }
+        else if(currentStep === 3) {
+            if(!document.getElementById('priceInput').value || !document.getElementById('chargeTypeInput').value) valido = false;
+            if(mod !== 'Genetica' && !document.getElementById('weightInput').value) valido = false;
+        }
+        else if(currentStep === 4) {
+            if(document.getElementById('mediaInput').files.length === 0) valido = false;
+            if(document.getElementById('switch_sanidad').checked && document.getElementById('sanityFileInput').files.length === 0) valido = false;
+        }
+
+        btnNext.disabled = !valido;
+        btnSubmit.disabled = !valido;
+    }
+
+    document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', validarPaso);
+        el.addEventListener('change', validarPaso);
+    });
+</script>
 @endsection
