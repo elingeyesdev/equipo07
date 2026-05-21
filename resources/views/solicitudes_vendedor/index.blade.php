@@ -90,10 +90,126 @@
         font-size: .8rem;
     }
 
+    .btn-document-view {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        min-height: 34px;
+        padding: .38rem .78rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--agro), var(--agro-700));
+        border: 0;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+        line-height: 1;
+        box-shadow: 0 8px 18px rgba(63, 126, 42, .18);
+        transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .btn-document-view:hover,
+    .btn-document-view:focus {
+        color: #fff;
+        background: linear-gradient(135deg, var(--agro-700), #244d18);
+        box-shadow: 0 10px 22px rgba(63, 126, 42, .24);
+        transform: translateY(-1px);
+    }
+
+    .btn-document-view i {
+        font-size: .9rem;
+    }
+
     .requests-footer {
         background: #fff;
         border-top: 1px solid #e9ecef;
         padding: .75rem 1.75rem;
+    }
+
+    .seller-document-modal .modal-dialog {
+        max-width: min(1100px, calc(100vw - 2rem));
+    }
+
+    .seller-document-modal .modal-content {
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 24px 60px rgba(17, 24, 39, .24);
+        overflow: hidden;
+    }
+
+    .seller-document-modal .modal-header {
+        align-items: flex-start;
+        background: linear-gradient(135deg, var(--agro), var(--agro-700));
+        color: #fff;
+        border-bottom: 0;
+        padding: 1rem 1.25rem;
+    }
+
+    .seller-document-modal .modal-title {
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .seller-document-modal__subtitle {
+        display: block;
+        margin-top: .25rem;
+        color: rgba(255,255,255,.78);
+        font-size: .84rem;
+        font-weight: 400;
+    }
+
+    .seller-document-modal .close {
+        color: #fff;
+        opacity: .9;
+        text-shadow: none;
+    }
+
+    .seller-document-modal .modal-body {
+        min-height: 520px;
+        padding: 1rem;
+        background: #f8fbf6;
+    }
+
+    .seller-document-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 500px;
+        background: #fff;
+        border: 1px solid rgba(63,126,42,.12);
+        border-radius: .85rem;
+        overflow: hidden;
+    }
+
+    .seller-document-preview img {
+        max-width: 100%;
+        max-height: 70vh;
+        object-fit: contain;
+    }
+
+    .seller-document-preview iframe {
+        width: 100%;
+        min-height: 70vh;
+        border: 0;
+        background: #fff;
+    }
+
+    .seller-document-preview__fallback {
+        max-width: 460px;
+        padding: 2rem;
+        text-align: center;
+        color: #536056;
+    }
+
+    .seller-document-preview__fallback i {
+        color: var(--agro);
+        font-size: 2.4rem;
+        margin-bottom: .75rem;
+    }
+
+    .seller-document-modal .modal-footer {
+        background: #fff;
+        border-top: 1px solid #e9ecef;
     }
 
     @media (max-width: 992px) {
@@ -101,6 +217,11 @@
             flex-direction: column;
             align-items: flex-start;
             gap: .75rem;
+        }
+
+        .seller-document-modal .modal-body,
+        .seller-document-preview {
+            min-height: 360px;
         }
     }
 </style>
@@ -234,11 +355,22 @@
                                 </td>
                                 <td>
                                     @if($solicitud->archivo_documento)
-                                        <a href="{{ asset('storage/'.$solicitud->archivo_documento) }}"
-                                           target="_blank"
-                                           class="btn btn-info btn-action">
-                                            <i class="fas fa-file-download"></i> Ver
-                                        </a>
+                                        @php
+                                            $documentUrl = asset('storage/'.$solicitud->archivo_documento);
+                                            $documentExtension = strtolower(pathinfo($solicitud->archivo_documento, PATHINFO_EXTENSION));
+                                            $documentType = in_array($documentExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])
+                                                ? 'image'
+                                                : ($documentExtension === 'pdf' ? 'pdf' : 'file');
+                                        @endphp
+                                        <button type="button"
+                                                class="btn btn-document-view"
+                                                data-toggle="modal"
+                                                data-target="#sellerDocumentModal"
+                                                data-document-url="{{ $documentUrl }}"
+                                                data-document-type="{{ $documentType }}"
+                                                data-document-name="Documento de {{ $solicitud->user->name }}">
+                                            <i class="fas fa-eye"></i> Ver documento
+                                        </button>
                                     @else
                                         <span class="text-muted">Sin documento</span>
                                     @endif
@@ -293,4 +425,97 @@
 
     </div>
 </div>
+
+<div class="modal fade seller-document-modal" id="sellerDocumentModal" tabindex="-1" role="dialog"
+     aria-labelledby="sellerDocumentModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="sellerDocumentModalTitle">Documento de solicitud</h5>
+                    <span class="seller-document-modal__subtitle">Vista previa del archivo adjunto</span>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="seller-document-preview" id="sellerDocumentPreview">
+                    <div class="seller-document-preview__fallback">
+                        <i class="fas fa-file-alt"></i>
+                        <strong class="d-block mb-1">Selecciona un documento</strong>
+                        <span>La vista previa aparecerá aquí.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-success" id="sellerDocumentOpen" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt mr-1"></i> Abrir archivo
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = document.getElementById('sellerDocumentModal');
+        var preview = document.getElementById('sellerDocumentPreview');
+        var title = document.getElementById('sellerDocumentModalTitle');
+        var openLink = document.getElementById('sellerDocumentOpen');
+
+        if (!modal || !preview || !title || !openLink) {
+            return;
+        }
+
+        $('#sellerDocumentModal').on('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var url = button.getAttribute('data-document-url');
+            var type = button.getAttribute('data-document-type');
+            var name = button.getAttribute('data-document-name') || 'Documento de solicitud';
+
+            title.textContent = name;
+            openLink.href = url;
+            preview.innerHTML = '';
+
+            if (type === 'image') {
+                var image = document.createElement('img');
+                image.src = url;
+                image.alt = name;
+                preview.appendChild(image);
+                return;
+            }
+
+            if (type === 'pdf') {
+                var frame = document.createElement('iframe');
+                frame.src = url;
+                frame.title = name;
+                preview.appendChild(frame);
+                return;
+            }
+
+            preview.innerHTML = [
+                '<div class="seller-document-preview__fallback">',
+                    '<i class="fas fa-file-alt"></i>',
+                    '<strong class="d-block mb-1">Vista previa no disponible</strong>',
+                    '<span>Este tipo de archivo debe abrirse directamente.</span>',
+                '</div>'
+            ].join('');
+        });
+
+        $('#sellerDocumentModal').on('hidden.bs.modal', function () {
+            preview.innerHTML = [
+                '<div class="seller-document-preview__fallback">',
+                    '<i class="fas fa-file-alt"></i>',
+                    '<strong class="d-block mb-1">Selecciona un documento</strong>',
+                    '<span>La vista previa aparecerá aquí.</span>',
+                '</div>'
+            ].join('');
+            openLink.href = '#';
+        });
+    });
+</script>
 @endsection
