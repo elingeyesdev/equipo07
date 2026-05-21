@@ -1,25 +1,51 @@
-@extends('layouts.gentelella')
+@extends('layouts.adminlte')
+
+@section('title', 'Nueva Categoría')
 
 @section('content')
-    <div class="x_panel">
-        <div class="x_title">
-            <h2>Nueva Categoría</h2>
-            <div class="clearfix"></div>
-        </div>
-        <div class="x_content">
-            <form action="{{ route('admin.categorias.store') }}" method="POST">
-                @csrf
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" name="nombre" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea name="descripcion" class="form-control"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <a href="{{ route('admin.categorias.index') }}" class="btn btn-secondary">Cancelar</a>
-            </form>
+    <div class="container-fluid">
+        <div class="card category-form-card">
+            <div class="card-header">
+                <strong>
+                    <i class="fas fa-tag mr-1"></i>
+                    Nueva Categoría
+                </strong>
+            </div>
+
+            <div class="card-body">
+                <form action="{{ route('admin.categorias.store') }}" method="POST">
+                    @csrf
+
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" name="nombre"
+                            class="form-control @error('nombre') is-invalid @enderror"
+                            value="{{ old('nombre') }}" required>
+                        @error('nombre')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" name="descripcion"
+                            class="form-control @error('descripcion') is-invalid @enderror"
+                            rows="3">{{ old('descripcion') }}</textarea>
+                        @error('descripcion')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="category-form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1"></i> Guardar
+                        </button>
+                        <a href="{{ route('admin.categorias.index') }}" class="btn btn-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 @endsection
