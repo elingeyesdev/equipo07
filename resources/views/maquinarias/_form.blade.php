@@ -74,7 +74,7 @@
                 <h3 class="card-title mb-0">
                     <i class="fas fa-tractor mr-2"></i> Datos de la maquinaria
                 </h3>
-                <small class="text-muted">Identificación, categoría, tipo, marca y modelo.</small>
+                <small class="text-muted">Identificación, tipo, marca y modelo.</small>
             </div>
             <span class="badge badge-success">Paso 1 de {{ count($wizardSteps) }}</span>
         </div>
@@ -93,19 +93,8 @@
                             value="{{ old('nombre', $maquinaria->nombre ?? '') }}" required>
                     </div>
 
-                    <div class="form-group">
-                        <label class="mb-1">Categoría *</label>
-                        <select name="categoria_id" class="form-control @error('categoria_id') is-invalid @enderror"
-                            required>
-                            <option value="">Seleccione una categoría</option>
-                            @foreach ($categorias as $categoria)
-                                <option value="{{ $categoria->id }}"
-                                    {{ old('categoria_id', $maquinaria->categoria_id ?? '') == $categoria->id ? 'selected' : '' }}>
-                                    {{ $categoria->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <input type="hidden" name="categoria_id"
+                        value="{{ old('categoria_id', $maquinaria->categoria_id ?? ($categoriaMaquinaria->id ?? '')) }}">
 
                     <div class="form-group mb-md-0">
                         <label class="mb-1">Tipo de Maquinaria *</label>
@@ -171,17 +160,25 @@
                     </div>
 
                     <div class="form-group mb-md-0">
-                        <label class="mb-1">Precio por día *</label>
+                        <label class="mb-1">Precio *</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
-                                <span class="input-group-text">Bs/día</span>
+                                @php
+                                    $tarifaUnidad = old('tarifa_unidad', $maquinaria->tarifa_unidad ?? 'dia');
+                                @endphp
+                                <select name="tarifa_unidad"
+                                    class="custom-select @error('tarifa_unidad') is-invalid @enderror"
+                                    style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                                    <option value="hora" {{ $tarifaUnidad === 'hora' ? 'selected' : '' }}>Bs/hora</option>
+                                    <option value="dia" {{ $tarifaUnidad === 'dia' ? 'selected' : '' }}>Bs/día</option>
+                                </select>
                             </div>
                             <input type="number" step="0.01" name="precio_dia"
                                 class="form-control @error('precio_dia') is-invalid @enderror" placeholder="0.00"
                                 value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required>
                         </div>
                         <small class="form-text text-muted">
-                            Monto a cobrar por cada día de alquiler.
+                            Monto a cobrar según la unidad seleccionada.
                         </small>
                     </div>
                 </div>
@@ -189,21 +186,29 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="mb-1">Estado *</label>
-                        <select name="estado_maquinaria_id"
-                            class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
-                            <option value="">Seleccione un estado</option>
-                            @foreach ($estado_maquinarias as $estado)
-                                <option value="{{ $estado->id }}"
-                                    {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
-                                    {{ $estado->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @if (isset($maquinaria))
+                            <select name="estado_maquinaria_id"
+                                class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
+                                <option value="">Seleccione un estado</option>
+                                @foreach ($estado_maquinarias as $estado)
+                                    <option value="{{ $estado->id }}"
+                                        {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
+                                        {{ $estado->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="hidden" name="estado_maquinaria_id"
+                                value="{{ old('estado_maquinaria_id', $estadoDisponible->id ?? '') }}">
+                            <select class="form-control @error('estado_maquinaria_id') is-invalid @enderror" disabled>
+                                <option selected>{{ $estadoDisponible ? ucfirst(str_replace('_', ' ', $estadoDisponible->nombre)) : 'Disponible' }}</option>
+                            </select>
+                        @endif
                     </div>
 
                     <div class="form-group mb-0">
                         <label class="mb-1">Descripción</label>
-                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4"
+                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4" style="resize: none;"
                             placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
                     </div>
                 </div>
@@ -226,6 +231,19 @@
         <div class="card-body">
             <div class="form-group mb-3">
                 <label class="mb-1">Ubicación (seleccione en el mapa)</label>
+                <div class="input-group mb-2">
+                    <input type="search" id="buscar-ubicacion" class="form-control"
+                        placeholder="Buscar lugar, ciudad o dirección">
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-secondary" id="btn-buscar-ubicacion">
+                            <i class="fas fa-search mr-1"></i> Buscar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-ubicacion-actual">
+                            <i class="fas fa-location-arrow mr-1"></i> Ubicación actual
+                        </button>
+                    </div>
+                </div>
+                <div id="sugerencias-ubicacion" class="list-group mb-2" style="display: none;"></div>
                 <div id="map" class="maquinaria-wizard__map"
                     style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
                 </div>
@@ -246,6 +264,12 @@
                 <input type="text" id="ubicacion" name="ubicacion"
                     class="form-control mt-2 @error('ubicacion') is-invalid @enderror"
                     value="{{ old('ubicacion', $maquinaria->ubicacion ?? '') }}" readonly>
+                <button type="button" class="btn btn-success btn-sm mt-2" id="btn-confirmar-ubicacion">
+                    <i class="fas fa-check mr-1"></i> Confirmar ubicación
+                </button>
+                <small id="ubicacion-confirmada" class="form-text text-success" style="display: none;">
+                    Ubicación confirmada.
+                </small>
             </div>
 
             <div id="info-ubicacion" class="maquinaria-wizard__location-detail mt-2"
@@ -313,15 +337,21 @@
                         <div class="row" id="imagenes-actuales">
                             @foreach ($maquinaria->imagenes as $imagen)
                                 <div class="col-md-3 mb-3 imagen-item" data-imagen-id="{{ $imagen->id }}">
-                                    <div class="position-relative">
+                                    <div class="mb-2">
                                         <img src="{{ asset('storage/' . $imagen->ruta) }}"
                                             alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
                                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                        <button type="button"
-                                            class="btn btn-sm btn-danger position-absolute eliminar-imagen"
+                                    </div>
+                                    <div class="btn-group btn-group-sm d-flex" role="group">
+                                        <button type="button" class="btn btn-outline-danger eliminar-imagen"
                                             data-imagen-id="{{ $imagen->id }}">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fas fa-trash mr-1"></i> Eliminar
                                         </button>
+                                        <label class="btn btn-outline-success mb-0">
+                                            <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
+                                                {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
+                                            Portada
+                                        </label>
                                     </div>
                                     <input type="hidden" name="imagenes_eliminar[]" value=""
                                         class="imagen-eliminar-input">
@@ -395,17 +425,17 @@
     }).addTo(map);
 
     var marker;
+    var locationSearchTimer = null;
+    var lastLocationQuery = '';
+    var locationSearchAbort = null;
+    var locationSearchCache = {};
 
     // Si hay coordenadas existentes, mostrar el marcador
     @if (isset($maquinaria) && $maquinaria->latitud && $maquinaria->longitud)
         marker = L.marker([initialLat, initialLng]).addTo(map);
     @endif
 
-    // Evento click en mapa
-    map.on('click', function(e) {
-        var lat = e.latlng.lat.toFixed(7);
-        var lng = e.latlng.lng.toFixed(7);
-
+    function setMapLocation(lat, lng, label, zoom) {
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
@@ -414,10 +444,131 @@
 
         document.getElementById('latitud').value = lat;
         document.getElementById('longitud').value = lng;
-        document.getElementById('ubicacion').value = "Lat: " + lat + " - Lng: " + lng;
+        document.getElementById('ubicacion').value = label || ("Lat: " + lat + " - Lng: " + lng);
+        document.getElementById('ubicacion-confirmada').style.display = 'none';
 
-        // Obtener información geográfica
+        if (zoom) {
+            map.setView([lat, lng], zoom);
+        }
+
         obtenerInformacionGeografica(lat, lng);
+    }
+
+    // Evento click en mapa
+    map.on('click', function(e) {
+        var lat = e.latlng.lat.toFixed(7);
+        var lng = e.latlng.lng.toFixed(7);
+
+        setMapLocation(lat, lng, null);
+    });
+
+    function renderLocationSuggestions(results) {
+        var container = document.getElementById('sugerencias-ubicacion');
+        container.innerHTML = '';
+
+        if (!results.length) {
+            container.style.display = 'none';
+            return;
+        }
+
+        results.forEach(function(result) {
+            var option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action';
+            option.textContent = result.display_name;
+            option.addEventListener('click', function() {
+                var lat = Number(result.lat).toFixed(7);
+                var lng = Number(result.lon).toFixed(7);
+                container.style.display = 'none';
+                document.getElementById('buscar-ubicacion').value = result.display_name;
+                setMapLocation(lat, lng, result.display_name, 14);
+            });
+            container.appendChild(option);
+        });
+
+        container.style.display = 'block';
+    }
+
+    function buscarUbicacion(force) {
+        var input = document.getElementById('buscar-ubicacion');
+        var query = input.value.trim();
+        var suggestions = document.getElementById('sugerencias-ubicacion');
+
+        if (query.length < 3) {
+            suggestions.style.display = 'none';
+            return;
+        }
+
+        if (!force && query === lastLocationQuery) {
+            return;
+        }
+
+        lastLocationQuery = query;
+
+        if (locationSearchCache[query]) {
+            renderLocationSuggestions(locationSearchCache[query]);
+            return;
+        }
+
+        if (locationSearchAbort) {
+            locationSearchAbort.abort();
+        }
+
+        locationSearchAbort = new AbortController();
+
+        fetch('/api/geocodificacion/buscar?q=' + encodeURIComponent(query), {
+                signal: locationSearchAbort.signal
+            })
+            .then(response => response.json())
+            .then(data => {
+                var results = data.success ? data.data : [];
+                locationSearchCache[query] = results;
+                renderLocationSuggestions(results);
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    console.error('Error al buscar ubicación:', error);
+                }
+            });
+    }
+
+    document.getElementById('buscar-ubicacion').addEventListener('input', function() {
+        clearTimeout(locationSearchTimer);
+        locationSearchTimer = setTimeout(function() {
+            buscarUbicacion(false);
+        }, 700);
+    });
+
+    document.getElementById('btn-buscar-ubicacion').addEventListener('click', function() {
+        clearTimeout(locationSearchTimer);
+        buscarUbicacion(true);
+    });
+
+    document.getElementById('btn-ubicacion-actual').addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('Tu navegador no permite obtener la ubicación actual.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude.toFixed(7);
+            var lng = position.coords.longitude.toFixed(7);
+            setMapLocation(lat, lng, null, 14);
+        }, function() {
+            alert('No se pudo obtener tu ubicación actual.');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000
+        });
+    });
+
+    document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function() {
+        if (!document.getElementById('latitud').value || !document.getElementById('longitud').value) {
+            alert('Primero selecciona una ubicación en el mapa.');
+            return;
+        }
+
+        document.getElementById('ubicacion-confirmada').style.display = 'block';
     });
 
     // Función para obtener información geográfica
@@ -498,6 +649,7 @@
             modelo: 0,
             telefono: 1,
             precio_dia: 1,
+            tarifa_unidad: 1,
             estado_maquinaria_id: 1,
             descripcion: 1,
             ubicacion: 2,
@@ -509,6 +661,7 @@
             ciudad: 2,
             imagenes: 3,
             imagenes_eliminar: 3,
+            imagen_portada: 3,
         };
 
         function normalizeFieldName(name) {
@@ -745,9 +898,69 @@
         const countDisplay = document.getElementById('imagenes-count');
         const imagenesActuales =
             {{ isset($maquinaria) && $maquinaria->imagenes ? $maquinaria->imagenes->count() : 0 }};
-        let imagenesNuevas = 0;
         let imagenesAEliminar = [];
-        let fileMap = new Map();
+        let selectedFiles = [];
+
+        function refreshInputFiles() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(item => dataTransfer.items.add(item.file));
+            input.files = dataTransfer.files;
+        }
+
+        function liveExistingImagesCount() {
+            return imagenesActuales - imagenesAEliminar.length;
+        }
+
+        function ensureCoverSelection() {
+            const checked = form.querySelector('input[name="imagen_portada"]:checked');
+            if (checked && !(checked.value.startsWith('existing:') && imagenesAEliminar.includes(checked.value.replace('existing:', '')))) {
+                return;
+            }
+
+            const firstExisting = Array.from(form.querySelectorAll('input[name="imagen_portada"][value^="existing:"]'))
+                .find(radio => !imagenesAEliminar.includes(radio.value.replace('existing:', '')));
+            const firstNew = form.querySelector('input[name="imagen_portada"][value^="new:"]');
+
+            if (firstExisting) {
+                firstExisting.checked = true;
+            } else if (firstNew) {
+                firstNew.checked = true;
+            }
+        }
+
+        function renderSelectedFiles() {
+            previewContainer.innerHTML = '';
+
+            selectedFiles.forEach((item, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-3';
+                col.setAttribute('data-file-id', item.id);
+                col.innerHTML = `
+                    <div class="mb-2">
+                        <img src="${item.url}"
+                             alt="Preview ${index + 1}"
+                             class="img-thumbnail"
+                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+                    </div>
+                    <div class="btn-group btn-group-sm d-flex" role="group">
+                        <button type="button"
+                                class="btn btn-outline-danger eliminar-preview"
+                                data-file-id="${item.id}">
+                            <i class="fas fa-trash mr-1"></i> Eliminar
+                        </button>
+                        <label class="btn btn-outline-success mb-0">
+                            <input type="radio" name="imagen_portada" value="new:${index}">
+                            Portada
+                        </label>
+                    </div>
+                `;
+                previewContainer.appendChild(col);
+            });
+
+            refreshInputFiles();
+            ensureCoverSelection();
+            updateCount();
+        }
 
         // Manejar eliminación de imágenes existentes
         document.querySelectorAll('.eliminar-imagen').forEach(btn => {
@@ -759,21 +972,22 @@
                 if (inputEliminar.value === '') {
                     inputEliminar.value = imagenId;
                     imagenItem.style.opacity = '0.5';
-                    this.innerHTML = '<i class="fas fa-undo"></i>';
+                    this.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurar';
                     imagenesAEliminar.push(imagenId);
                 } else {
                     inputEliminar.value = '';
                     imagenItem.style.opacity = '1';
-                    this.innerHTML = '<i class="fas fa-times"></i>';
+                    this.innerHTML = '<i class="fas fa-trash mr-1"></i> Eliminar';
                     imagenesAEliminar = imagenesAEliminar.filter(id => id !== imagenId);
                 }
 
+                ensureCoverSelection();
                 updateCount();
             });
         });
 
         function updateCount() {
-            const total = imagenesActuales - imagenesAEliminar.length + imagenesNuevas;
+            const total = liveExistingImagesCount() + selectedFiles.length;
             countDisplay.textContent = `Total de imágenes: ${total} / 3`;
             uploadZone.classList.toggle('has-files', total > 0);
 
@@ -814,63 +1028,34 @@
         }
 
         input.addEventListener('change', function(e) {
-            previewContainer.innerHTML = '';
-            imagenesNuevas = 0;
-            fileMap.clear();
-
             const files = Array.from(e.target.files);
-            const maxFiles = Math.max(0, 3 - (imagenesActuales - imagenesAEliminar.length));
-            const dataTransfer = new DataTransfer();
+            const slots = Math.max(0, 3 - liveExistingImagesCount() - selectedFiles.length);
 
-            files.slice(0, maxFiles).forEach((file, index) => {
+            files.slice(0, slots).forEach((file, index) => {
                 if (file.type.startsWith('image/')) {
-                    const fileId = Date.now() + '-' + index;
-                    fileMap.set(fileId, file);
-                    dataTransfer.items.add(file);
-
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const col = document.createElement('div');
-                        col.className = 'col-md-3 mb-3';
-                        col.setAttribute('data-file-id', fileId);
-                        col.innerHTML = `
-                            <div class="position-relative">
-                                <img src="${event.target.result}"
-                                     alt="Preview ${index + 1}"
-                                     class="img-thumbnail"
-                                     style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                <button type="button"
-                                        class="btn btn-sm btn-danger position-absolute eliminar-preview"
-                                        data-file-id="${fileId}">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `;
-                        previewContainer.appendChild(col);
-                        imagenesNuevas++;
-                        updateCount();
-
-                        // Agregar evento para eliminar preview
-                        col.querySelector('.eliminar-preview').addEventListener('click',
-                            function() {
-                                const fileIdToRemove = this.getAttribute('data-file-id');
-                                fileMap.delete(fileIdToRemove);
-
-                                const updatedTransfer = new DataTransfer();
-                                fileMap.forEach(file => updatedTransfer.items.add(file));
-                                input.files = updatedTransfer.files;
-
-                                col.remove();
-                                imagenesNuevas--;
-                                updateCount();
-                            });
-                    };
-                    reader.readAsDataURL(file);
+                    selectedFiles.push({
+                        id: Date.now() + '-' + index + '-' + file.name,
+                        file: file,
+                        url: URL.createObjectURL(file),
+                    });
                 }
             });
 
-            input.files = dataTransfer.files;
-            updateCount();
+            renderSelectedFiles();
+        });
+
+        previewContainer.addEventListener('click', function(event) {
+            const button = event.target.closest('.eliminar-preview');
+            if (!button) return;
+
+            const fileId = button.getAttribute('data-file-id');
+            const removed = selectedFiles.find(item => item.id === fileId);
+            if (removed) {
+                URL.revokeObjectURL(removed.url);
+            }
+
+            selectedFiles = selectedFiles.filter(item => item.id !== fileId);
+            renderSelectedFiles();
         });
 
         updateCount();

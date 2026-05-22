@@ -1,4 +1,16 @@
 services:
+  assets:
+    image: node:22-alpine
+    container_name: agrovida-assets
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: sh -c "npm ci && npm run build"
+    profiles:
+      - assets
+    networks:
+      - agrovida-net
+
   laravel:
     build:
       context: .
@@ -9,7 +21,8 @@ services:
     env_file:
       - .env.docker
     depends_on:
-      - db
+      db:
+        condition: service_started
     networks:
       - agrovida-net
 

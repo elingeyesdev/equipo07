@@ -9,10 +9,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('ganados', function (Blueprint $table) {
+        $afterColumn = Schema::hasColumn('ganados', 'dato_sanitario_id')
+            ? 'dato_sanitario_id'
+            : 'categoria_id';
+
+        Schema::table('ganados', function (Blueprint $table) use ($afterColumn) {
             $table->foreignId('ubicacion_ganado_id')
                 ->nullable()
-                ->after('dato_sanitario_id')
+                ->after($afterColumn)
                 ->constrained('ubicacion_ganado')
                 ->onDelete('set null');
         });

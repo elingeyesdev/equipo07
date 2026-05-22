@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Maquinaria extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'nombre',
         'user_id',
@@ -14,6 +17,7 @@ class Maquinaria extends Model
         'modelo',
         'telefono',
         'precio_dia',
+        'tarifa_unidad',
         'estado_maquinaria_id',
         'ubicacion_maquinaria_id',
         'descripcion',

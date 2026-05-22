@@ -6,6 +6,8 @@ use App\Models\Maquinaria;
 use App\Models\MaquinariaImagen;
 use App\Models\UbicacionGeograficaMaquinaria;
 use App\Models\UbicacionMaquinaria;
+use App\Models\Categoria;
+use App\Models\EstadoMaquinaria;
 use App\Services\GeocodificacionService;
 use App\Http\Requests\StoreMaquinariaRequest;
 use App\Http\Requests\UpdateMaquinariaRequest;
@@ -34,17 +36,22 @@ class MaquinariaController extends Controller
 
     public function create()
     {
-        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
+        $categoriaMaquinaria = $this->categoriaMaquinaria();
+        $estadoDisponible = $this->estadoDisponible();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
-        return view('maquinarias.create', compact('categorias', 'tipo_maquinarias', 'marcas_maquinarias', 'estado_maquinarias'));
+        return view('maquinarias.create', compact('categoriaMaquinaria', 'estadoDisponible', 'tipo_maquinarias', 'marcas_maquinarias', 'estado_maquinarias'));
     }
 
     public function store(StoreMaquinariaRequest $request)
     {
         $data = $request->validated();
         $data['user_id'] = auth()->id();
+        $data['categoria_id'] = $this->categoriaMaquinaria()?->id;
+        $data['estado_maquinaria_id'] = $this->estadoDisponible()?->id;
+        $imagenPortada = $data['imagen_portada'] ?? null;
+        unset($data['imagen_portada']);
 
         // Obtener información geográfica si hay coordenadas
         if ($request->latitud && $request->longitud) {
@@ -79,14 +86,20 @@ class MaquinariaController extends Controller
             foreach ($imagenes as $imagen) {
                 if ($imagen && $imagen->isValid()) {
                     $ruta = $imagen->store('maquinarias', 'public');
-                    MaquinariaImagen::create([
+                    $imagenCreada = MaquinariaImagen::create([
                         'maquinaria_id' => $maquinaria->id,
                         'ruta' => $ruta,
                         'orden' => $orden++,
                     ]);
+
+                    if ($imagenPortada === 'new:' . ($orden - 1)) {
+                        $imagenPortada = 'existing:' . $imagenCreada->id;
+                    }
                 }
             }
         }
+
+        $this->aplicarPortada($maquinaria, $imagenPortada);
 
         return redirect()->route('maquinarias.index')->with('ok', 'Maquinaria creada');
     }
@@ -106,11 +119,12 @@ class MaquinariaController extends Controller
         }
 
         $maquinaria->load(['imagenes', 'ubicacionMaquinaria.ubicacionGeografica']);
-        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
+        $categoriaMaquinaria = $this->categoriaMaquinaria();
+        $estadoDisponible = $this->estadoDisponible();
         $tipo_maquinarias = \App\Models\TipoMaquinaria::orderBy('nombre')->get();
         $marcas_maquinarias = \App\Models\MarcaMaquinaria::orderBy('nombre')->get();
         $estado_maquinarias = \App\Models\EstadoMaquinaria::orderBy('nombre')->get();
-        return view('maquinarias.edit', compact('maquinaria', 'categorias', 'tipo_maquinarias', 'marcas_maquinarias', 'estado_maquinarias'));
+        return view('maquinarias.edit', compact('maquinaria', 'categoriaMaquinaria', 'estadoDisponible', 'tipo_maquinarias', 'marcas_maquinarias', 'estado_maquinarias'));
     }
 
 
@@ -123,6 +137,9 @@ class MaquinariaController extends Controller
         }
 
         $data = $request->validated();
+        $data['categoria_id'] = $maquinaria->categoria_id ?: $this->categoriaMaquinaria()?->id;
+        $imagenPortada = $data['imagen_portada'] ?? null;
+        unset($data['imagen_portada']);
 
         // Obtener información geográfica si hay coordenadas (y si cambiaron)
         if (
@@ -171,21 +188,30 @@ class MaquinariaController extends Controller
             $maxOrden = $maquinaria->imagenes()->max('orden') ?? -1;
             $orden = $maxOrden + 1;
             $espaciosDisponibles = 3 - $totalImagenesActuales;
+            $newIndex = 0;
 
             if ($espaciosDisponibles > 0) {
                 $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
                 foreach ($imagenes as $imagen) {
                     if ($imagen && $imagen->isValid()) {
                         $ruta = $imagen->store('maquinarias', 'public');
-                        MaquinariaImagen::create([
+                        $imagenCreada = MaquinariaImagen::create([
                             'maquinaria_id' => $maquinaria->id,
                             'ruta' => $ruta,
                             'orden' => $orden++,
                         ]);
+
+                        if ($imagenPortada === 'new:' . $newIndex) {
+                            $imagenPortada = 'existing:' . $imagenCreada->id;
+                        }
+
+                        $newIndex++;
                     }
                 }
             }
         }
+
+        $this->aplicarPortada($maquinaria, $imagenPortada);
 
         return redirect()->route('maquinarias.index')->with('ok', 'Maquinaria actualizada');
     }
@@ -259,6 +285,60 @@ class MaquinariaController extends Controller
     {
         foreach (['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad'] as $campo) {
             unset($data[$campo]);
+        }
+    }
+
+    private function categoriaMaquinaria(): ?Categoria
+    {
+        $categoria = Categoria::query()
+            ->where('tipo', 'maquinaria')
+            ->orWhere('nombre', 'ilike', '%maquinaria%')
+            ->orderByRaw("CASE WHEN tipo = 'maquinaria' THEN 0 ELSE 1 END")
+            ->first();
+
+        return $categoria ?: Categoria::create([
+            'nombre' => 'Maquinaria',
+            'tipo' => 'maquinaria',
+            'descripcion' => 'Categoría para publicaciones de maquinaria.',
+        ]);
+    }
+
+    private function estadoDisponible(): ?EstadoMaquinaria
+    {
+        $estado = EstadoMaquinaria::query()
+            ->where('nombre', 'ilike', 'disponible')
+            ->first();
+
+        return $estado ?: EstadoMaquinaria::create([
+            'nombre' => 'disponible',
+            'descripcion' => 'Maquinaria disponible para alquiler',
+        ]);
+    }
+
+    private function aplicarPortada(Maquinaria $maquinaria, ?string $imagenPortada): void
+    {
+        if (!$imagenPortada || !str_starts_with($imagenPortada, 'existing:')) {
+            return;
+        }
+
+        $imagenId = (int) str_replace('existing:', '', $imagenPortada);
+        $portada = $maquinaria->imagenes()->whereKey($imagenId)->first();
+
+        if (!$portada) {
+            return;
+        }
+
+        $imagenes = $maquinaria->imagenes()->orderBy('orden')->orderBy('id')->get();
+        $orden = 0;
+
+        $portada->update(['orden' => $orden++]);
+
+        foreach ($imagenes as $imagen) {
+            if ($imagen->id === $portada->id) {
+                continue;
+            }
+
+            $imagen->update(['orden' => $orden++]);
         }
     }
 }

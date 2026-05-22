@@ -666,10 +666,9 @@
                             <div class="price-box mb-4">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <small class="text-muted d-block mb-1" style="font-weight: 600;">Precio por día</small>
+                                        <small class="text-muted d-block mb-1" style="font-weight: 600;">Precio</small>
                                         <div class="price-value">
-                                            Bs {{ number_format($maquinaria->precio_dia, 2) }}
-                                            <small class="text-muted" style="font-size: 1rem;">/día</small>
+                                            Bs {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                         </div>
                                     </div>
                                     <div>

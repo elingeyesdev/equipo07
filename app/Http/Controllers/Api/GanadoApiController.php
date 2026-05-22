@@ -171,6 +171,7 @@ class GanadoApiController extends Controller
             'tipoPeso',
             'tipoAnimal',
             'datoSanitario',
+            'datosSanitarios',
             'ubicacionGanado.ubicacionGeografica',
             'datoProductivo.tipoPeso',
             'datoComercial',

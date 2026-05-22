@@ -886,10 +886,10 @@
                                             </div>
                                             @if ($maquinaria->precio_dia)
                                                 <div class="price-box-modern">
-                                                    <small>Precio por día</small>
+                                                    <small>Precio</small>
                                                     <h4>
                                                         <i class="fas fa-boliviano-sign"></i>
-                                                        {{ number_format($maquinaria->precio_dia, 2) }}/día
+                                                        {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                                     </h4>
                                                 </div>
                                             @else
@@ -901,7 +901,7 @@
                                         </div>
                                         <div class="card-footer-modern">
                                             @if ($maquinaria->precio_dia)
-                                                <span class="price-footer">Bs {{ number_format($maquinaria->precio_dia, 2) }}/día</span>
+                                                <span class="price-footer">Bs {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}</span>
                                             @else
                                                 <span class="price-footer text-muted">Consultar</span>
                                             @endif

@@ -144,12 +144,6 @@ class DatoSanitarioController extends Controller
         $datoSanitario = DatoSanitario::create($data);
         $this->sincronizarDatosNormalizados($datoSanitario, $datosNormalizados);
 
-        // Actualizar el ganado con el dato_sanitario_id (solo si hay ganado_id)
-        if ($request->ganado_id) {
-            $ganado = Ganado::findOrFail($request->ganado_id);
-            $ganado->update(['dato_sanitario_id' => $datoSanitario->id]);
-        }
-
         return redirect()->route('admin.datos-sanitarios.index')
             ->with('success', 'Registro sanitario guardado correctamente.');
     }
@@ -228,23 +222,6 @@ class DatoSanitarioController extends Controller
             if ($ganado->user_id !== auth()->id()) {
                 return redirect()->route('admin.datos-sanitarios.edit', $datos_sanitario)
                     ->with('error', 'No tienes permisos para editar datos sanitarios de este animal.');
-            }
-        }
-
-        // Si cambió el ganado, actualizar el ganado anterior y el nuevo
-        if ($datos_sanitario->ganado_id != $request->ganado_id) {
-            // Limpiar el dato_sanitario_id del ganado anterior
-            if ($datos_sanitario->ganado_id) {
-                $ganadoAnterior = Ganado::find($datos_sanitario->ganado_id);
-                if ($ganadoAnterior) {
-                    $ganadoAnterior->update(['dato_sanitario_id' => null]);
-                }
-            }
-
-            // Asignar el dato_sanitario_id al nuevo ganado (solo si hay ganado_id)
-            if ($request->ganado_id) {
-                $ganadoNuevo = Ganado::findOrFail($request->ganado_id);
-                $ganadoNuevo->update(['dato_sanitario_id' => $datos_sanitario->id]);
             }
         }
 
@@ -345,12 +322,6 @@ class DatoSanitarioController extends Controller
                 return redirect()->route('admin.datos-sanitarios.index')
                     ->with('error', 'No tienes permisos para eliminar este registro sanitario.');
             }
-        }
-
-        // Limpiar el dato_sanitario_id del ganado antes de eliminar
-        $ganado = $datos_sanitario->ganado;
-        if ($ganado) {
-            $ganado->update(['dato_sanitario_id' => null]);
         }
 
         // Eliminar las imágenes si existen

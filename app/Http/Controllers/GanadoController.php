@@ -47,14 +47,11 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
-        $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
-
         return view('ganados.create', compact(
             'tipo_animals',
             'categorias',
             'tipoPesos',
-            'razas',
-            'datosSanitarios'
+            'razas'
         ));
     }
 
@@ -83,7 +80,6 @@ class GanadoController extends Controller
             'ubicacion' => 'nullable|string|max:255',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
         ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
@@ -97,7 +93,6 @@ class GanadoController extends Controller
             'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id' => $request->raza_id,
             'categoria_id' => $request->categoria_id,
-            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
         ];
 
         $datosNormalizados = [
@@ -160,15 +155,12 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
-        $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
-
         return view('ganados.edit', compact(
             'ganado',
             'tipo_animals',
             'categorias',
             'tipoPesos',
-            'razas',
-            'datosSanitarios'
+            'razas'
         ));
     }
 
@@ -203,7 +195,6 @@ class GanadoController extends Controller
             'ubicacion' => 'nullable|string|max:255',
             'latitud' => 'nullable|numeric',
             'longitud' => 'nullable|numeric',
-            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
         ]);
 
         // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
@@ -217,7 +208,6 @@ class GanadoController extends Controller
             'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id' => $request->raza_id,
             'categoria_id' => $request->categoria_id,
-            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
         ];
 
         $datosNormalizados = [
@@ -440,6 +430,7 @@ class GanadoController extends Controller
             'tipoAnimal',
             'tipoPeso',
             'datoSanitario',
+            'datosSanitarios',
             'imagenes',
             'ubicacionGanado.ubicacionGeografica',
             'datoProductivo.tipoPeso',

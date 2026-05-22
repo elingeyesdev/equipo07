@@ -19,6 +19,7 @@ Route::get('/health', function () {
 
 // GEOCODIFICACIÓN
 Route::get('/geocodificacion', [GeocodificacionController::class, 'reverse']);
+Route::get('/geocodificacion/buscar', [GeocodificacionController::class, 'search']);
 
 // CATÁLOGOS
 // Orgánicos
