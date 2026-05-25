@@ -56,8 +56,8 @@ class DatoSanitarioController extends Controller
             'vacunado_antirabica' => 'nullable|boolean',
             'tratamiento' => 'nullable|string',
             'medicamento' => 'nullable|string',
-            'fecha_aplicacion' => 'nullable|date',
-            'proxima_fecha' => 'nullable|date',
+            'fecha_aplicacion' => 'nullable|date|before_or_equal:today',
+            'proxima_fecha' => 'nullable|date|after:today',
             'veterinario' => 'nullable|string',
             'observaciones' => 'nullable|string',
             'certificado_imagen' => 'nullable|image|max:5120', // 5MB máximo
@@ -81,7 +81,7 @@ class DatoSanitarioController extends Controller
             'senal_numero' => 'nullable|string|max:255',
             'nombre_dueno' => 'nullable|string|max:255',
             'carnet_dueno_foto' => 'nullable|image|max:5120', // 5MB máximo
-        ]);
+        ], $this->mensajesValidacionFechas());
 
         // Verificar que el ganado pertenece al vendedor (si no es admin y hay ganado_id)
         if (!auth()->user()->isAdmin() && $request->ganado_id) {
@@ -189,8 +189,8 @@ class DatoSanitarioController extends Controller
             'vacunado_antirabica' => 'nullable|boolean',
             'tratamiento' => 'nullable|string',
             'medicamento' => 'nullable|string',
-            'fecha_aplicacion' => 'nullable|date',
-            'proxima_fecha' => 'nullable|date',
+            'fecha_aplicacion' => 'nullable|date|before_or_equal:today',
+            'proxima_fecha' => 'nullable|date|after:today',
             'veterinario' => 'nullable|string',
             'observaciones' => 'nullable|string',
             'certificado_imagen' => 'nullable|image|max:5120', // 5MB máximo
@@ -214,7 +214,7 @@ class DatoSanitarioController extends Controller
             'senal_numero' => 'nullable|string|max:255',
             'nombre_dueno' => 'nullable|string|max:255',
             'carnet_dueno_foto' => 'nullable|image|max:5120', // 5MB máximo
-        ]);
+        ], $this->mensajesValidacionFechas());
 
         // Verificar que el ganado pertenece al vendedor (si no es admin y hay ganado_id)
         if (!auth()->user()->isAdmin() && $request->ganado_id) {
@@ -532,6 +532,14 @@ class DatoSanitarioController extends Controller
         ] as $campo) {
             $data[$campo] = $request->has($campo);
         }
+    }
+
+    private function mensajesValidacionFechas(): array
+    {
+        return [
+            'fecha_aplicacion.before_or_equal' => 'La fecha de aplicación debe ser hoy o una fecha pasada.',
+            'proxima_fecha.after' => 'La próxima fecha debe ser una fecha futura.',
+        ];
     }
 
     private function tieneDatos(array $data): bool

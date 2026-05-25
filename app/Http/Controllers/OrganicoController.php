@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Organico;
-use App\Models\OrganicoImagen;
-use App\Models\Categoria;
-use App\Models\UnidadOrganico;
-use App\Models\TipoCultivo;
-use App\Models\UbicacionGeograficaOrganico;
-use App\Models\UbicacionOrganico;
 use App\Http\Requests\StoreOrganicoRequest;
 use App\Http\Requests\UpdateOrganicoRequest;
+use App\Models\Categoria;
+use App\Models\CertificadoOrganico;
+use App\Models\Organico;
+use App\Models\OrganicoCertificado;
+use App\Models\OrganicoImagen;
+use App\Models\TipoCultivo;
+use App\Models\UnidadOrganico;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class OrganicoController extends Controller
@@ -38,43 +39,28 @@ class OrganicoController extends Controller
 
     public function create()
     {
-        $categorias   = Categoria::orderBy('nombre')->get();
-        $unidades     = UnidadOrganico::orderBy('nombre')->get();
-        $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
-
-        return view('organicos.create', compact('categorias', 'unidades', 'tiposCultivo'));
+        return view('organicos.create', $this->catalogosFormulario());
     }
 
     public function store(StoreOrganicoRequest $request)
     {
         $data = $request->validated();
         $data['user_id'] = auth()->id();
+
         $datosComerciales = $this->extraerDatosComerciales($data);
-        $this->sincronizarUbicacionNormalizada($data);
+        $ubicacion = $this->extraerDatosUbicacion($data);
+        $trazabilidad = $this->extraerDatosTrazabilidad($data);
+        $certificados = $this->extraerDatosCertificados($data);
 
-        // Crear el orgánico
         $organico = Organico::create($data);
+
         $this->sincronizarDatosComerciales($organico, $datosComerciales);
+        $this->sincronizarUbicacion($organico, $ubicacion);
+        $this->sincronizarTrazabilidad($organico, $trazabilidad);
+        $this->sincronizarCertificados($organico, $certificados, $request);
+        $this->guardarImagenes($organico, $request);
 
-        // Guardar las imágenes si existen (máximo 3)
-        if ($request->hasFile('imagenes')) {
-            $orden    = 0;
-            $imagenes = array_slice($request->file('imagenes'), 0, 3); // Limitar a 3 imágenes
-
-            foreach ($imagenes as $imagen) {
-                if ($imagen && $imagen->isValid()) {
-                    $ruta = $imagen->store('organicos', 'public');
-
-                    OrganicoImagen::create([
-                        'organico_id' => $organico->id,
-                        'ruta'        => $ruta,
-                        'orden'       => $orden++,
-                    ]);
-                }
-            }
-        }
-
-        return redirect()->route('organicos.index')->with('ok', 'Orgánico creado');
+        return redirect()->route('organicos.index')->with('ok', 'Organico creado');
     }
 
     public function show(Organico $organico)
@@ -86,86 +72,52 @@ class OrganicoController extends Controller
 
     public function edit(Organico $organico)
     {
-        // Verificar permisos: solo el dueño o admin puede editar
-        if (!auth()->user()->isAdmin() && $organico->user_id !== auth()->id()) {
+        if (!$this->puedeModificarProducto($organico)) {
             return redirect()->route('organicos.index')
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
         $organico->load($this->relacionesOrganico());
 
-        $categorias   = Categoria::orderBy('nombre')->get();
-        $unidades     = UnidadOrganico::orderBy('nombre')->get();
-        $tiposCultivo = TipoCultivo::orderBy('nombre')->get();
-
-        return view('organicos.edit', compact('organico', 'categorias', 'unidades', 'tiposCultivo'));
+        return view('organicos.edit', array_merge(
+            ['organico' => $organico],
+            $this->catalogosFormulario()
+        ));
     }
 
     public function update(UpdateOrganicoRequest $request, Organico $organico)
     {
-        // Verificar permisos: solo el dueño o admin puede actualizar
-        if (!auth()->user()->isAdmin() && $organico->user_id !== auth()->id()) {
+        if (!$this->puedeModificarProducto($organico)) {
             return redirect()->route('organicos.index')
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
         $data = $request->validated();
+
         $datosComerciales = $this->extraerDatosComerciales($data);
-        $this->sincronizarUbicacionNormalizada($data, $organico);
+        $ubicacion = $this->extraerDatosUbicacion($data);
+        $trazabilidad = $this->extraerDatosTrazabilidad($data);
+        $certificados = $this->extraerDatosCertificados($data);
 
         $organico->update($data);
+
         $this->sincronizarDatosComerciales($organico, $datosComerciales);
+        $this->sincronizarUbicacion($organico, $ubicacion);
+        $this->sincronizarTrazabilidad($organico, $trazabilidad);
+        $this->sincronizarCertificados($organico, $certificados, $request);
+        $this->eliminarImagenesMarcadas($organico, $request);
+        $this->guardarImagenes($organico, $request);
 
-        // Eliminar imágenes marcadas para eliminar
-        if ($request->has('imagenes_eliminar')) {
-            foreach ($request->imagenes_eliminar as $imagenId) {
-                $imagen = OrganicoImagen::find($imagenId);
-
-                if ($imagen && $imagen->organico_id === $organico->id) {
-                    if (Storage::disk('public')->exists($imagen->ruta)) {
-                        Storage::disk('public')->delete($imagen->ruta);
-                    }
-                    $imagen->delete();
-                }
-            }
-        }
-
-        // Agregar nuevas imágenes
-        if ($request->hasFile('imagenes')) {
-            $totalImagenesActuales = $organico->imagenes()->count();
-            $maxOrden              = $organico->imagenes()->max('orden') ?? -1;
-            $orden                 = $maxOrden + 1;
-            $espaciosDisponibles   = 3 - $totalImagenesActuales;
-
-            if ($espaciosDisponibles > 0) {
-                $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
-
-                foreach ($imagenes as $imagen) {
-                    if ($imagen && $imagen->isValid()) {
-                        $ruta = $imagen->store('organicos', 'public');
-
-                        OrganicoImagen::create([
-                            'organico_id' => $organico->id,
-                            'ruta'        => $ruta,
-                            'orden'       => $orden++,
-                        ]);
-                    }
-                }
-            }
-        }
-
-        return redirect()->route('organicos.index')->with('ok', 'Orgánico actualizado');
+        return redirect()->route('organicos.index')->with('ok', 'Organico actualizado');
     }
 
     public function destroy(Organico $organico)
     {
-        // Verificar permisos: solo el dueño o admin puede eliminar
-        if (!auth()->user()->isAdmin() && $organico->user_id !== auth()->id()) {
+        if (!$this->puedeModificarProducto($organico)) {
             return redirect()->route('organicos.index')
                 ->with('error', 'No tienes permisos para eliminar este anuncio.');
         }
 
-        // Eliminar las imágenes físicas
         foreach ($organico->imagenes as $imagen) {
             if (Storage::disk('public')->exists($imagen->ruta)) {
                 Storage::disk('public')->delete($imagen->ruta);
@@ -174,7 +126,34 @@ class OrganicoController extends Controller
 
         $organico->delete();
 
-        return redirect()->route('organicos.index')->with('ok', 'Orgánico eliminado');
+        return redirect()->route('organicos.index')->with('ok', 'Organico eliminado');
+    }
+
+    public function actualizarEstadoCertificado(Request $request, OrganicoCertificado $certificado)
+    {
+        abort_unless(auth()->user()?->isAdmin(), 403);
+
+        $data = $request->validate([
+            'estado' => 'required|in:' . implode(',', [
+                OrganicoCertificado::ESTADO_PENDIENTE,
+                OrganicoCertificado::ESTADO_VERIFICADO,
+                OrganicoCertificado::ESTADO_RECHAZADO,
+            ]),
+        ]);
+
+        $certificado->update(['estado' => $data['estado']]);
+
+        return back()->with('ok', 'Estado del certificado actualizado.');
+    }
+
+    private function catalogosFormulario(): array
+    {
+        return [
+            'categorias' => Categoria::orderBy('nombre')->get(),
+            'unidades' => UnidadOrganico::orderBy('nombre')->get(),
+            'tiposCultivo' => TipoCultivo::orderBy('nombre')->get(),
+            'certificados' => CertificadoOrganico::where('activo', true)->orderBy('orden')->get(),
+        ];
     }
 
     private function relacionesOrganico(): array
@@ -186,23 +165,77 @@ class OrganicoController extends Controller
             'user',
             'imagenes',
             'datoComercial.unidad',
+            'ubicacionUnificada',
+            'trazabilidad',
+            'certificadoRegistros.certificado',
             'ubicacionOrganico.ubicacionGeografica',
         ];
     }
 
+    private function puedeModificarProducto(Organico $organico): bool
+    {
+        return $organico->user_id === auth()->id();
+    }
+
     private function extraerDatosComerciales(array &$data): array
     {
-        $campos = ['unidad_id', 'precio', 'stock'];
-        $datos = [];
+        return $this->extraerCampos($data, ['unidad_id', 'precio', 'stock']);
+    }
+
+    private function extraerDatosUbicacion(array &$data): array
+    {
+        return $this->extraerCampos($data, [
+            'origen',
+            'latitud_origen',
+            'longitud_origen',
+            'departamento_origen',
+            'municipio_origen',
+            'provincia_origen',
+            'ciudad_origen',
+            'referencia_ubicacion',
+        ]);
+    }
+
+    private function extraerDatosTrazabilidad(array &$data): array
+    {
+        $trazabilidad = [
+            'finca' => $data['finca'] ?? null,
+            'fecha_siembra' => $data['fecha_siembra'] ?? null,
+            'tratamientos_utilizados' => $data['tratamientos_utilizados'] ?? null,
+            'observaciones' => $data['observaciones_trazabilidad'] ?? null,
+        ];
+
+        foreach (['finca', 'fecha_siembra', 'tratamientos_utilizados', 'observaciones_trazabilidad'] as $campo) {
+            unset($data[$campo]);
+        }
+
+        return array_map(fn ($value) => $value === '' ? null : $value, $trazabilidad);
+    }
+
+    private function extraerDatosCertificados(array &$data): array
+    {
+        $certificados = [
+            'catalogo' => $data['certificados'] ?? [],
+            'adicionales' => $data['certificados_adicionales'] ?? [],
+        ];
+
+        unset($data['certificados'], $data['certificados_adicionales']);
+
+        return $certificados;
+    }
+
+    private function extraerCampos(array &$data, array $campos): array
+    {
+        $extraidos = [];
 
         foreach ($campos as $campo) {
             if (array_key_exists($campo, $data)) {
-                $datos[$campo] = $data[$campo];
+                $extraidos[$campo] = $data[$campo] === '' ? null : $data[$campo];
                 unset($data[$campo]);
             }
         }
 
-        return $datos;
+        return $extraidos;
     }
 
     private function sincronizarDatosComerciales(Organico $organico, array $data): void
@@ -221,79 +254,167 @@ class OrganicoController extends Controller
         );
     }
 
-    private function sincronizarUbicacionNormalizada(array &$data, ?Organico $organico = null): void
+    private function sincronizarUbicacion(Organico $organico, array $data): void
     {
-        $campos = [
-            'origen',
-            'latitud_origen',
-            'longitud_origen',
-            'departamento_origen',
-            'municipio_origen',
-            'provincia_origen',
-            'ciudad_origen',
-        ];
-
-        $recibioCamposUbicacion = collect($campos)->contains(fn ($campo) => array_key_exists($campo, $data));
-
-        if (!$recibioCamposUbicacion) {
+        if (!$data) {
             return;
         }
 
-        foreach ($campos as $campo) {
-            if (array_key_exists($campo, $data) && $data[$campo] === '') {
-                $data[$campo] = null;
-            }
-        }
-
-        $tieneDatosUbicacion = collect($campos)->contains(fn ($campo) => !empty($data[$campo]));
-
-        if (!$tieneDatosUbicacion) {
-            $data['ubicacion_organico_id'] = null;
-            $this->quitarCamposUbicacionAntiguos($data);
-            return;
-        }
-
-        $ubicacionGeografica = UbicacionGeograficaOrganico::firstOrCreate([
+        $payload = [
+            'direccion' => $data['origen'] ?? null,
+            'latitud' => $data['latitud_origen'] ?? null,
+            'longitud' => $data['longitud_origen'] ?? null,
             'departamento' => $data['departamento_origen'] ?? null,
             'municipio' => $data['municipio_origen'] ?? null,
             'provincia' => $data['provincia_origen'] ?? null,
             'ciudad' => $data['ciudad_origen'] ?? null,
-        ]);
-
-        $ubicacionData = [
-            'ubicacion' => $data['origen'] ?? null,
-            'latitud' => $data['latitud_origen'] ?? null,
-            'longitud' => $data['longitud_origen'] ?? null,
-            'ubicacion_geografica_organico_id' => $ubicacionGeografica->id,
+            'referencia' => $data['referencia_ubicacion'] ?? null,
         ];
 
-        if ($organico && $organico->ubicacion_organico_id) {
-            $ubicacion = UbicacionOrganico::find($organico->ubicacion_organico_id);
-
-            if ($ubicacion) {
-                $ubicacion->update($ubicacionData);
-                $data['ubicacion_organico_id'] = $ubicacion->id;
-                $this->quitarCamposUbicacionAntiguos($data);
-                return;
-            }
+        if (!collect($payload)->filter()->isNotEmpty()) {
+            $organico->ubicacionUnificada()?->delete();
+            return;
         }
 
-        $data['ubicacion_organico_id'] = UbicacionOrganico::create($ubicacionData)->id;
-        $this->quitarCamposUbicacionAntiguos($data);
+        $organico->ubicacionUnificada()->updateOrCreate(
+            ['organico_id' => $organico->id],
+            $payload
+        );
     }
 
-    private function quitarCamposUbicacionAntiguos(array &$data): void
+    private function sincronizarTrazabilidad(Organico $organico, array $data): void
     {
-        foreach ([
-            'origen',
-            'latitud_origen',
-            'longitud_origen',
-            'departamento_origen',
-            'municipio_origen',
-            'provincia_origen',
-            'ciudad_origen',
-        ] as $campo) {
-            unset($data[$campo]);
+        if (!collect($data)->filter()->isNotEmpty()) {
+            return;
+        }
+
+        $organico->trazabilidad()->updateOrCreate(
+            ['organico_id' => $organico->id],
+            [
+                'origen' => $organico->origen ?? 'Bolivia',
+                'finca' => $data['finca'] ?? 'No especificada',
+                'ubicacion' => $organico->origen ?? 'Bolivia',
+                'fecha_siembra' => $data['fecha_siembra'] ?? $organico->fecha_cosecha,
+                'fecha_cosecha' => $organico->fecha_cosecha,
+                'tratamientos_utilizados' => $data['tratamientos_utilizados'] ?? 'No especificado',
+                'certificaciones' => '',
+                'observaciones' => $data['observaciones'] ?? null,
+            ]
+        );
+    }
+
+    private function sincronizarCertificados(Organico $organico, array $data, Request $request): void
+    {
+        foreach ($data['catalogo'] as $certificadoId => $certificadoData) {
+            $certificado = CertificadoOrganico::find($certificadoId);
+
+            if (!$certificado) {
+                continue;
+            }
+
+            $registro = $organico->certificadoRegistros()
+                ->where('certificado_organico_id', $certificadoId)
+                ->first();
+
+            $archivo = $registro?->archivo;
+
+            $sinCertificado = (bool) ($certificadoData['sin_certificado'] ?? false);
+
+            if (!$sinCertificado && $request->hasFile("certificados.$certificadoId.archivo")) {
+                $archivo = $request->file("certificados.$certificadoId.archivo")
+                    ->store('organicos/certificados', 'public');
+            }
+
+            $incluido = (bool) ($certificadoData['incluido'] ?? false);
+            $debeGuardar = $certificado->es_obligatorio
+                || $incluido
+                || filled($archivo)
+                || filled($certificadoData['observaciones'] ?? null);
+
+            if (!$debeGuardar) {
+                $registro?->delete();
+                continue;
+            }
+
+            $organico->certificadoRegistros()->updateOrCreate(
+                ['certificado_organico_id' => $certificadoId],
+                [
+                    'estado' => $registro?->estado ?? OrganicoCertificado::ESTADO_PENDIENTE,
+                    'archivo' => $sinCertificado ? null : $archivo,
+                    'fecha_emision' => $certificadoData['fecha_emision'] ?? null,
+                    'fecha_vencimiento' => $certificadoData['fecha_vencimiento'] ?? null,
+                    'observaciones' => $certificadoData['observaciones'] ?? null,
+                ]
+            );
+        }
+
+        foreach ($data['adicionales'] as $index => $certificadoData) {
+            if (blank($certificadoData['nombre'] ?? null) && !$request->hasFile("certificados_adicionales.$index.archivo")) {
+                continue;
+            }
+
+            $archivo = null;
+
+            if ($request->hasFile("certificados_adicionales.$index.archivo")) {
+                $archivo = $request->file("certificados_adicionales.$index.archivo")
+                    ->store('organicos/certificados', 'public');
+            }
+
+            $organico->certificadoRegistros()->create([
+                'nombre_adicional' => $certificadoData['nombre'] ?? 'Certificado adicional',
+                'estado' => OrganicoCertificado::ESTADO_PENDIENTE,
+                'archivo' => $archivo,
+                'fecha_emision' => $certificadoData['fecha_emision'] ?? null,
+                'fecha_vencimiento' => $certificadoData['fecha_vencimiento'] ?? null,
+                'observaciones' => $certificadoData['observaciones'] ?? null,
+            ]);
+        }
+    }
+
+    private function guardarImagenes(Organico $organico, Request $request): void
+    {
+        if (!$request->hasFile('imagenes')) {
+            return;
+        }
+
+        $totalImagenesActuales = $organico->imagenes()->count();
+        $maxOrden = $organico->imagenes()->max('orden') ?? -1;
+        $espaciosDisponibles = 3 - $totalImagenesActuales;
+
+        if ($espaciosDisponibles <= 0) {
+            return;
+        }
+
+        $orden = $maxOrden + 1;
+        $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
+
+        foreach ($imagenes as $imagen) {
+            if ($imagen && $imagen->isValid()) {
+                OrganicoImagen::create([
+                    'organico_id' => $organico->id,
+                    'ruta' => $imagen->store('organicos', 'public'),
+                    'orden' => $orden++,
+                ]);
+            }
+        }
+    }
+
+    private function eliminarImagenesMarcadas(Organico $organico, Request $request): void
+    {
+        if (!$request->has('imagenes_eliminar')) {
+            return;
+        }
+
+        foreach ($request->imagenes_eliminar as $imagenId) {
+            $imagen = OrganicoImagen::find($imagenId);
+
+            if ($imagen && $imagen->organico_id === $organico->id) {
+                if (Storage::disk('public')->exists($imagen->ruta)) {
+                    Storage::disk('public')->delete($imagen->ruta);
+                }
+
+                $imagen->delete();
+            }
         }
     }
 }

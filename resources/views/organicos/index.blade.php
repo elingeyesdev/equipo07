@@ -24,7 +24,7 @@
                 </form>
 
                 @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
-                    <a href="{{ route('organicos.create') }}" class="btn btn-outline-light btn-sm">
+                    <a href="{{ route('ads.create') }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-plus-circle"></i> Nuevo Registro
                     </a>
                 @endif
@@ -67,7 +67,7 @@
                         @endphp
                         <div class="w-100 d-flex justify-content-center align-items-center"
                             style="height: 200px; background:#fff;">
-                            <img src="{{ $img ? asset('storage/' . $img) : asset('img/organico-placeholder.jpg') }}"
+                            <img src="{{ $img ? asset('storage/' . $img) : asset('img/hero-agrovida.png') }}"
                                 style="max-height: 100%; max-width: 100%; object-fit: contain;" alt="{{ $o->nombre }}">
                         </div>
 

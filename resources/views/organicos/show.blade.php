@@ -177,7 +177,7 @@
                                     data-toggle="modal" data-target="#imageModal"
                                     onclick="document.getElementById('imageModalImg').src = this.src">
                             @else
-                                <img src="{{ asset('img/organico-placeholder.jpg') }}"
+                                <img src="{{ asset('img/hero-agrovida.png') }}"
                                     style="max-height:100%; max-width:100%; object-fit:contain;">
                             @endif
 
@@ -449,6 +449,125 @@
 
         </div>
 
+        <div class="row">
+            <div class="col-12">
+                <div class="card detail-card mb-4">
+                    <div class="detail-card-header detail-card-header-success">
+                        <h5 class="mb-0">
+                            <i class="fas fa-certificate mr-2"></i> Certificados y trazabilidad
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if ($organico->trazabilidad)
+                            <div class="row mb-3">
+                                <div class="col-md-4 mb-2">
+                                    <small class="detail-section-title d-block">Finca o productor</small>
+                                    <div class="detail-section-value">{{ $organico->trazabilidad->finca ?: 'No especificada' }}</div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <small class="detail-section-title d-block">Fecha de siembra</small>
+                                    <div class="detail-section-value">
+                                        {{ $organico->trazabilidad->fecha_siembra ? \Carbon\Carbon::parse($organico->trazabilidad->fecha_siembra)->format('d/m/Y') : 'No registrada' }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <small class="detail-section-title d-block">Tratamientos</small>
+                                    <div class="detail-section-value">{{ $organico->trazabilidad->tratamientos_utilizados ?: 'No especificados' }}</div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @forelse ($organico->certificadoRegistros as $registro)
+                            @php
+                                $archivoUrl = $registro->archivo ? asset('storage/' . $registro->archivo) : null;
+                                $extension = strtolower(pathinfo($registro->archivo ?? '', PATHINFO_EXTENSION));
+                                $esImagen = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                $esObligatorioSinArchivo = (bool) ($registro->certificado?->es_obligatorio && !$registro->archivo);
+                                $estadoClases = [
+                                    'verificado' => 'success',
+                                    'rechazado' => 'danger',
+                                    'pendiente' => 'warning',
+                                ];
+                                $estadoTextos = [
+                                    'verificado' => 'aprobado',
+                                    'rechazado' => 'rechazado',
+                                    'pendiente' => 'pendiente',
+                                ];
+                                $badge = $esObligatorioSinArchivo ? 'secondary' : ($estadoClases[$registro->estado] ?? 'secondary');
+                                $textoEstado = $esObligatorioSinArchivo ? 'no subido' : ($estadoTextos[$registro->estado] ?? $registro->estado);
+                            @endphp
+                            <div class="d-flex justify-content-between align-items-start border-top py-2">
+                                <div>
+                                    <strong>{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}</strong>
+                                    @if ($registro->certificado?->descripcion)
+                                        <small class="d-block text-muted">{{ $registro->certificado->descripcion }}</small>
+                                    @endif
+                                    @if ($registro->archivo)
+                                        <small class="d-block text-muted">Archivo: {{ basename($registro->archivo) }}</small>
+                                        @if ($esImagen)
+                                            <button type="button" class="btn btn-sm btn-outline-success mt-2"
+                                                data-toggle="modal" data-target="#certificadoModal"
+                                                data-certificado-url="{{ $archivoUrl }}"
+                                                data-certificado-titulo="{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}">
+                                                <i class="fas fa-eye mr-1"></i> Ver certificado
+                                            </button>
+                                        @else
+                                            <a href="{{ $archivoUrl }}" target="_blank" class="btn btn-sm btn-outline-success mt-2">
+                                                <i class="fas fa-eye mr-1"></i> Ver PDF
+                                            </a>
+                                        @endif
+                                    @else
+                                        <small class="d-block text-muted">Sin archivo cargado.</small>
+                                    @endif
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge badge-{{ $badge }} mr-2">{{ $textoEstado }}</span>
+
+                                    @if (auth()->user()?->isAdmin())
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light border" type="button"
+                                                id="certificadoMenu{{ $registro->id }}" data-toggle="dropdown"
+                                                aria-haspopup="true" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="certificadoMenu{{ $registro->id }}">
+                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="estado" value="verificado">
+                                                    <button class="dropdown-item" type="submit">
+                                                        <i class="fas fa-check text-success mr-2"></i>Aprobar
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="estado" value="rechazado">
+                                                    <button class="dropdown-item" type="submit">
+                                                        <i class="fas fa-times text-danger mr-2"></i>Desaprobar
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="estado" value="pendiente">
+                                                    <button class="dropdown-item" type="submit">
+                                                        <i class="fas fa-clock text-warning mr-2"></i>Marcar pendiente
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <span class="text-muted">Sin certificados registrados.</span>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     {{-- MODAL MAPA --}}
@@ -540,6 +659,33 @@
         </script>
     @endif
 
+    {{-- MODAL CERTIFICADO --}}
+    <div class="modal fade" id="certificadoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="certificadoModalTitulo">Certificado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center bg-light">
+                    <img id="certificadoModalImg" src="" class="img-fluid rounded"
+                        style="max-height: 78vh; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', function() {
+            $('#certificadoModal').on('show.bs.modal', function(event) {
+                const button = $(event.relatedTarget);
+                $('#certificadoModalTitulo').text(button.data('certificado-titulo') || 'Certificado');
+                $('#certificadoModalImg').attr('src', button.data('certificado-url') || '');
+            });
+        });
+    </script>
 
     {{-- MODAL IMAGEN --}}
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">

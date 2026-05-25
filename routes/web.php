@@ -54,6 +54,8 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('marcas_maquinarias', App\Http\Controllers\MarcaMaquinariaController::class);
     Route::resource('estado_maquinarias', EstadoMaquinariaController::class);
     Route::resource('unidades_organicos', App\Http\Controllers\UnidadOrganicoController::class);
+    Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
+        ->name('organicos.certificados.estado');
 
 
     Route::get('/pedidos', [AdminPedidoController::class, 'index'])->name('pedidos.index');

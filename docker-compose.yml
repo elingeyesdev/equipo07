@@ -18,8 +18,11 @@ services:
     container_name: agrovida-laravel
     volumes:
       - .:/var/www
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     env_file:
       - .env.docker
+    environment:
+      SESSION_DRIVER: file
     depends_on:
       db:
         condition: service_started

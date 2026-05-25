@@ -94,6 +94,21 @@ class Organico extends Model
         return $this->belongsTo(UbicacionOrganico::class, 'ubicacion_organico_id');
     }
 
+    public function ubicacionUnificada()
+    {
+        return $this->hasOne(UbicacionOrganicoUnificada::class, 'organico_id');
+    }
+
+    public function trazabilidad()
+    {
+        return $this->hasOne(OrganicoTrazabilidad::class, 'organico_id');
+    }
+
+    public function certificadoRegistros()
+    {
+        return $this->hasMany(OrganicoCertificado::class, 'organico_id');
+    }
+
     public function datoComercial()
     {
         return $this->hasOne(DatoComercialOrganico::class);
@@ -116,36 +131,46 @@ class Organico extends Model
 
     public function getOrigenAttribute($value)
     {
-        return $this->ubicacionOrganico?->ubicacion ?? $value;
+        return $this->ubicacionUnificada?->direccion
+            ?? $this->ubicacionOrganico?->ubicacion
+            ?? $value;
     }
 
     public function getLatitudOrigenAttribute($value)
     {
-        return $this->ubicacionOrganico?->latitud ?? $value;
+        return $this->ubicacionUnificada?->latitud
+            ?? $this->ubicacionOrganico?->latitud
+            ?? $value;
     }
 
     public function getLongitudOrigenAttribute($value)
     {
-        return $this->ubicacionOrganico?->longitud ?? $value;
+        return $this->ubicacionUnificada?->longitud
+            ?? $this->ubicacionOrganico?->longitud
+            ?? $value;
     }
 
     public function getDepartamentoOrigenAttribute()
     {
-        return $this->ubicacionOrganico?->ubicacionGeografica?->departamento;
+        return $this->ubicacionUnificada?->departamento
+            ?? $this->ubicacionOrganico?->ubicacionGeografica?->departamento;
     }
 
     public function getMunicipioOrigenAttribute()
     {
-        return $this->ubicacionOrganico?->ubicacionGeografica?->municipio;
+        return $this->ubicacionUnificada?->municipio
+            ?? $this->ubicacionOrganico?->ubicacionGeografica?->municipio;
     }
 
     public function getProvinciaOrigenAttribute()
     {
-        return $this->ubicacionOrganico?->ubicacionGeografica?->provincia;
+        return $this->ubicacionUnificada?->provincia
+            ?? $this->ubicacionOrganico?->ubicacionGeografica?->provincia;
     }
 
     public function getCiudadOrigenAttribute()
     {
-        return $this->ubicacionOrganico?->ubicacionGeografica?->ciudad;
+        return $this->ubicacionUnificada?->ciudad
+            ?? $this->ubicacionOrganico?->ubicacionGeografica?->ciudad;
     }
 }
