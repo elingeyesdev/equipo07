@@ -1,79 +1,49 @@
 @extends('layouts.public')
-@section('title', 'Publicita tu Anuncio')
+@section('title', 'Nuevo registro')
 
 @section('content')
     <div class="container py-4">
-        <h5 class="mb-3 text-success">Llega a miles de productores y compradores de todo el país en minutos.</h5>
+        <div class="mb-4">
+            <h4 class="text-success mb-1">Selecciona el tipo de registro</h4>
+            <p class="text-muted mb-0">Elige el modulo donde quieres publicar tu anuncio.</p>
+        </div>
 
         <div class="row">
-            {{-- Formulario UI --}}
-            <div class="col-lg-8">
-                <div class="card shadow-sm rounded-lg">
+            <div class="col-md-4 mb-3">
+                <a href="{{ route('maquinarias.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
                     <div class="card-body">
-                        <form>
-                            <div class="form-group">
-                                <label class="font-weight-600">Título del anuncio <span class="text-danger">*</span></label>
-                                <input class="form-control form-control-lg project-input" placeholder="Ingrese el título">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="font-weight-600">Categoría <span class="text-danger">*</span></label>
-                                <select class="form-control form-control-lg project-input">
-                                    <option selected>Seleccione la categoría</option>
-                                    <option>Animales</option>
-                                    <option>Maquinaria</option>
-                                    <option>Orgánico</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="font-weight-600">Precio</label>
-                                <input class="form-control form-control-lg project-input" placeholder="Ingrese el precio">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="font-weight-600">Descripción <span class="text-danger">*</span></label>
-                                <textarea class="form-control project-input" rows="4" placeholder="Ingrese la descripción"></textarea>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="font-weight-600 d-block">Imágenes <span class="text-danger">*</span></label>
-                                <div class="custom-file">
-                                    <input type="file" class="custom-file-input" id="img">
-                                    <label class="custom-file-label" for="img">Subir foto</label>
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-success btn-lg btn-block mt-3">Publicar Anuncio</button>
-                        </form>
+                        <div class="text-success mb-3" style="font-size: 2rem;">
+                            <i class="fas fa-tractor"></i>
+                        </div>
+                        <h5 class="font-weight-bold">Maquinaria</h5>
+                        <p class="text-muted mb-0">Equipos, herramientas y maquinaria agricola.</p>
                     </div>
-                </div>
+                </a>
             </div>
 
-            <div class="col-lg-4 mt-3 mt-lg-0">
-                <div class="card shadow-sm rounded-lg">
+            <div class="col-md-4 mb-3">
+                <a href="{{ route('ganados.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
                     <div class="card-body">
-                        <h6 class="font-weight-bold text-success mb-3">Consejos para tu anuncio</h6>
-                        <ul class="mb-0 text-muted">
-                            <li>Usa un título claro y descriptivo.</li>
-                            <li>Agrega imágenes nítidas y reales.</li>
-                            <li>Describe detalles clave: estado, marca, certificados.</li>
-                            <li>Incluye datos de contacto actualizados.</li>
-                        </ul>
+                        <div class="text-success mb-3" style="font-size: 2rem;">
+                            <i class="fas fa-cow"></i>
+                        </div>
+                        <h5 class="font-weight-bold">Animales</h5>
+                        <p class="text-muted mb-0">Ganado y animales disponibles para venta.</p>
                     </div>
-                </div>
+                </a>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <a href="{{ route('organicos.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
+                    <div class="card-body">
+                        <div class="text-success mb-3" style="font-size: 2rem;">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h5 class="font-weight-bold">Organicos</h5>
+                        <p class="text-muted mb-0">Productos organicos con trazabilidad y certificados.</p>
+                    </div>
+                </a>
             </div>
         </div>
     </div>
-
-    @push('scripts')
-        <script>
-            document.addEventListener('change', function(e) {
-                if (e.target.classList.contains('custom-file-input')) {
-                    e.target.nextElementSibling.innerText = e.target.files.length ? e.target.files[0].name :
-                        'Subir foto';
-                }
-            });
-        </script>
-    @endpush
 @endsection

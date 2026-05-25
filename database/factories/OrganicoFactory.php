@@ -7,6 +7,12 @@ use App\Models\Organico;
 use App\Models\TipoCultivo;
 use App\Models\UnidadOrganico;
 use App\Models\User;
+use App\Models\CertificadoOrganico;
+use App\Models\DatoComercialOrganico;
+use App\Models\OrganicoCertificado;
+use App\Models\UbicacionOrganicoUnificada;
+use App\Models\UbicacionOrganico;
+use App\Models\UbicacionGeograficaOrganico;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -36,19 +42,65 @@ class OrganicoFactory extends Factory
             'user_id' => User::query()->inRandomOrder()->value('id'),
             'categoria_id' => Categoria::query()->where('nombre', 'like', '%org%')->value('id')
                 ?? Categoria::query()->inRandomOrder()->value('id'),
-            'unidad_id' => UnidadOrganico::query()->inRandomOrder()->value('id'),
-            'precio' => fake()->randomFloat(2, 5, 220),
-            'stock' => fake()->numberBetween(10, 250),
             'fecha_cosecha' => $fechaCosecha->format('Y-m-d'),
             'descripcion' => fake()->sentence(16),
-            'origen' => fake()->city() . ', Bolivia',
-            'latitud_origen' => fake()->randomFloat(7, -22.9, -9.6),
-            'longitud_origen' => fake()->randomFloat(7, -69.7, -57.4),
-            'departamento_origen' => fake()->randomElement(['La Paz', 'Santa Cruz', 'Cochabamba', 'Oruro', 'Potosi']),
-            'municipio_origen' => fake()->city(),
-            'provincia_origen' => fake()->lastName(),
-            'ciudad_origen' => fake()->city(),
             'tipo_cultivo_id' => TipoCultivo::query()->inRandomOrder()->value('id'),
         ];
+    }
+
+    public function configure()
+    {
+        return $this->afterCreating(function (Organico $organico) {
+            DatoComercialOrganico::create([
+                'organico_id' => $organico->id,
+                'unidad_id' => UnidadOrganico::query()->inRandomOrder()->value('id'),
+                'precio' => fake()->randomFloat(2, 5, 220),
+                'stock' => fake()->numberBetween(10, 250),
+            ]);
+
+            $geografica = UbicacionGeograficaOrganico::firstOrCreate([
+                'departamento' => fake()->randomElement(['La Paz', 'Santa Cruz', 'Cochabamba', 'Oruro', 'Potosi']),
+                'municipio' => fake()->city(),
+                'provincia' => fake()->lastName(),
+                'ciudad' => fake()->city(),
+            ]);
+
+            $ubicacion = UbicacionOrganico::create([
+                'ubicacion' => fake()->city() . ', Bolivia',
+                'latitud' => fake()->randomFloat(7, -22.9, -9.6),
+                'longitud' => fake()->randomFloat(7, -69.7, -57.4),
+                'ubicacion_geografica_organico_id' => $geografica->id,
+            ]);
+
+            $organico->ubicacion_organico_id = $ubicacion->id;
+            $organico->save();
+
+            UbicacionOrganicoUnificada::updateOrCreate(
+                ['organico_id' => $organico->id],
+                [
+                    'direccion' => $ubicacion->ubicacion,
+                    'latitud' => $ubicacion->latitud,
+                    'longitud' => $ubicacion->longitud,
+                    'departamento' => $geografica->departamento,
+                    'municipio' => $geografica->municipio,
+                    'provincia' => $geografica->provincia,
+                    'ciudad' => $geografica->ciudad,
+                    'referencia' => null,
+                ]
+            );
+
+            CertificadoOrganico::query()
+                ->where('es_obligatorio', true)
+                ->get()
+                ->each(function (CertificadoOrganico $certificado) use ($organico) {
+                    OrganicoCertificado::updateOrCreate(
+                        [
+                            'organico_id' => $organico->id,
+                            'certificado_organico_id' => $certificado->id,
+                        ],
+                        ['estado' => OrganicoCertificado::ESTADO_PENDIENTE]
+                    );
+                });
+        });
     }
 }
