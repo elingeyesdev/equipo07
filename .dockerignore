@@ -13,3 +13,5 @@ public/storage
 
 .env
 .env.*
+!.env.example
+!.env.docker
