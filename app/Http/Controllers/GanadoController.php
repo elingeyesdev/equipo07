@@ -7,6 +7,7 @@ use App\Models\Categoria;
 use App\Models\TipoAnimal;
 use App\Models\TipoPeso;
 use App\Models\Raza;
+use App\Models\DatoSanitario;
 use App\Models\GanadoImagen;
 use App\Models\UbicacionGanado;
 use App\Models\UbicacionGeograficaGanado;
@@ -47,11 +48,15 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
+        $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
+            ->orderBy('id', 'desc')
+            ->get();
         return view('ganados.create', compact(
             'tipo_animals',
             'categorias',
             'tipoPesos',
-            'razas'
+            'razas',
+            'datosSanitarios'
         ));
     }
 
@@ -155,12 +160,16 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
+        $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
+            ->orderBy('id', 'desc')
+            ->get();
         return view('ganados.edit', compact(
             'ganado',
             'tipo_animals',
             'categorias',
             'tipoPesos',
-            'razas'
+            'razas',
+            'datosSanitarios'
         ));
     }
 
