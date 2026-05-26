@@ -52,6 +52,18 @@ class PedidoController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'destino_entrega' => 'required|string|min:5|max:500',
+            'destino_latitud' => 'required|numeric|between:-90,90',
+            'destino_longitud' => 'required|numeric|between:-180,180',
+        ], [
+            'destino_entrega.required' => 'Debes agregar detalles extra para el vendedor.',
+            'destino_entrega.min' => 'Los detalles deben tener al menos 5 caracteres.',
+            'destino_entrega.max' => 'Los detalles no deben superar los 500 caracteres.',
+            'destino_latitud.required' => 'Debes marcar el destino en el mapa.',
+            'destino_longitud.required' => 'Debes marcar el destino en el mapa.',
+        ]);
+
         $userId = Auth::id();
 
         $cartItems = CartItem::where('user_id', $userId)
@@ -68,9 +80,12 @@ class PedidoController extends Controller
             $total = $cartItems->sum('subtotal');
 
             $pedido = Pedido::create([
-                'user_id' => $userId,
-                'total'   => $total,
-                'estado'  => 'pendiente',
+                'user_id'         => $userId,
+                'total'           => $total,
+                'estado'          => 'pendiente',
+                'destino_entrega' => $request->destino_entrega,
+                'destino_latitud' => $request->destino_latitud,
+                'destino_longitud' => $request->destino_longitud,
             ]);
 
             foreach ($cartItems as $item) {
@@ -78,6 +93,8 @@ class PedidoController extends Controller
 
                 PedidoDetalle::create([
                     'pedido_id'       => $pedido->id,
+                    'vendedor_id'     => $product?->user_id,
+                    'estado_solicitud' => 'pendiente',
                     'product_id'      => $item->product_id,
                     'product_type'    => $item->product_type,
                     'nombre_producto' => $product ? $product->nombre : 'Producto eliminado',

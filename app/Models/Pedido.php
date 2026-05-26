@@ -12,10 +12,15 @@ class Pedido extends Model
         'estado',
         'metodo_pago',
         'observaciones',
+        'destino_entrega',
+        'destino_latitud',
+        'destino_longitud',
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
+        'destino_latitud' => 'decimal:8',
+        'destino_longitud' => 'decimal:8',
     ];
 
     public function user()

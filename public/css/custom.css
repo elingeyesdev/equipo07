@@ -1454,6 +1454,38 @@ body.no-topbar .main-footer .float-right{
   padding: 1.35rem;
 }
 
+.maquinaria-wizard-step > .card {
+  margin-bottom: 0 !important;
+  border: 0 !important;
+  border-radius: 1rem !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.maquinaria-wizard-step > .card > .card-header {
+  align-items: flex-start !important;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(180deg, #f9fcf7, #eef7ef) !important;
+  border-bottom: 1px solid rgba(44, 91, 31, 0.12);
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+.maquinaria-wizard-step > .card > .card-header .card-title {
+  color: #172114;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.maquinaria-wizard-step > .card > .card-header small {
+  color: var(--wizard-muted) !important;
+  font-size: .82rem;
+  font-weight: 500;
+}
+
+.maquinaria-wizard-step > .card > .card-body {
+  padding: 1.35rem;
+}
+
 .maquinaria-wizard .form-group {
   margin-bottom: 1.05rem;
 }

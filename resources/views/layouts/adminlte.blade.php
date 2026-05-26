@@ -310,6 +310,18 @@
                                 </li>
                             @endif
 
+                            {{-- ===== OPCIONES SOLO PARA VENDEDOR ===== --}}
+                            @if (auth()->user()->isVendedor())
+                                <li class="nav-header">VENTAS</li>
+                                <li class="nav-item">
+                                    <a href="{{ route('vendedor.solicitudes.index') }}"
+                                        class="nav-link {{ request()->routeIs('vendedor.solicitudes.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-clipboard-list"></i>
+                                        <p>Solicitudes de productos</p>
+                                    </a>
+                                </li>
+                            @endif
+
                             {{-- ===== OPCIONES SOLO PARA CLIENTE ===== --}}
                             @if (auth()->user()->isCliente())
                                 <li class="nav-item">

@@ -140,6 +140,29 @@
             top: 20px;
         }
 
+        .checkout-map {
+            height: 520px;
+            width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .checkout-map-suggestions {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .checkout-destination-status {
+            min-height: 38px;
+        }
+
+        @media (max-width: 768px) {
+            .checkout-map {
+                height: 420px;
+            }
+        }
+
         .summary-row {
             display: flex;
             justify-content: space-between;
@@ -448,15 +471,43 @@
                                             <i class="fas fa-arrow-left mr-2"></i>Continuar Comprando
                                         </a>
 
-
-                                        <button class="btn btn-success btn-block btn-modern btn-lg"
-                                            onclick="proceedToCheckout()">
-                                            <i class="fas fa-check mr-2"></i>Procesar Pedido
-                                        </button>
-
-                                        <form id="checkoutForm" action="{{ route('pedidos.store') }}" method="POST"
-                                            style="display: none;">
+                                        <form id="checkoutForm" action="{{ route('pedidos.store') }}" method="POST">
                                             @csrf
+                                            <div class="form-group">
+                                                <label for="destino_entrega" class="font-weight-bold">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>Destino y detalles
+                                                </label>
+                                                <div id="destino-status"
+                                                    class="alert alert-light border checkout-destination-status py-2 px-3 mb-2">
+                                                    <span class="text-muted">Aun no seleccionaste un punto en el mapa.</span>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-success btn-block mb-2"
+                                                    data-toggle="modal" data-target="#destinoMapModal">
+                                                    <i class="fas fa-map-marked-alt mr-1"></i>Seleccionar en mapa
+                                                </button>
+                                                <textarea name="destino_entrega" id="destino_entrega"
+                                                    class="form-control @error('destino_entrega') is-invalid @enderror" rows="3"
+                                                    placeholder="Escribe detalles extra para el vendedor: referencia, horario, contacto o instrucciones"
+                                                    required>{{ old('destino_entrega') }}</textarea>
+                                                <input type="hidden" name="destino_latitud" id="destino_latitud"
+                                                    value="{{ old('destino_latitud') }}" required>
+                                                <input type="hidden" name="destino_longitud" id="destino_longitud"
+                                                    value="{{ old('destino_longitud') }}" required>
+                                                @error('destino_entrega')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                @if ($errors->has('destino_latitud') || $errors->has('destino_longitud'))
+                                                    <div class="text-danger small mt-1">Debes marcar el destino exacto en el mapa.</div>
+                                                @endif
+                                                <small class="form-text text-muted">
+                                                    El punto exacto se marca en el mapa. Este campo es solo para detalles extra escritos por ti.
+                                                </small>
+                                            </div>
+
+                                            <button type="button" class="btn btn-success btn-block btn-modern btn-lg"
+                                                onclick="proceedToCheckout()">
+                                                <i class="fas fa-check mr-2"></i>Procesar Pedido
+                                            </button>
                                         </form>
 
                                     </div>
@@ -483,6 +534,57 @@
             </div>
         </div>
     </div>
+
+    @if ($cartItems->count() > 0)
+        <div class="modal fade" id="destinoMapModal" tabindex="-1" role="dialog" aria-labelledby="destinoMapModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="destinoMapModalLabel">
+                            <i class="fas fa-map-marker-alt mr-1"></i>Seleccionar destino exacto
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-2">
+                            <input type="search" id="buscar-destino" class="form-control"
+                                placeholder="Busca una zona, comunidad o direccion">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary" id="btn-buscar-destino"
+                                    title="Buscar en el mapa">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-destino-actual"
+                                    title="Usar mi ubicacion actual">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sugerencias-destino" class="list-group checkout-map-suggestions mb-2"
+                            style="display: none;"></div>
+                        <div id="checkout-map" class="checkout-map"></div>
+                        <small class="form-text text-muted">
+                            Busca una direccion, usa tu ubicacion actual o haz clic en el mapa para marcar el destino.
+                        </small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" id="btn-confirmar-destino">
+                            <i class="fas fa-check mr-1"></i>Usar este destino
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($cartItems->count() > 0)
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @endif
 
     <script>
         function increaseQuantity(itemId) {
@@ -531,7 +633,205 @@
             }
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            var mapElement = document.getElementById('checkout-map');
+
+            if (!mapElement || typeof L === 'undefined') {
+                return;
+            }
+
+            var latInput = document.getElementById('destino_latitud');
+            var lngInput = document.getElementById('destino_longitud');
+            var destinoInput = document.getElementById('destino_entrega');
+            var destinoStatus = document.getElementById('destino-status');
+            var searchInput = document.getElementById('buscar-destino');
+            var suggestions = document.getElementById('sugerencias-destino');
+            var storageKeys = {
+                lat: 'checkout_destino_latitud',
+                lng: 'checkout_destino_longitud',
+                label: 'checkout_destino_label',
+                detail: 'checkout_destino_detalle'
+            };
+
+            if (!latInput.value && sessionStorage.getItem(storageKeys.lat)) {
+                latInput.value = sessionStorage.getItem(storageKeys.lat);
+            }
+
+            if (!lngInput.value && sessionStorage.getItem(storageKeys.lng)) {
+                lngInput.value = sessionStorage.getItem(storageKeys.lng);
+            }
+
+            if (!destinoInput.value && sessionStorage.getItem(storageKeys.detail)) {
+                destinoInput.value = sessionStorage.getItem(storageKeys.detail);
+            }
+
+            var initialLat = latInput.value ? parseFloat(latInput.value) : -17.7833;
+            var initialLng = lngInput.value ? parseFloat(lngInput.value) : -63.1821;
+            var initialZoom = latInput.value && lngInput.value ? 14 : 6;
+            var checkoutMap = L.map('checkout-map').setView([initialLat, initialLng], initialZoom);
+            var marker = null;
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(checkoutMap);
+
+            function setDestination(lat, lng, label, zoom) {
+                latInput.value = lat;
+                lngInput.value = lng;
+                sessionStorage.setItem(storageKeys.lat, lat);
+                sessionStorage.setItem(storageKeys.lng, lng);
+                sessionStorage.setItem(storageKeys.label, label || 'Punto seleccionado en el mapa');
+
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng]).addTo(checkoutMap);
+                }
+
+                marker.bindPopup(label || 'Punto seleccionado en el mapa').openPopup();
+                checkoutMap.setView([lat, lng], zoom || 15);
+
+                if (destinoStatus) {
+                    destinoStatus.innerHTML =
+                        '<strong><i class="fas fa-check-circle text-success mr-1"></i>Destino seleccionado:</strong>' +
+                        '<div class="small mt-1"></div>';
+                    destinoStatus.querySelector('.small').textContent = label || 'Punto seleccionado en el mapa';
+                }
+            }
+
+            if (latInput.value && lngInput.value) {
+                setDestination(
+                    latInput.value,
+                    lngInput.value,
+                    sessionStorage.getItem(storageKeys.label) || 'Punto seleccionado en el mapa',
+                    initialZoom
+                );
+            }
+
+            checkoutMap.on('click', function(e) {
+                var lat = e.latlng.lat.toFixed(8);
+                var lng = e.latlng.lng.toFixed(8);
+                setDestination(lat, lng, 'Punto seleccionado en el mapa', 15);
+            });
+
+            destinoInput.addEventListener('input', function() {
+                sessionStorage.setItem(storageKeys.detail, destinoInput.value);
+            });
+
+            if (destinoInput.value) {
+                sessionStorage.setItem(storageKeys.detail, destinoInput.value);
+            }
+
+            function renderSuggestions(results) {
+                suggestions.innerHTML = '';
+
+                if (!results.length) {
+                    suggestions.style.display = 'none';
+                    return;
+                }
+
+                results.forEach(function(result) {
+                    var button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'list-group-item list-group-item-action';
+                    button.textContent = result.display_name;
+                    button.addEventListener('click', function() {
+                        searchInput.value = result.display_name;
+                        suggestions.style.display = 'none';
+                        setDestination(parseFloat(result.lat).toFixed(8), parseFloat(result.lon).toFixed(8), result.display_name, 15);
+                    });
+                    suggestions.appendChild(button);
+                });
+
+                suggestions.style.display = 'block';
+            }
+
+            function searchDestination() {
+                var query = searchInput.value.trim();
+
+                if (query.length < 3) {
+                    suggestions.style.display = 'none';
+                    return;
+                }
+
+                fetch('/api/geocodificacion/buscar?q=' + encodeURIComponent(query), {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        renderSuggestions(data.success ? data.data : []);
+                    })
+                    .catch(function() {
+                        suggestions.style.display = 'none';
+                    });
+            }
+
+            document.getElementById('btn-buscar-destino').addEventListener('click', searchDestination);
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    searchDestination();
+                }
+            });
+
+            document.getElementById('btn-destino-actual').addEventListener('click', function() {
+                if (!navigator.geolocation) {
+                    alert('Tu navegador no permite obtener la ubicacion actual.');
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude.toFixed(8);
+                    var lng = position.coords.longitude.toFixed(8);
+                    setDestination(lat, lng, 'Mi ubicacion actual', 16);
+                }, function() {
+                    alert('No se pudo obtener tu ubicacion actual.');
+                });
+            });
+
+            setTimeout(function() {
+                checkoutMap.invalidateSize();
+            }, 250);
+
+            $('#destinoMapModal').on('shown.bs.modal', function() {
+                setTimeout(function() {
+                    checkoutMap.invalidateSize();
+
+                    if (latInput.value && lngInput.value) {
+                        checkoutMap.setView([latInput.value, lngInput.value], 15);
+                    }
+                }, 150);
+            });
+
+            document.getElementById('btn-confirmar-destino').addEventListener('click', function() {
+                if (!latInput.value || !lngInput.value) {
+                    alert('Primero marca un punto en el mapa.');
+                    return;
+                }
+
+                $('#destinoMapModal').modal('hide');
+            });
+        });
+
         function proceedToCheckout() {
+            const form = document.getElementById('checkoutForm');
+            const latInput = document.getElementById('destino_latitud');
+            const lngInput = document.getElementById('destino_longitud');
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            if (!latInput.value || !lngInput.value) {
+                alert('Debes marcar el destino exacto en el mapa.');
+                return;
+            }
+
             Swal.fire({
                 title: '¿Procesar pedido?',
                 text: 'Tu pedido será generado y enviado para su procesamiento.',
@@ -543,7 +843,7 @@
                 cancelButtonColor: '#d33'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById('checkoutForm').submit();
+                    form.submit();
                 }
             });
         }

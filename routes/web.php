@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\VendedorSolicitudController;
 
 
 Route::view('/', 'public.landing')->name('landing');
@@ -95,6 +96,11 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::resource('ganados', GanadoController::class)->except(['index', 'show']);
     Route::resource('maquinarias', MaquinariaController::class)->except(['index', 'show'])->names('maquinarias');
     Route::resource('organicos', OrganicoController::class)->except(['index', 'show'])->names('organicos');
+
+    Route::get('/vendedor/solicitudes', [VendedorSolicitudController::class, 'index'])->name('vendedor.solicitudes.index');
+    Route::get('/vendedor/solicitudes/{solicitud}', [VendedorSolicitudController::class, 'show'])->name('vendedor.solicitudes.show');
+    Route::post('/vendedor/solicitudes/{solicitud}/aceptar', [VendedorSolicitudController::class, 'aceptar'])->name('vendedor.solicitudes.aceptar');
+    Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
 });
 
 // TODOS LOS USUARIOS AUTENTICADOS
