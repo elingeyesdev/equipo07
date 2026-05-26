@@ -7,372 +7,380 @@
     <style>
         html {
             scroll-behavior: smooth;
+            scroll-padding-top: 5rem;
         }
 
         .landing-page section[id] {
             scroll-margin-top: 5rem;
         }
 
+        .landing-nav-shell,
+        .landing-hero-shell {
+            max-width: 1216px;
+        }
+
+        .landing-nav {
+            transition: opacity .28s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .28s ease;
+        }
+
+        .landing-nav .landing-nav-shell {
+            transition: min-height .25s ease;
+        }
+
+        .landing-nav.is-stuck {
+            border-color: rgba(47, 98, 31, .16);
+            background-color: rgba(247, 251, 242, .96);
+            box-shadow: 0 18px 45px rgba(20, 33, 18, .12);
+            transform: translateY(0);
+        }
+
+        .landing-nav.is-stuck .landing-nav-shell {
+            min-height: 4.25rem;
+        }
+
+        .landing-nav.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-100%);
+        }
+
+        .landing-hero {
+            min-height: calc(100vh - 5rem);
+            min-height: calc(100svh - 5rem);
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .landing-hero-shell {
+            grid-template-columns: minmax(0, 620px) minmax(0, 532px);
+            gap: 4rem;
+        }
+
+        .landing-hero-title {
+            max-width: 590px;
+            margin-top: 3rem;
+            font-size: 3.05rem;
+            line-height: .94;
+        }
+
+        .landing-hero-copy {
+            max-width: 36rem;
+            margin-top: 3rem;
+            line-height: 1.75;
+        }
+
+        .landing-hero-cta {
+            margin-top: 3rem;
+        }
+
+        .landing-hero-stats {
+            max-width: 622px;
+            margin-top: 3.5rem;
+            gap: .75rem;
+        }
+
+        .landing-hero-visual {
+            min-height: 728px;
+        }
+
+        .landing-hero-image {
+            inset: 1.75rem 0 .5rem;
+        }
+
+        .landing-hero-feature {
+            top: 0;
+            right: 2rem;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             html {
                 scroll-behavior: auto;
             }
+
+            .landing-nav,
+            .landing-nav .landing-nav-shell {
+                transition: none;
+            }
         }
 
-        /* --- CLASES CUSTOM PARA TRADUCCIÓN EXACTA DE TAILWIND --- */
-        .landing-page { background-color: #f7fbf2; color: #142112; font-family: var(--app-font), sans-serif; -webkit-font-smoothing: antialiased; }
-        
-        /* Tipografía y Colores Exactos */
-        .fw-black { font-weight: 900 !important; }
-        .text-agro-dark { color: #142112 !important; }
-        .text-agro-darker { color: #183b18 !important; }
-        .text-agro-muted { color: #66735f !important; }
-        .text-agro-muted-dark { color: #4b5949 !important; }
-        .text-white-75 { color: rgba(255, 255, 255, 0.75) !important; }
-        .text-white-70 { color: rgba(255, 255, 255, 0.70) !important; }
-        .text-white-65 { color: rgba(255, 255, 255, 0.65) !important; }
-        .text-white-60 { color: rgba(255, 255, 255, 0.60) !important; }
+        @media (max-width: 1023.98px) {
+            .landing-hero {
+                min-height: auto;
+                padding-top: 3rem;
+                padding-bottom: 4rem;
+            }
 
-        /* Bordes (Radios Tailwind) */
-        .rounded-xl { border-radius: 0.75rem !important; }
-        .rounded-2xl { border-radius: 1rem !important; }
-        .rounded-3xl { border-radius: 1.5rem !important; }
-        .rounded-4xl { border-radius: 2rem !important; }
+            .landing-hero-shell {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
 
-        /* Contenedor equivalente a max-w-7xl de Tailwind (1280px) */
-        .container-landing { width: 100%; padding-right: 1rem; padding-left: 1rem; margin-right: auto; margin-left: auto; max-width: 1280px; }
-        @media (min-width: 576px) { .container-landing { padding-right: 1.5rem; padding-left: 1.5rem; } }
-        @media (min-width: 992px) { .container-landing { padding-right: 2rem; padding-left: 2rem; } }
+            .landing-hero-title {
+                margin-top: 2rem;
+                font-size: clamp(2.25rem, 8vw, 3.75rem);
+                line-height: 1.04;
+            }
 
-        /* Espaciados verticales equivalentes (py-16, py-20, py-24) */
-        .landing-py-section { padding-top: 4rem; padding-bottom: 4rem; }
-        @media (min-width: 576px) { .landing-py-section { padding-top: 5rem; padding-bottom: 5rem; } }
-        @media (min-width: 992px) { .landing-hero-py { padding-top: 6rem; padding-bottom: 6rem; } }
+            .landing-hero-copy,
+            .landing-hero-cta {
+                margin-top: 2rem;
+            }
 
-        /* Barra de Navegación */
-        .landing-nav {
-            background-color: rgba(247, 251, 242, 0.9);
-            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-            border-bottom: 1px solid rgba(47, 98, 31, 0.1);
-            min-height: 5rem;
-        }
-        .landing-link { color: #4b5949; transition: color 0.2s ease-in-out; }
-        .landing-link:hover { color: #2f621f; }
-        .landing-logo-icon { border: 1px solid rgba(47, 98, 31, 0.15); box-shadow: 0 10px 15px -3px rgba(47, 98, 31, 0.1); }
+            .landing-hero-stats {
+                margin-top: 2.5rem;
+                gap: 1rem;
+            }
 
-        /* Botones Generales */
-        .landing-btn-outline {
-            border: 1px solid rgba(47, 98, 31, 0.15); background: #fff; color: #183b18;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .landing-btn-outline:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); color: #183b18; }
-        
-        .landing-btn-gradient {
-            background: linear-gradient(to bottom right, #2f621f, #4f8f2f); color: white;
-            box-shadow: 0 20px 25px -5px rgba(47, 98, 31, 0.25); transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .landing-btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 25px 50px -12px rgba(47, 98, 31, 0.25); color: white; }
+            .landing-hero-visual {
+                min-height: 600px;
+            }
 
-        /* Sección Hero */
-        .landing-hero-bg { background: linear-gradient(to bottom right, #f8fcf3, #edf8e6, #ffffff); }
-        .landing-hero-blob-1 { background-color: rgba(47, 98, 31, 0.1); width: 32rem; height: 32rem; right: -10rem; bottom: -12rem; z-index: 0;}
-        .landing-hero-blob-2 { background-color: rgba(166, 200, 95, 0.2); width: 10rem; height: 10rem; filter: blur(48px); top: 2.5rem; left: 1.5rem; z-index: 0;}
-        .badge-agro-soft { background-color: #edf7e7; color: #2f621f; border: 1px solid rgba(47, 98, 31, 0.15); }
-        
-        /* Imágenes y Badges flotantes del Hero */
-        .landing-hero-img-container {
-            border: 1px solid rgba(47, 98, 31, 0.15) !important;
-            box-shadow: 0 25px 50px -12px rgba(47, 98, 31, 0.2) !important;
-        }
-        .landing-hero-overlay { background: linear-gradient(to bottom, transparent, transparent, rgba(20, 33, 18, 0.7)); }
-        .landing-hero-img-badge {
-            background-color: rgba(20, 33, 18, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.2) !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        .landing-hero-float-badge { 
-            border: 1px solid rgba(47, 98, 31, 0.15) !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important; 
-            width: 14rem; background: rgba(255, 255, 255, 0.95); z-index: 10;
+            .landing-hero-image {
+                inset: .5rem 0;
+            }
         }
 
-        /* Tarjetas (Beneficios y Categorías) */
-        .landing-card-icon { background: linear-gradient(to bottom right, #2f621f, #5c9938); color: white; box-shadow: 0 10px 15px -3px rgba(47, 98, 31, 0.2); }
-        .landing-card { border: 1px solid rgba(47, 98, 31, 0.1); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04); transition: transform 0.2s, box-shadow 0.2s; }
-        .landing-card:hover { transform: translateY(-4px); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); }
-        .landing-categorias-bg { background: linear-gradient(to bottom, #f4faef, #ffffff); }
+        @media (max-width: 639.98px) {
+            .landing-hero-visual {
+                min-height: 460px;
+            }
 
-        /* Tarjetas 'Cómo Funciona' */
-        .landing-step-card {
-            background: linear-gradient(to bottom right, #ffffff, #f7fbf2);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04); border: 1px solid rgba(47, 98, 31, 0.1) !important;
+            .landing-hero-feature {
+                right: .5rem;
+            }
         }
-
-        /* Sección CTA Final */
-        .landing-cta-bg {
-            background: linear-gradient(135deg, rgba(24, 59, 24, 0.98), rgba(47, 98, 31, 0.95)), url('{{ asset("img/bg-agrovida.jpg") }}');
-            background-size: cover; background-position: center;
-            box-shadow: 0 25px 50px -12px rgba(24, 59, 24, 0.25) !important;
-        }
-        .landing-cta-btn-light { transition: transform 0.2s; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .landing-cta-btn-light:hover { transform: translateY(-2px); }
-        .landing-cta-btn-outline { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25) !important; transition: all 0.2s; }
-        .landing-cta-btn-outline:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); color: white; }
-
-        /* Footer */
-        .landing-footer-link { color: #dfeada; transition: color 0.2s; }
-        .landing-footer-link:hover { color: #ffffff; text-decoration: none; }
     </style>
 
-    <main class="landing-page min-vh-100">
-        <!-- NAVEGACIÓN -->
-        <nav class="sticky-top w-100 landing-nav d-flex align-items-center">
-            <div class="container-landing d-flex align-items-center justify-content-between gap-3">
-                
-                <a href="{{ route('landing') }}" class="d-flex align-items-center gap-3 fs-5 fw-black text-agro-darker text-decoration-none">
-                    <span class="d-flex align-items-center justify-content-center rounded-2xl bg-white landing-logo-icon" style="width: 2.75rem; height: 2.75rem;">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" style="height: 2rem; width: 2rem; object-fit: contain;">
+    <main class="landing-page min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
+        <nav class="landing-nav sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl" data-landing-nav>
+            <div class="landing-nav-shell mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-4 xl:px-0">
+                <a href="{{ route('landing') }}" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white shadow-lg shadow-[#2f621f]/10">
+                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
                     </span>
-                    <span>Mercado Agrícola</span>
+                    <span>Mercado Agricola</span>
                 </a>
 
-                <div class="d-none d-lg-flex align-items-center gap-4">
-                    <a href="#inicio" class="small fw-bold text-decoration-none landing-link">Inicio</a>
-                    <a href="#beneficios" class="small fw-bold text-decoration-none landing-link">Beneficios</a>
-                    <a href="#categorias" class="small fw-bold text-decoration-none landing-link">Categorías</a>
-                    <a href="#como-funciona" class="small fw-bold text-decoration-none landing-link">Cómo funciona</a>
+                <div class="hidden items-center gap-7 lg:flex">
+                    <a href="#inicio" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Inicio</a>
+                    <a href="#beneficios" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Beneficios</a>
+                    <a href="#categorias" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Categorías</a>
+                    <a href="#como-funciona" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Cómo funciona</a>
                 </div>
 
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{{ route('login') }}" class="btn landing-btn-outline rounded-xl fw-black px-3 py-2 d-flex align-items-center" style="min-height: 2.75rem; font-size: 0.875rem;">
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                         Iniciar sesión
-                    </a>
-                    <a href="{{ route('register') }}" class="btn landing-btn-gradient rounded-xl fw-black px-3 py-2 d-flex align-items-center" style="min-height: 2.75rem; font-size: 0.875rem;">
-                        Registrarse
                     </a>
                 </div>
             </div>
         </nav>
 
-        <!-- SECCIÓN INICIO (HERO) -->
-        <section id="inicio" class="position-relative overflow-hidden landing-hero-bg landing-py-section landing-hero-py">
-            <div class="position-absolute rounded-circle landing-hero-blob-1"></div>
-            <div class="position-absolute rounded-circle landing-hero-blob-2"></div>
+        <section id="inicio" class="landing-hero relative flex items-center overflow-hidden bg-gradient-to-br from-[#f8fcf3] via-[#edf8e6] to-white">
+            <div class="absolute right-[-10rem] bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-[#2f621f]/10"></div>
+            <div class="absolute top-10 left-6 h-40 w-40 rounded-full bg-[#a6c85f]/20 blur-3xl"></div>
 
-            <div class="container-landing position-relative">
-                <div class="row align-items-center" style="gap: 3rem;">
-                    
-                    <!-- Textos Hero -->
-                    <div class="col-lg">
-                        <span class="badge badge-agro-soft rounded-pill px-3 py-2 text-uppercase fw-black d-inline-flex align-items-center gap-2" style="font-size: 0.75rem;">
-                            <i class="fas fa-seedling"></i> Plataforma agropecuaria integral
+            <div class="landing-hero-shell relative mx-auto grid w-full items-center px-4 sm:px-6 lg:px-4 xl:px-0">
+                <div>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">
+                        <i class="fas fa-seedling"></i>
+                        Plataforma agropecuaria integral
+                    </span>
+
+                    <h1 class="landing-hero-title text-4xl font-black tracking-normal text-[#142112] sm:text-5xl">
+                        Mercado Agrícola para conectar productos, animales y maquinaria en un solo lugar.
+                    </h1>
+
+                    <p class="landing-hero-copy text-base text-[#66735f]">
+                        Una plataforma moderna para publicar, explorar y gestionar oportunidades del mercado agropecuario:
+                        productos orgánicos, ganado, maquinaria agrícola y servicios relacionados.
+                    </p>
+
+                    <div class="landing-hero-cta flex flex-col gap-3 sm:flex-row">
+                        <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
+                            Comenzar ahora
+                            <i class="fas fa-arrow-right text-sm"></i>
+                        </a>
+                    </div>
+
+                    <div class="landing-hero-stats grid sm:grid-cols-2">
+                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
+                            <strong class="block text-2xl font-black text-[#183b18]">4 áreas</strong>
+                            <span class="mt-1 block leading-6 text-[#66735f]">Animales, maquinaria, orgánicos y servicios</span>
+                        </div>
+                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
+                            <strong class="block text-2xl font-black text-[#183b18]">24/7</strong>
+                            <span class="mt-1 block leading-6 text-[#66735f]">Consulta publicaciones cuando lo necesites</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="landing-hero-visual relative">
+                    <div class="landing-hero-image absolute overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20">
+                        <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#142112]/70"></div>
+                        <div class="absolute right-5 bottom-5 max-w-xs rounded-2xl border border-white/20 bg-[#142112]/75 p-5 text-white shadow-xl backdrop-blur">
+                            <span class="block text-sm text-white/70">Publicaciones activas</span>
+                            <strong class="mt-1 block text-xl font-black">Mercado organizado</strong>
+                        </div>
+                    </div>
+
+                    <div class="landing-hero-feature absolute flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
+                            <i class="fas fa-tractor"></i>
                         </span>
-
-                        <h1 class="fw-black text-agro-dark mt-4" style="line-height: 1.02; font-size: clamp(2.25rem, 5vw, 4.5rem);">
-                            Mercado Agrícola para conectar productos, animales y maquinaria en un solo lugar.
-                        </h1>
-
-                        <p class="fs-5 text-agro-muted mt-4" style="line-height: 1.6; max-width: 42rem;">
-                            Una plataforma moderna para publicar, explorar y gestionar oportunidades del mercado agropecuario:
-                            productos orgánicos, ganado, maquinaria agrícola y servicios relacionados.
-                        </p>
-
-                        <div class="d-flex flex-column flex-sm-row gap-3 mt-4 pt-2">
-                            <a href="{{ route('register') }}" class="btn landing-btn-gradient rounded-2xl fw-black px-4 d-flex align-items-center justify-content-center gap-2" style="min-height: 3.5rem;">
-                                Comenzar ahora <i class="fas fa-arrow-right small"></i>
-                            </a>
-                            <a href="{{ route('login') }}" class="btn landing-btn-outline rounded-2xl fw-black px-4 d-flex align-items-center justify-content-center" style="min-height: 3.5rem;">
-                                Iniciar sesión
-                            </a>
-                        </div>
-
-                        <div class="row g-3 mt-4 pt-2" style="max-width: 42rem;">
-                            <div class="col-sm-6">
-                                <div class="p-4 rounded-2xl bg-white border" style="border-color: rgba(47,98,31,0.1)!important; background-color: rgba(255,255,255,0.75)!important;">
-                                    <strong class="d-block fs-3 fw-black text-agro-darker">4 áreas</strong>
-                                    <span class="text-agro-muted d-block mt-1">Animales, maquinaria, orgánicos y servicios</span>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="p-4 rounded-2xl bg-white border" style="border-color: rgba(47,98,31,0.1)!important; background-color: rgba(255,255,255,0.75)!important;">
-                                    <strong class="d-block fs-3 fw-black text-agro-darker">24/7</strong>
-                                    <span class="text-agro-muted d-block mt-1">Consulta publicaciones cuando lo necesites</span>
-                                </div>
-                            </div>
+                        <div>
+                            <strong class="block font-black text-[#142112]">Maquinaria</strong>
+                            <span class="text-sm text-[#66735f]">Venta o alquiler</span>
                         </div>
                     </div>
 
-                    <!-- Imagen Hero -->
-                    <div class="col-lg position-relative" style="min-height: 380px;">
-                        <div class="position-absolute top-0 bottom-0 start-0 end-0 rounded-4xl overflow-hidden bg-white landing-hero-img-container m-lg-4" style="min-height: 500px;">
-                            <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="w-100 h-100" style="object-fit: cover;">
-                            <div class="position-absolute landing-hero-overlay" style="top:0; bottom:0; left:0; right:0;"></div>
-                            
-                            <div class="position-absolute bottom-0 end-0 m-4 p-4 rounded-2xl text-white landing-hero-img-badge" style="max-width: 20rem;">
-                                <span class="d-block text-white-70" style="font-size: 0.875rem;">Publicaciones activas</span>
-                                <strong class="d-block fs-5 fw-black mt-1">Mercado organizado</strong>
-                            </div>
-                        </div>
-
-                        <!-- Float Badge Maquinaria -->
-                        <div class="position-absolute top-0 end-0 d-flex align-items-center gap-3 p-3 rounded-2xl landing-hero-float-badge mt-3 me-2" style="right: 2rem;">
-                            <span class="d-flex align-items-center justify-content-center rounded-xl bg-agro text-white" style="width: 2.75rem; height: 2.75rem;">
-                                <i class="fas fa-tractor"></i>
-                            </span>
-                            <div>
-                                <strong class="d-block fw-black text-agro-dark">Maquinaria</strong>
-                                <span class="small text-agro-muted d-block">Venta o alquiler</span>
-                            </div>
-                        </div>
-
-                        <!-- Float Badge Orgánicos -->
-                        <div class="position-absolute bottom-0 start-0 d-flex align-items-center gap-3 p-3 rounded-2xl landing-hero-float-badge mb-3 ms-2">
-                            <span class="d-flex align-items-center justify-content-center rounded-xl bg-agro text-white" style="width: 2.75rem; height: 2.75rem;">
-                                <i class="fas fa-leaf"></i>
-                            </span>
-                            <div>
-                                <strong class="d-block fw-black text-agro-dark">Orgánicos</strong>
-                                <span class="small text-agro-muted d-block">Productos frescos</span>
-                            </div>
+                    <div class="absolute bottom-0 left-2 flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10 sm:left-0">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
+                            <i class="fas fa-leaf"></i>
+                        </span>
+                        <div>
+                            <strong class="block font-black text-[#142112]">Orgánicos</strong>
+                            <span class="text-sm text-[#66735f]">Productos frescos</span>
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN BENEFICIOS -->
-        <section id="beneficios" class="bg-white landing-py-section">
-            <div class="container-landing">
-                <div class="text-center mx-auto" style="max-width: 48rem;">
-                    <span class="badge badge-agro-soft rounded-pill px-3 py-2 text-uppercase fw-black" style="font-size: 0.75rem;">Beneficios</span>
-                    <h2 class="fw-black text-agro-dark mt-3" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2;">Una experiencia clara para compradores, vendedores y productores.</h2>
-                    <p class="fs-5 text-agro-muted mt-3" style="line-height: 1.6;">Centraliza publicaciones y mejora la forma de encontrar oportunidades dentro del mercado agropecuario.</p>
+        <section id="beneficios" class="bg-white py-16 sm:py-20">
+            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-3xl text-center">
+                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Beneficios</span>
+                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Una experiencia clara para compradores, vendedores y productores.</h2>
+                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Centraliza publicaciones y mejora la forma de encontrar oportunidades dentro del mercado agropecuario.</p>
                 </div>
 
-                <div class="row g-4 mt-5">
+                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
                         ['icon' => 'fa-box-open', 'title' => 'Publicación de productos', 'text' => 'Presenta productos agrícolas con información clara, imágenes y detalles comerciales.'],
                         ['icon' => 'fa-horse', 'title' => 'Gestión de animales', 'text' => 'Organiza información de ganado, características, ubicación y datos relevantes.'],
                         ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Publica maquinaria para venta, alquiler o consulta con una presentación profesional.'],
                         ['icon' => 'fa-handshake', 'title' => 'Contacto comercial', 'text' => 'Facilita la conexión entre compradores, vendedores y operadores del sector.'],
                     ] as $benefit)
-                        <div class="col-md-6 col-lg-3">
-                            <article class="landing-card h-100 p-4 rounded-3xl bg-white">
-                                <span class="d-flex align-items-center justify-content-center landing-card-icon rounded-2xl mb-4" style="width: 3rem; height: 3rem;">
-                                    <i class="fas {{ $benefit['icon'] }} fs-5"></i>
-                                </span>
-                                <h3 class="fs-5 fw-black text-agro-dark mt-3">{{ $benefit['title'] }}</h3>
-                                <p class="text-agro-muted mt-2 mb-0" style="line-height: 1.6;">{{ $benefit['text'] }}</p>
-                            </article>
-                        </div>
+                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas {{ $benefit['icon'] }}"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $benefit['title'] }}</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">{{ $benefit['text'] }}</p>
+                        </article>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN CATEGORÍAS -->
-        <section id="categorias" class="landing-categorias-bg landing-py-section">
-            <div class="container-landing">
-                <div class="row align-items-end g-4">
-                    <div class="col-lg-7">
-                        <span class="badge badge-agro-soft rounded-pill px-3 py-2 text-uppercase fw-black" style="font-size: 0.75rem;">Categorías</span>
-                        <h2 class="fw-black text-agro-dark mt-3 mb-0" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2;">Todo el mercado agropecuario presentado con orden.</h2>
+        <section id="categorias" class="bg-gradient-to-b from-[#f4faef] to-white py-16 sm:py-20">
+            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="grid items-end gap-6 lg:grid-cols-[1fr_0.7fr]">
+                    <div>
+                        <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Categorías</span>
+                        <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Todo el mercado agropecuario presentado con orden.</h2>
                     </div>
-                    <div class="col-lg-5">
-                        <p class="fs-5 text-agro-muted mb-0" style="line-height: 1.6;">Tarjetas visuales para encontrar rápidamente el tipo de publicación que cada usuario necesita.</p>
-                    </div>
+                    <p class="text-lg leading-8 text-[#66735f]">Tarjetas visuales para encontrar rápidamente el tipo de publicación que cada usuario necesita.</p>
                 </div>
 
-                <div class="row g-4 mt-5">
+                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
                         ['icon' => 'fa-horse', 'title' => 'Animales', 'text' => 'Ganado y publicaciones pecuarias con datos útiles para evaluar cada oportunidad.'],
                         ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Equipos, marcas, estados y opciones para trabajo agrícola o productivo.'],
                         ['icon' => 'fa-carrot', 'title' => 'Productos orgánicos', 'text' => 'Producción fresca, trazabilidad y productos naturales para el mercado local.'],
                         ['icon' => 'fa-bullhorn', 'title' => 'Servicios y anuncios', 'text' => 'Publicaciones relacionadas con operaciones, oferta y demanda del sector.'],
                     ] as $category)
-                        <div class="col-md-6 col-lg-3">
-                            <article class="landing-card h-100 p-4 rounded-3xl bg-white">
-                                <span class="d-flex align-items-center justify-content-center landing-card-icon rounded-2xl mb-4" style="width: 3rem; height: 3rem;">
-                                    <i class="fas {{ $category['icon'] }} fs-5"></i>
-                                </span>
-                                <h3 class="fs-5 fw-black text-agro-dark mt-3">{{ $category['title'] }}</h3>
-                                <p class="text-agro-muted mt-2 mb-0" style="line-height: 1.6;">{{ $category['text'] }}</p>
-                            </article>
-                        </div>
+                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
+                                <i class="fas {{ $category['icon'] }}"></i>
+                            </span>
+                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $category['title'] }}</h3>
+                            <p class="mt-3 leading-7 text-[#66735f]">{{ $category['text'] }}</p>
+                        </article>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN CÓMO FUNCIONA -->
-        <section id="como-funciona" class="bg-white landing-py-section">
-            <div class="container-landing">
-                <div class="row g-5">
-                    <div class="col-lg-5">
-                        <span class="badge badge-agro-soft rounded-pill px-3 py-2 text-uppercase fw-black" style="font-size: 0.75rem;">Cómo funciona</span>
-                        <h2 class="fw-black text-agro-dark mt-3 mb-4" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2;">Encuentra, publica y organiza oportunidades del campo con facilidad.</h2>
-                        <p class="fs-5 text-agro-muted" style="line-height: 1.6;">Crea tu cuenta para explorar el mercado, compartir tus productos y gestionar contactos comerciales desde un entorno claro y ordenado.</p>
-                    </div>
+        <section id="como-funciona" class="bg-white py-16 sm:py-20">
+            <div class="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1fr] lg:px-8">
+                <div>
+                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Cómo funciona</span>
+                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Encuentra, publica y organiza oportunidades del campo con facilidad.</h2>
+                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Crea tu cuenta para explorar el mercado, compartir tus productos y gestionar contactos comerciales desde un entorno claro y ordenado.</p>
+                </div>
 
-                    <div class="col-lg-7">
-                        <div class="d-flex flex-column gap-4">
-                            @foreach ([
-                                ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
-                                ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
-                                ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
-                            ] as $item)
-                                <article class="landing-step-card d-flex flex-column flex-sm-row gap-3 gap-sm-4 p-4 rounded-3xl">
-                                    <span class="d-flex align-items-center justify-content-center rounded-2xl border text-agro-darker fs-5 fw-black flex-shrink-0" style="width: 3.5rem; height: 3.5rem; border-color: rgba(47,98,31,0.15)!important; background-color: #edf7e7;">
-                                        {{ $item['step'] }}
-                                    </span>
-                                    <div>
-                                        <h3 class="fs-5 fw-black text-agro-dark mb-2">{{ $item['title'] }}</h3>
-                                        <p class="text-agro-muted mb-0" style="line-height: 1.6;">{{ $item['text'] }}</p>
-                                    </div>
-                                </article>
-                            @endforeach
-                        </div>
-                    </div>
+                <div class="grid gap-5">
+                    @foreach ([
+                        ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
+                        ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
+                        ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
+                    ] as $item)
+                        <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
+                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">{{ $item['step'] }}</span>
+                            <div>
+                                <h3 class="text-xl font-black text-[#142112]">{{ $item['title'] }}</h3>
+                                <p class="mt-2 leading-7 text-[#66735f]">{{ $item['text'] }}</p>
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN CTA -->
-        <section class="bg-white px-3 px-sm-4 px-lg-5 pb-5">
-            <div class="container-landing p-4 p-sm-5 rounded-4xl landing-cta-bg text-white d-flex flex-column flex-lg-row align-items-lg-center justify-content-lg-between gap-4">
-                <div class="col-lg-8">
-                    <span class="badge border rounded-pill px-3 py-2 text-uppercase fw-black text-white mb-3" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2)!important; font-size: 0.75rem;">Mercado Agrícola</span>
-                    <h2 class="fw-black mb-3" style="font-size: clamp(1.875rem, 4vw, 3rem); line-height: 1.2;">Impulsa tus publicaciones agropecuarias con una plataforma profesional.</h2>
-                    <p class="fs-5 text-white-75 mb-0" style="max-width: 42rem; line-height: 1.6;">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
+        <section class="bg-white px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8">
+            <div class="mx-auto grid max-w-7xl items-center gap-8 rounded-[2rem] bg-[linear-gradient(135deg,rgba(24,59,24,0.98),rgba(47,98,31,0.95)),url('/img/bg-agrovida.jpg')] bg-cover bg-center p-8 text-white shadow-2xl shadow-[#183b18]/25 sm:p-12 lg:grid-cols-[1fr_auto]">
+                <div>
+                    <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase text-white">Mercado Agrícola</span>
+                    <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">Impulsa tus publicaciones agropecuarias con una plataforma profesional.</h2>
+                    <p class="mt-5 max-w-2xl text-lg leading-8 text-white/75">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
                 </div>
-                <div class="d-flex flex-column flex-sm-row flex-lg-column gap-3 col-lg-auto">
-                    <a href="{{ route('register') }}" class="btn bg-white landing-cta-btn-light rounded-2xl fw-black px-4 text-agro-darker d-flex align-items-center justify-content-center" style="min-height: 3.5rem;">
-                        Registrarse
-                    </a>
-                    <a href="{{ route('login') }}" class="btn text-white landing-cta-btn-outline rounded-2xl fw-black px-4 d-flex align-items-center justify-content-center" style="min-height: 3.5rem;">
-                        Iniciar sesión
-                    </a>
+                <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                    <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#183b18] no-underline shadow-xl transition hover:-translate-y-0.5">Registrarse</a>
+                    <a href="{{ route('login') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 font-black text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15">Iniciar sesión</a>
                 </div>
             </div>
         </section>
 
-        <!-- FOOTER -->
-        <footer class="py-5" style="background-color: #132714; color: #dfeada;">
-            <div class="container-landing">
-                <div class="row align-items-center gap-4">
-                    <div class="col-lg">
-                        <strong class="d-block fs-5 fw-black text-white">Mercado Agrícola</strong>
-                        <p class="mt-2 mb-0 text-white-65" style="max-width: 28rem;">Plataforma para conectar productos, animales, maquinaria y servicios agropecuarios.</p>
-                    </div>
-                    <div class="col-lg-auto d-flex flex-wrap gap-3 gap-sm-4">
-                        <a href="#beneficios" class="fw-bold text-decoration-none landing-footer-link">Beneficios</a>
-                        <a href="#categorias" class="fw-bold text-decoration-none landing-footer-link">Categorías</a>
-                        <a href="#como-funciona" class="fw-bold text-decoration-none landing-footer-link">Cómo funciona</a>
-                    </div>
-                    <div class="col-lg-auto text-white-60 small">
-                        © {{ date('Y') }} Mercado Agrícola
-                    </div>
+        <footer class="bg-[#132714] py-8 text-[#dfeada]">
+            <div class="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_auto_auto] lg:px-8">
+                <div>
+                    <strong class="block text-lg font-black text-white">Mercado Agrícola</strong>
+                    <p class="mt-2 max-w-md text-white/65">Plataforma para conectar productos, animales, maquinaria y servicios agropecuarios.</p>
                 </div>
+                <div class="flex flex-wrap gap-4">
+                    <a href="#beneficios" class="font-bold text-[#dfeada] no-underline hover:text-white">Beneficios</a>
+                    <a href="#categorias" class="font-bold text-[#dfeada] no-underline hover:text-white">Categorías</a>
+                    <a href="#como-funciona" class="font-bold text-[#dfeada] no-underline hover:text-white">Cómo funciona</a>
+                </div>
+                <span class="text-white/60">© {{ date('Y') }} Mercado Agrícola</span>
             </div>
         </footer>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nav = document.querySelector('[data-landing-nav]');
+            if (!nav) {
+                return;
+            }
+
+            let lastScrollY = window.scrollY;
+
+            const updateNav = () => {
+                const currentScrollY = window.scrollY;
+                const isScrollingDown = currentScrollY > lastScrollY;
+
+                nav.classList.toggle('is-stuck', currentScrollY > 12);
+                nav.classList.toggle('is-hidden', isScrollingDown && currentScrollY > 48);
+
+                lastScrollY = Math.max(currentScrollY, 0);
+            };
+
+            updateNav();
+            window.addEventListener('scroll', updateNav, { passive: true });
+        });
+    </script>
 @endsection
