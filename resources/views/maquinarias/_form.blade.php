@@ -25,56 +25,59 @@
     ];
 @endphp
 
-<div class="maquinaria-wizard" data-maquinaria-wizard>
-    <div class="maquinaria-wizard__shell">
-    <div class="maquinaria-wizard__hero">
+<!-- CARGAR CSS GENÉRICO -->
+<link rel="stylesheet" href="{{ asset('css/wizard-form.css') }}">
+
+<div class="agro-wizard" data-agro-wizard>
+    <div class="agro-wizard__shell">
+    <div class="agro-wizard__hero">
         <div>
-            <span class="maquinaria-wizard__eyebrow">Registro de maquinaria agrícola</span>
-            <h3 class="maquinaria-wizard__title mb-1">
+            <span class="agro-wizard__eyebrow">Registro de maquinaria agrícola</span>
+            <h3 class="agro-wizard__title mb-1">
                 <i class="fas fa-tractor mr-2"></i>{{ isset($maquinaria) ? 'Editar maquinaria' : 'Nueva maquinaria' }}
             </h3>
-            <p class="maquinaria-wizard__subtitle mb-0">
+            <p class="agro-wizard__subtitle mb-0">
                 Completa la información paso a paso. Los datos se conservan al avanzar o retroceder.
             </p>
         </div>
-        <span class="badge badge-success maquinaria-wizard__badge" data-wizard-current-label>
+        <span class="badge badge-success agro-wizard__badge" data-wizard-current-label>
             Paso 1 de {{ count($wizardSteps) }}
         </span>
     </div>
 
-    <div class="maquinaria-wizard__progress" role="tablist" aria-label="Pasos del registro de maquinaria">
+    <div class="agro-wizard__progress" role="tablist" aria-label="Pasos del registro">
         @foreach ($wizardSteps as $index => $step)
-            <button type="button" class="maquinaria-wizard__step-indicator {{ $index === 0 ? 'is-active' : '' }}"
+            <button type="button" class="agro-wizard__step-indicator {{ $index === 0 ? 'is-active' : '' }}"
                 data-wizard-go-to="{{ $index }}" aria-current="{{ $index === 0 ? 'step' : 'false' }}">
-                <span class="maquinaria-wizard__step-number">{{ $index + 1 }}</span>
-                <span class="maquinaria-wizard__step-icon">
+                <span class="agro-wizard__step-number">{{ $index + 1 }}</span>
+                <span class="agro-wizard__step-icon">
                     <i class="{{ $step['icon'] }}"></i>
                 </span>
-                <span class="maquinaria-wizard__step-copy">
-                    <span class="maquinaria-wizard__step-title">{{ $step['title'] }}</span>
-                    <span class="maquinaria-wizard__step-description">{{ $step['description'] }}</span>
-                    <span class="maquinaria-wizard__step-status" data-wizard-step-status>Pendiente</span>
+                <span class="agro-wizard__step-copy">
+                    <span class="agro-wizard__step-title">{{ $step['title'] }}</span>
+                    <span class="agro-wizard__step-description">{{ $step['description'] }}</span>
+                    <span class="agro-wizard__step-status" data-wizard-step-status>Pendiente</span>
                 </span>
             </button>
         @endforeach
     </div>
 
-    <div class="maquinaria-wizard__progressbar" aria-hidden="true">
+    <div class="agro-wizard__progressbar" aria-hidden="true">
         <span data-wizard-progressbar style="width: {{ 100 / max(count($wizardSteps), 1) }}%;"></span>
     </div>
 
-    <div class="alert alert-danger maquinaria-wizard__error-summary d-none" data-wizard-error-summary></div>
+    <div class="alert alert-danger agro-wizard__error-summary d-none" data-wizard-error-summary></div>
 
-    <div class="maquinaria-wizard__content">
+    <div class="agro-wizard__content">
 
     {{-- ========== PASO 1: DATOS BASICOS ========== --}}
-    <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step is-active" data-wizard-step="0">
+    <section class="card card-outline card-success shadow-sm mb-4 agro-wizard-step is-active" data-wizard-step="0">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h3 class="card-title mb-0">
                     <i class="fas fa-tractor mr-2"></i> Datos de la maquinaria
                 </h3>
-                <small class="text-muted">Identificación, tipo, marca y modelo.</small>
+                <small class="text-muted">Identificación, categoría, tipo, marca y modelo.</small>
             </div>
             <span class="badge badge-success">Paso 1 de {{ count($wizardSteps) }}</span>
         </div>
@@ -93,8 +96,18 @@
                             value="{{ old('nombre', $maquinaria->nombre ?? '') }}" required>
                     </div>
 
-                    <input type="hidden" name="categoria_id"
-                        value="{{ old('categoria_id', $maquinaria->categoria_id ?? ($categoriaMaquinaria->id ?? '')) }}">
+                    <div class="form-group">
+                        <label class="mb-1">Categoría *</label>
+                        <select name="categoria_id" class="form-control @error('categoria_id') is-invalid @enderror" required>
+                            <option value="">Seleccione una categoría</option>
+                            @foreach ($categorias as $categoria)
+                                <option value="{{ $categoria->id }}"
+                                    {{ old('categoria_id', $maquinaria->categoria_id ?? '') == $categoria->id ? 'selected' : '' }}>
+                                    {{ $categoria->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div class="form-group mb-md-0">
                         <label class="mb-1">Tipo de Maquinaria *</label>
@@ -137,7 +150,7 @@
     </section>
 
     {{-- ========== PASO 2: CONTACTO Y ALQUILER ========== --}}
-    <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" data-wizard-step="1">
+    <section class="card card-outline card-success shadow-sm mb-4 agro-wizard-step" data-wizard-step="1">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h3 class="card-title mb-0">
@@ -160,25 +173,17 @@
                     </div>
 
                     <div class="form-group mb-md-0">
-                        <label class="mb-1">Precio *</label>
+                        <label class="mb-1">Precio por día *</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
-                                @php
-                                    $tarifaUnidad = old('tarifa_unidad', $maquinaria->tarifa_unidad ?? 'dia');
-                                @endphp
-                                <select name="tarifa_unidad"
-                                    class="custom-select @error('tarifa_unidad') is-invalid @enderror"
-                                    style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                    <option value="hora" {{ $tarifaUnidad === 'hora' ? 'selected' : '' }}>Bs/hora</option>
-                                    <option value="dia" {{ $tarifaUnidad === 'dia' ? 'selected' : '' }}>Bs/día</option>
-                                </select>
+                                <span class="input-group-text">Bs/día</span>
                             </div>
                             <input type="number" step="0.01" name="precio_dia"
                                 class="form-control @error('precio_dia') is-invalid @enderror" placeholder="0.00"
                                 value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required>
                         </div>
                         <small class="form-text text-muted">
-                            Monto a cobrar según la unidad seleccionada.
+                            Monto a cobrar por cada día de alquiler.
                         </small>
                     </div>
                 </div>
@@ -186,29 +191,21 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="mb-1">Estado *</label>
-                        @if (isset($maquinaria))
-                            <select name="estado_maquinaria_id"
-                                class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
-                                <option value="">Seleccione un estado</option>
-                                @foreach ($estado_maquinarias as $estado)
-                                    <option value="{{ $estado->id }}"
-                                        {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
-                                        {{ $estado->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        @else
-                            <input type="hidden" name="estado_maquinaria_id"
-                                value="{{ old('estado_maquinaria_id', $estadoDisponible->id ?? '') }}">
-                            <select class="form-control @error('estado_maquinaria_id') is-invalid @enderror" disabled>
-                                <option selected>{{ $estadoDisponible ? ucfirst(str_replace('_', ' ', $estadoDisponible->nombre)) : 'Disponible' }}</option>
-                            </select>
-                        @endif
+                        <select name="estado_maquinaria_id"
+                            class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
+                            <option value="">Seleccione un estado</option>
+                            @foreach ($estado_maquinarias as $estado)
+                                <option value="{{ $estado->id }}"
+                                    {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
+                                    {{ $estado->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="form-group mb-0">
                         <label class="mb-1">Descripción</label>
-                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4" style="resize: none;"
+                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4"
                             placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
                     </div>
                 </div>
@@ -217,7 +214,7 @@
     </section>
 
     {{-- ========== PASO 3: UBICACION ========== --}}
-    <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" data-wizard-step="2">
+    <section class="card card-outline card-success shadow-sm mb-4 agro-wizard-step" data-wizard-step="2">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h3 class="card-title mb-0">
@@ -231,77 +228,38 @@
         <div class="card-body">
             <div class="form-group mb-3">
                 <label class="mb-1">Ubicación (seleccione en el mapa)</label>
-                <div class="input-group mb-2">
-                    <input type="search" id="buscar-ubicacion" class="form-control"
-                        placeholder="Buscar lugar, ciudad o dirección">
-                    <div class="input-group-append">
-                        <button type="button" class="btn btn-outline-secondary" id="btn-buscar-ubicacion">
-                            <i class="fas fa-search mr-1"></i> Buscar
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btn-ubicacion-actual">
-                            <i class="fas fa-location-arrow mr-1"></i> Ubicación actual
-                        </button>
-                    </div>
-                </div>
-                <div id="sugerencias-ubicacion" class="list-group mb-2" style="display: none;"></div>
-                <div id="map" class="maquinaria-wizard__map"
-                    style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
-                </div>
+                <div id="map" class="agro-wizard__map"></div>
 
-                <input type="hidden" name="latitud" id="latitud"
-                    value="{{ old('latitud', $maquinaria->latitud ?? '') }}">
-                <input type="hidden" name="longitud" id="longitud"
-                    value="{{ old('longitud', $maquinaria->longitud ?? '') }}">
-                <input type="hidden" name="departamento" id="departamento"
-                    value="{{ old('departamento', $maquinaria->departamento ?? '') }}">
-                <input type="hidden" name="municipio" id="municipio"
-                    value="{{ old('municipio', $maquinaria->municipio ?? '') }}">
-                <input type="hidden" name="provincia" id="provincia"
-                    value="{{ old('provincia', $maquinaria->provincia ?? '') }}">
-                <input type="hidden" name="ciudad" id="ciudad"
-                    value="{{ old('ciudad', $maquinaria->ciudad ?? '') }}">
+                <input type="hidden" name="latitud" id="latitud" value="{{ old('latitud', $maquinaria->latitud ?? '') }}">
+                <input type="hidden" name="longitud" id="longitud" value="{{ old('longitud', $maquinaria->longitud ?? '') }}">
+                <input type="hidden" name="departamento" id="departamento" value="{{ old('departamento', $maquinaria->departamento ?? '') }}">
+                <input type="hidden" name="municipio" id="municipio" value="{{ old('municipio', $maquinaria->municipio ?? '') }}">
+                <input type="hidden" name="provincia" id="provincia" value="{{ old('provincia', $maquinaria->provincia ?? '') }}">
+                <input type="hidden" name="ciudad" id="ciudad" value="{{ old('ciudad', $maquinaria->ciudad ?? '') }}">
 
                 <input type="text" id="ubicacion" name="ubicacion"
                     class="form-control mt-2 @error('ubicacion') is-invalid @enderror"
                     value="{{ old('ubicacion', $maquinaria->ubicacion ?? '') }}" readonly>
-                <button type="button" class="btn btn-success btn-sm mt-2" id="btn-confirmar-ubicacion">
-                    <i class="fas fa-check mr-1"></i> Confirmar ubicación
-                </button>
-                <small id="ubicacion-confirmada" class="form-text text-success" style="display: none;">
-                    Ubicación confirmada.
-                </small>
             </div>
 
-            <div id="info-ubicacion" class="maquinaria-wizard__location-detail mt-2"
+            <div id="info-ubicacion" class="agro-wizard__location-detail mt-2"
                 style="display: {{ isset($maquinaria) && ($maquinaria->ciudad || $maquinaria->municipio) ? 'block' : 'none' }};">
                 <h6 class="mb-3 text-muted text-uppercase">
                     <i class="fas fa-map mr-1"></i> Detalle de ubicación
                 </h6>
                 <div class="row mb-2">
-                    <div class="col-md-3">
-                        <strong>Ciudad:</strong>
-                    </div>
-                    <div class="col-md-9" id="ciudad-texto">
-                        {{ isset($maquinaria) ? $maquinaria->ciudad ?? ($maquinaria->municipio ?? '-') : '-' }}
-                    </div>
+                    <div class="col-md-3"><strong>Ciudad:</strong></div>
+                    <div class="col-md-9" id="ciudad-texto">{{ isset($maquinaria) ? $maquinaria->ciudad ?? ($maquinaria->municipio ?? '-') : '-' }}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-3">
-                        <strong>Dirección:</strong>
-                    </div>
+                    <div class="col-md-3"><strong>Dirección:</strong></div>
                     <div class="col-md-9" id="direccion-texto">
                         @if (isset($maquinaria) && ($maquinaria->municipio || $maquinaria->provincia || $maquinaria->departamento))
                             @php
                                 $direccion = [];
-                                if ($maquinaria->municipio) {
-                                    $direccion[] = $maquinaria->municipio;
-                                }
-                                if ($maquinaria->provincia) {
-                                    $direccion[] = 'Provincia ' . $maquinaria->provincia;
-                                }
-                                if ($maquinaria->departamento) {
-                                    $direccion[] = $maquinaria->departamento;
-                                }
+                                if ($maquinaria->municipio) $direccion[] = $maquinaria->municipio;
+                                if ($maquinaria->provincia) $direccion[] = 'Provincia ' . $maquinaria->provincia;
+                                if ($maquinaria->departamento) $direccion[] = $maquinaria->departamento;
                                 $direccion[] = 'Bolivia';
                                 $direccionCompleta = implode(', ', $direccion);
                             @endphp
@@ -316,7 +274,7 @@
     </section>
 
     {{-- ========== PASO 4: IMAGENES ========== --}}
-    <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" data-wizard-step="3">
+    <section class="card card-outline card-success shadow-sm mb-4 agro-wizard-step" data-wizard-step="3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h3 class="card-title mb-0">
@@ -334,24 +292,18 @@
                 @if (isset($maquinaria) && $maquinaria->imagenes->count() > 0)
                     <div class="mb-3">
                         <p class="text-muted mb-2">Imágenes actuales:</p>
-                        <div class="row" id="imagenes-actuales">
+                        <div class="row" id="imagenes-actuales" data-count="{{ $maquinaria->imagenes->count() }}">
                             @foreach ($maquinaria->imagenes as $imagen)
                                 <div class="col-md-3 mb-3 imagen-item" data-imagen-id="{{ $imagen->id }}">
-                                    <div class="mb-2">
+                                    <div class="position-relative">
                                         <img src="{{ asset('storage/' . $imagen->ruta) }}"
                                             alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
                                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                    </div>
-                                    <div class="btn-group btn-group-sm d-flex" role="group">
-                                        <button type="button" class="btn btn-outline-danger eliminar-imagen"
+                                        <button type="button"
+                                            class="btn btn-sm btn-danger position-absolute eliminar-imagen"
                                             data-imagen-id="{{ $imagen->id }}">
-                                            <i class="fas fa-trash mr-1"></i> Eliminar
+                                            <i class="fas fa-times"></i>
                                         </button>
-                                        <label class="btn btn-outline-success mb-0">
-                                            <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
-                                                {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
-                                            Portada
-                                        </label>
                                     </div>
                                     <input type="hidden" name="imagenes_eliminar[]" value=""
                                         class="imagen-eliminar-input">
@@ -362,22 +314,21 @@
                 @endif
 
                 <label for="imagenes-input"
-                    class="maquinaria-upload-zone @error('imagenes') is-invalid @enderror @error('imagenes.*') is-invalid @enderror"
+                    class="agro-upload-zone @error('imagenes') is-invalid @enderror @error('imagenes.*') is-invalid @enderror"
                     data-upload-zone>
-                    <span class="maquinaria-upload-zone__icon">
+                    <span class="agro-upload-zone__icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </span>
-                    <span class="maquinaria-upload-zone__content">
+                    <span class="agro-upload-zone__content">
                         <strong>Haz clic para subir imágenes</strong>
                         <small>También puedes arrastrar tus archivos aquí. JPG, PNG o GIF, máximo 2MB por imagen.</small>
                     </span>
-                    <span class="maquinaria-upload-zone__cta">Seleccionar archivos</span>
+                    <span class="agro-upload-zone__cta">Seleccionar archivos</span>
                 </label>
 
-                <input type="file" name="imagenes[]" class="maquinaria-upload-input" accept="image/*" multiple
-                    id="imagenes-input">
+                <input type="file" name="imagenes[]" class="agro-upload-input" accept="image/*" multiple id="imagenes-input">
 
-                <div id="imagenes-count" class="maquinaria-upload-count mt-3"></div>
+                <div id="imagenes-count" class="agro-upload-count mt-3"></div>
                 <div id="preview-container" class="row mt-3 mb-0"></div>
             </div>
         </div>
@@ -386,12 +337,12 @@
     </div>
 
     {{-- BOTONES --}}
-    <div class="maquinaria-wizard__actions">
+    <div class="agro-wizard__actions">
         <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('maquinarias.index') }}"
             class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Volver
         </a>
-        <div class="maquinaria-wizard__action-group">
+        <div class="agro-wizard__action-group">
             <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
                 <i class="fas fa-chevron-left mr-1"></i> Anterior
             </button>
@@ -416,164 +367,26 @@
     var initialLng = {{ old('longitud', $maquinaria->longitud ?? -63.1821) }};
     var initialZoom = {{ isset($maquinaria) && $maquinaria->latitud ? 12 : 6 }};
 
-    // Crear el mapa
     var map = L.map('map').setView([initialLat, initialLng], initialZoom);
-
-    // Capa gratuita de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: 'OpenStreetMap'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OpenStreetMap' }).addTo(map);
 
     var marker;
-    var locationSearchTimer = null;
-    var lastLocationQuery = '';
-    var locationSearchAbort = null;
-    var locationSearchCache = {};
-
-    // Si hay coordenadas existentes, mostrar el marcador
     @if (isset($maquinaria) && $maquinaria->latitud && $maquinaria->longitud)
         marker = L.marker([initialLat, initialLng]).addTo(map);
     @endif
 
-    function setMapLocation(lat, lng, label, zoom) {
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng]).addTo(map);
-        }
-
-        document.getElementById('latitud').value = lat;
-        document.getElementById('longitud').value = lng;
-        document.getElementById('ubicacion').value = label || ("Lat: " + lat + " - Lng: " + lng);
-        document.getElementById('ubicacion-confirmada').style.display = 'none';
-
-        if (zoom) {
-            map.setView([lat, lng], zoom);
-        }
-
-        obtenerInformacionGeografica(lat, lng);
-    }
-
-    // Evento click en mapa
     map.on('click', function(e) {
         var lat = e.latlng.lat.toFixed(7);
         var lng = e.latlng.lng.toFixed(7);
+        if (marker) { marker.setLatLng([lat, lng]); } else { marker = L.marker([lat, lng]).addTo(map); }
 
-        setMapLocation(lat, lng, null);
+        document.getElementById('latitud').value = lat;
+        document.getElementById('longitud').value = lng;
+        document.getElementById('ubicacion').value = "Lat: " + lat + " - Lng: " + lng;
+        obtenerInformacionGeografica(lat, lng);
     });
 
-    function renderLocationSuggestions(results) {
-        var container = document.getElementById('sugerencias-ubicacion');
-        container.innerHTML = '';
-
-        if (!results.length) {
-            container.style.display = 'none';
-            return;
-        }
-
-        results.forEach(function(result) {
-            var option = document.createElement('button');
-            option.type = 'button';
-            option.className = 'list-group-item list-group-item-action';
-            option.textContent = result.display_name;
-            option.addEventListener('click', function() {
-                var lat = Number(result.lat).toFixed(7);
-                var lng = Number(result.lon).toFixed(7);
-                container.style.display = 'none';
-                document.getElementById('buscar-ubicacion').value = result.display_name;
-                setMapLocation(lat, lng, result.display_name, 14);
-            });
-            container.appendChild(option);
-        });
-
-        container.style.display = 'block';
-    }
-
-    function buscarUbicacion(force) {
-        var input = document.getElementById('buscar-ubicacion');
-        var query = input.value.trim();
-        var suggestions = document.getElementById('sugerencias-ubicacion');
-
-        if (query.length < 3) {
-            suggestions.style.display = 'none';
-            return;
-        }
-
-        if (!force && query === lastLocationQuery) {
-            return;
-        }
-
-        lastLocationQuery = query;
-
-        if (locationSearchCache[query]) {
-            renderLocationSuggestions(locationSearchCache[query]);
-            return;
-        }
-
-        if (locationSearchAbort) {
-            locationSearchAbort.abort();
-        }
-
-        locationSearchAbort = new AbortController();
-
-        fetch('/api/geocodificacion/buscar?q=' + encodeURIComponent(query), {
-                signal: locationSearchAbort.signal
-            })
-            .then(response => response.json())
-            .then(data => {
-                var results = data.success ? data.data : [];
-                locationSearchCache[query] = results;
-                renderLocationSuggestions(results);
-            })
-            .catch(error => {
-                if (error.name !== 'AbortError') {
-                    console.error('Error al buscar ubicación:', error);
-                }
-            });
-    }
-
-    document.getElementById('buscar-ubicacion').addEventListener('input', function() {
-        clearTimeout(locationSearchTimer);
-        locationSearchTimer = setTimeout(function() {
-            buscarUbicacion(false);
-        }, 700);
-    });
-
-    document.getElementById('btn-buscar-ubicacion').addEventListener('click', function() {
-        clearTimeout(locationSearchTimer);
-        buscarUbicacion(true);
-    });
-
-    document.getElementById('btn-ubicacion-actual').addEventListener('click', function() {
-        if (!navigator.geolocation) {
-            alert('Tu navegador no permite obtener la ubicación actual.');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(function(position) {
-            var lat = position.coords.latitude.toFixed(7);
-            var lng = position.coords.longitude.toFixed(7);
-            setMapLocation(lat, lng, null, 14);
-        }, function() {
-            alert('No se pudo obtener tu ubicación actual.');
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000
-        });
-    });
-
-    document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function() {
-        if (!document.getElementById('latitud').value || !document.getElementById('longitud').value) {
-            alert('Primero selecciona una ubicación en el mapa.');
-            return;
-        }
-
-        document.getElementById('ubicacion-confirmada').style.display = 'block';
-    });
-
-    // Función para obtener información geográfica
     function obtenerInformacionGeografica(lat, lng) {
-        // Mostrar contenedor de información
         document.getElementById('info-ubicacion').style.display = 'block';
         document.getElementById('ciudad-texto').textContent = 'Cargando...';
         document.getElementById('direccion-texto').textContent = 'Cargando...';
@@ -583,18 +396,12 @@
             .then(data => {
                 if (data.success && data.data) {
                     var info = data.data;
-
-                    // Guardar en campos ocultos
                     document.getElementById('departamento').value = info.departamento || '';
                     document.getElementById('municipio').value = info.municipio || '';
                     document.getElementById('provincia').value = info.provincia || '';
                     document.getElementById('ciudad').value = info.ciudad || '';
+                    document.getElementById('ciudad-texto').textContent = info.ciudad || info.municipio || 'No disponible';
 
-                    // Mostrar en la interfaz
-                    document.getElementById('ciudad-texto').textContent = info.ciudad || info.municipio ||
-                        'No disponible';
-
-                    // Construir dirección completa: Municipio, Provincia, Departamento, Bolivia
                     var direccion = [];
                     if (info.municipio) direccion.push(info.municipio);
                     if (info.provincia) direccion.push('Provincia ' + info.provincia);
@@ -603,461 +410,25 @@
 
                     var direccionCompleta = direccion.join(', ');
                     document.getElementById('direccion-texto').textContent = direccionCompleta || 'No disponible';
-
-                    // Actualizar campo ubicación
-                    if (direccionCompleta) {
-                        document.getElementById('ubicacion').value = direccionCompleta;
-                    }
+                    if (direccionCompleta) { document.getElementById('ubicacion').value = direccionCompleta; }
                 } else {
                     document.getElementById('ciudad-texto').textContent = 'No disponible';
                     document.getElementById('direccion-texto').textContent = 'No disponible';
                 }
             })
             .catch(error => {
-                console.error('Error al obtener información geográfica:', error);
+                console.error('Error al obtener info geográfica:', error);
                 document.getElementById('ciudad-texto').textContent = 'Error';
                 document.getElementById('direccion-texto').textContent = 'Error';
             });
     }
 </script>
-
-{{-- ========== JS DEL WIZARD E IMAGENES ========== --}}
+{{-- ========== LÓGICA GENÉRICA DEL AGRO-WIZARD ========== --}}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const wizard = document.querySelector('[data-maquinaria-wizard]');
-        if (!wizard) return;
-
-        const form = wizard.closest('form');
-        const steps = Array.from(wizard.querySelectorAll('[data-wizard-step]'));
-        const indicators = Array.from(wizard.querySelectorAll('[data-wizard-go-to]'));
-        const prevButton = wizard.querySelector('[data-wizard-prev]');
-        const nextButton = wizard.querySelector('[data-wizard-next]');
-        const submitButton = wizard.querySelector('[data-wizard-submit]');
-        const errorSummary = wizard.querySelector('[data-wizard-error-summary]');
-        const progressBar = wizard.querySelector('[data-wizard-progressbar]');
-        const currentLabel = wizard.querySelector('[data-wizard-current-label]');
-        const serverErrors = @json($errors->messages());
-        let currentStep = 0;
-
-        form.setAttribute('novalidate', 'novalidate');
-
-        const fieldStepMap = {
-            nombre: 0,
-            categoria_id: 0,
-            tipo_maquinaria_id: 0,
-            marca_maquinaria_id: 0,
-            modelo: 0,
-            telefono: 1,
-            precio_dia: 1,
-            tarifa_unidad: 1,
-            estado_maquinaria_id: 1,
-            descripcion: 1,
-            ubicacion: 2,
-            latitud: 2,
-            longitud: 2,
-            departamento: 2,
-            municipio: 2,
-            provincia: 2,
-            ciudad: 2,
-            imagenes: 3,
-            imagenes_eliminar: 3,
-            imagen_portada: 3,
-        };
-
-        function normalizeFieldName(name) {
-            return name.replace(/\[\]$/, '').replace(/\.\d+$/, '');
-        }
-
-        function findControlByErrorKey(key) {
-            const normalized = normalizeFieldName(key);
-            return form.querySelector(`[name="${normalized}"]`) ||
-                form.querySelector(`[name="${normalized}[]"]`);
-        }
-
-        function getStepForField(key) {
-            const normalized = normalizeFieldName(key);
-            return fieldStepMap[normalized] ?? 0;
-        }
-
-        function fieldLabel(control) {
-            const group = control.closest('.form-group');
-            const label = group ? group.querySelector('label') : null;
-            return label ? label.textContent.replace('*', '').trim() : 'este campo';
-        }
-
-        function validationMessage(control) {
-            if (control.validity.valueMissing) {
-                return `Completa ${fieldLabel(control).toLowerCase()} para continuar.`;
-            }
-
-            if (control.validity.rangeUnderflow) {
-                return `Ingresa un valor igual o mayor a ${control.min}.`;
-            }
-
-            if (control.validity.rangeOverflow) {
-                return `Ingresa un valor igual o menor a ${control.max}.`;
-            }
-
-            if (control.validity.typeMismatch) {
-                return 'Ingresa un valor con el formato correcto.';
-            }
-
-            return control.validationMessage || 'Revisa este campo antes de continuar.';
-        }
-
-        function feedbackElement(control) {
-            const holder = control.closest('.input-group') || control;
-            let feedback = holder.nextElementSibling;
-
-            if (!feedback || !feedback.classList.contains('wizard-field-error')) {
-                feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback wizard-field-error';
-                holder.insertAdjacentElement('afterend', feedback);
-            }
-
-            return feedback;
-        }
-
-        function setFieldError(control, message) {
-            control.classList.add('is-invalid');
-            feedbackElement(control).textContent = message;
-        }
-
-        function clearFieldError(control) {
-            control.classList.remove('is-invalid');
-            const group = control.closest('.input-group') || control;
-            const feedback = group.nextElementSibling;
-            if (feedback && feedback.classList.contains('wizard-field-error')) {
-                feedback.textContent = '';
-            }
-        }
-
-        function validateStep(index, shouldFocus = true) {
-            const controls = Array.from(steps[index].querySelectorAll('input, select, textarea'))
-                .filter(control => !control.disabled && control.type !== 'hidden');
-            const invalidControls = [];
-
-            controls.forEach(control => {
-                clearFieldError(control);
-
-                if (!control.checkValidity()) {
-                    invalidControls.push(control);
-                    setFieldError(control, validationMessage(control));
-                }
-            });
-
-            steps[index].classList.toggle('has-errors', invalidControls.length > 0);
-            indicators[index].classList.toggle('has-errors', invalidControls.length > 0);
-
-            if (invalidControls.length > 0) {
-                errorSummary.textContent = 'Revisa los campos marcados antes de continuar.';
-                errorSummary.classList.remove('d-none');
-
-                if (shouldFocus) {
-                    invalidControls[0].focus({
-                        preventScroll: true
-                    });
-                    invalidControls[0].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            } else {
-                errorSummary.classList.add('d-none');
-            }
-
-            return invalidControls.length === 0;
-        }
-
-        function validateUntil(targetStep) {
-            for (let index = 0; index < targetStep; index++) {
-                if (!validateStep(index, false)) {
-                    showStep(index);
-                    validateStep(index, true);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function refreshMap() {
-            if (typeof map !== 'undefined') {
-                setTimeout(function() {
-                    map.invalidateSize();
-                }, 180);
-            }
-        }
-
-        function showStep(index) {
-            const previousStep = currentStep;
-            currentStep = Math.max(0, Math.min(index, steps.length - 1));
-            const direction = currentStep >= previousStep ? 'forward' : 'backward';
-
-            steps.forEach((step, stepIndex) => {
-                const isActive = stepIndex === currentStep;
-                step.classList.toggle('is-active', isActive);
-                step.classList.toggle('is-forward', isActive && direction === 'forward');
-                step.classList.toggle('is-backward', isActive && direction === 'backward');
-                step.style.display = isActive ? 'block' : 'none';
-            });
-
-            indicators.forEach((indicator, indicatorIndex) => {
-                indicator.classList.toggle('is-active', indicatorIndex === currentStep);
-                indicator.classList.toggle('is-complete', indicatorIndex < currentStep);
-                indicator.setAttribute('aria-current', indicatorIndex === currentStep ? 'step' : 'false');
-
-                const status = indicator.querySelector('[data-wizard-step-status]');
-                if (status) {
-                    if (indicatorIndex < currentStep) {
-                        status.textContent = 'Completado';
-                    } else if (indicatorIndex === currentStep) {
-                        status.textContent = 'En progreso';
-                    } else {
-                        status.textContent = 'Pendiente';
-                    }
-                }
-            });
-
-            prevButton.disabled = currentStep === 0;
-            nextButton.classList.toggle('d-none', currentStep === steps.length - 1);
-            submitButton.classList.toggle('d-none', currentStep !== steps.length - 1);
-            errorSummary.classList.add('d-none');
-
-            if (progressBar) {
-                progressBar.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
-            }
-
-            if (currentLabel) {
-                currentLabel.textContent = `Paso ${currentStep + 1} de ${steps.length}`;
-            }
-
-            if (steps[currentStep].querySelector('#map')) {
-                refreshMap();
-            }
-
-            wizard.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-
-        indicators.forEach(indicator => {
-            indicator.addEventListener('click', function() {
-                const targetStep = Number(this.getAttribute('data-wizard-go-to'));
-
-                if (targetStep <= currentStep || validateUntil(targetStep)) {
-                    showStep(targetStep);
-                }
-            });
-        });
-
-        prevButton.addEventListener('click', function() {
-            showStep(currentStep - 1);
-        });
-
-        nextButton.addEventListener('click', function() {
-            if (validateStep(currentStep)) {
-                showStep(currentStep + 1);
-            }
-        });
-
-        form.addEventListener('submit', function(event) {
-            for (let index = 0; index < steps.length; index++) {
-                if (!validateStep(index, false)) {
-                    event.preventDefault();
-                    showStep(index);
-                    validateStep(index, true);
-                    return;
-                }
-            }
-        });
-
-        Object.entries(serverErrors).forEach(([key, messages]) => {
-            const control = findControlByErrorKey(key);
-            if (!control) return;
-
-            setFieldError(control, messages[0]);
-            const stepIndex = getStepForField(key);
-            steps[stepIndex].classList.add('has-errors');
-            indicators[stepIndex].classList.add('has-errors');
-        });
-
-        const firstServerError = Object.keys(serverErrors)[0];
-        if (firstServerError) {
-            showStep(getStepForField(firstServerError));
-            errorSummary.textContent = 'Hay datos por corregir antes de guardar la maquinaria.';
-            errorSummary.classList.remove('d-none');
-        } else {
-            showStep(0);
-        }
-
-        const input = document.getElementById('imagenes-input');
-        const uploadZone = wizard.querySelector('[data-upload-zone]');
-        const previewContainer = document.getElementById('preview-container');
-        const countDisplay = document.getElementById('imagenes-count');
-        const imagenesActuales =
-            {{ isset($maquinaria) && $maquinaria->imagenes ? $maquinaria->imagenes->count() : 0 }};
-        let imagenesAEliminar = [];
-        let selectedFiles = [];
-
-        function refreshInputFiles() {
-            const dataTransfer = new DataTransfer();
-            selectedFiles.forEach(item => dataTransfer.items.add(item.file));
-            input.files = dataTransfer.files;
-        }
-
-        function liveExistingImagesCount() {
-            return imagenesActuales - imagenesAEliminar.length;
-        }
-
-        function ensureCoverSelection() {
-            const checked = form.querySelector('input[name="imagen_portada"]:checked');
-            if (checked && !(checked.value.startsWith('existing:') && imagenesAEliminar.includes(checked.value.replace('existing:', '')))) {
-                return;
-            }
-
-            const firstExisting = Array.from(form.querySelectorAll('input[name="imagen_portada"][value^="existing:"]'))
-                .find(radio => !imagenesAEliminar.includes(radio.value.replace('existing:', '')));
-            const firstNew = form.querySelector('input[name="imagen_portada"][value^="new:"]');
-
-            if (firstExisting) {
-                firstExisting.checked = true;
-            } else if (firstNew) {
-                firstNew.checked = true;
-            }
-        }
-
-        function renderSelectedFiles() {
-            previewContainer.innerHTML = '';
-
-            selectedFiles.forEach((item, index) => {
-                const col = document.createElement('div');
-                col.className = 'col-md-3 mb-3';
-                col.setAttribute('data-file-id', item.id);
-                col.innerHTML = `
-                    <div class="mb-2">
-                        <img src="${item.url}"
-                             alt="Preview ${index + 1}"
-                             class="img-thumbnail"
-                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                    </div>
-                    <div class="btn-group btn-group-sm d-flex" role="group">
-                        <button type="button"
-                                class="btn btn-outline-danger eliminar-preview"
-                                data-file-id="${item.id}">
-                            <i class="fas fa-trash mr-1"></i> Eliminar
-                        </button>
-                        <label class="btn btn-outline-success mb-0">
-                            <input type="radio" name="imagen_portada" value="new:${index}">
-                            Portada
-                        </label>
-                    </div>
-                `;
-                previewContainer.appendChild(col);
-            });
-
-            refreshInputFiles();
-            ensureCoverSelection();
-            updateCount();
-        }
-
-        // Manejar eliminación de imágenes existentes
-        document.querySelectorAll('.eliminar-imagen').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const imagenId = this.getAttribute('data-imagen-id');
-                const imagenItem = this.closest('.imagen-item');
-                const inputEliminar = imagenItem.querySelector('.imagen-eliminar-input');
-
-                if (inputEliminar.value === '') {
-                    inputEliminar.value = imagenId;
-                    imagenItem.style.opacity = '0.5';
-                    this.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurar';
-                    imagenesAEliminar.push(imagenId);
-                } else {
-                    inputEliminar.value = '';
-                    imagenItem.style.opacity = '1';
-                    this.innerHTML = '<i class="fas fa-trash mr-1"></i> Eliminar';
-                    imagenesAEliminar = imagenesAEliminar.filter(id => id !== imagenId);
-                }
-
-                ensureCoverSelection();
-                updateCount();
-            });
-        });
-
-        function updateCount() {
-            const total = liveExistingImagesCount() + selectedFiles.length;
-            countDisplay.textContent = `Total de imágenes: ${total} / 3`;
-            uploadZone.classList.toggle('has-files', total > 0);
-
-            if (total > 3) {
-                countDisplay.className = 'text-danger mt-2';
-                countDisplay.textContent += ' (Excede el límite de 3 imágenes)';
-                input.setCustomValidity('Puedes publicar máximo 3 imágenes.');
-            } else {
-                countDisplay.className = 'text-muted mt-2';
-                input.setCustomValidity('');
-            }
-        }
-
-        if (uploadZone) {
-            ['dragenter', 'dragover'].forEach(eventName => {
-                uploadZone.addEventListener(eventName, function(event) {
-                    event.preventDefault();
-                    uploadZone.classList.add('is-dragover');
-                });
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                uploadZone.addEventListener(eventName, function(event) {
-                    event.preventDefault();
-                    uploadZone.classList.remove('is-dragover');
-                });
-            });
-
-            uploadZone.addEventListener('drop', function(event) {
-                const files = Array.from(event.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-                const dataTransfer = new DataTransfer();
-                files.forEach(file => dataTransfer.items.add(file));
-                input.files = dataTransfer.files;
-                input.dispatchEvent(new Event('change', {
-                    bubbles: true
-                }));
-            });
-        }
-
-        input.addEventListener('change', function(e) {
-            const files = Array.from(e.target.files);
-            const slots = Math.max(0, 3 - liveExistingImagesCount() - selectedFiles.length);
-
-            files.slice(0, slots).forEach((file, index) => {
-                if (file.type.startsWith('image/')) {
-                    selectedFiles.push({
-                        id: Date.now() + '-' + index + '-' + file.name,
-                        file: file,
-                        url: URL.createObjectURL(file),
-                    });
-                }
-            });
-
-            renderSelectedFiles();
-        });
-
-        previewContainer.addEventListener('click', function(event) {
-            const button = event.target.closest('.eliminar-preview');
-            if (!button) return;
-
-            const fileId = button.getAttribute('data-file-id');
-            const removed = selectedFiles.find(item => item.id === fileId);
-            if (removed) {
-                URL.revokeObjectURL(removed.url);
-            }
-
-            selectedFiles = selectedFiles.filter(item => item.id !== fileId);
-            renderSelectedFiles();
-        });
-
-        updateCount();
-    });
+    // Le pasamos los errores de validación de Laravel a JavaScript
+    window.laravelErrors = @json($errors->messages());
 </script>
+<script src="{{ asset('js/agro-wizard.js') }}"></script>
+
+
+    });
