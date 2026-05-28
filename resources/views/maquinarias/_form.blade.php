@@ -231,21 +231,43 @@
         <div class="card-body">
             <div class="form-group mb-3">
                 <label class="mb-1">Ubicación (seleccione en el mapa)</label>
-                <div class="input-group mb-2">
-                    <input type="search" id="buscar-ubicacion" class="form-control"
-                        placeholder="Buscar lugar, ciudad o dirección">
-                    <div class="input-group-append">
-                        <button type="button" class="btn btn-outline-secondary" id="btn-buscar-ubicacion">
-                            <i class="fas fa-search mr-1"></i> Buscar
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btn-ubicacion-actual">
-                            <i class="fas fa-location-arrow mr-1"></i> Ubicación actual
+                <div class="maquinaria-location-search mb-2" data-location-search>
+                    <div class="input-group">
+                        <input type="search" id="buscar-ubicacion" class="form-control"
+                            placeholder="Buscar destino o dirección" autocomplete="off"
+                            aria-describedby="ubicacion-search-help" aria-expanded="false"
+                            aria-controls="sugerencias-ubicacion">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-buscar-ubicacion">
+                                <i class="fas fa-search mr-1"></i> Buscar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-ubicacion-actual">
+                                <i class="fas fa-location-arrow mr-1"></i> Ubicación actual
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sugerencias-ubicacion" class="list-group maquinaria-location-suggestions"
+                        role="listbox" style="display: none;"></div>
+                    <small id="ubicacion-search-help" class="form-text text-muted">
+                        Escribe al menos 3 letras y elige una sugerencia, como en una app de transporte.
+                    </small>
+                    <small id="ubicacion-search-status" class="form-text text-muted" style="display: none;"></small>
+                </div>
+                <div class="maquinaria-map-panel mt-2">
+                    <div class="maquinaria-map-panel__toolbar">
+                        <span>
+                            <i class="fas fa-map-marked-alt mr-1"></i> Mapa de ubicación
+                        </span>
+                        <button type="button" class="btn btn-outline-success btn-sm" id="btn-ampliar-mapa"
+                            data-toggle="modal" data-target="#modal-mapa-maquinaria">
+                            <i class="fas fa-expand-alt mr-1"></i> Ampliar mapa
                         </button>
                     </div>
-                </div>
-                <div id="sugerencias-ubicacion" class="list-group mb-2" style="display: none;"></div>
-                <div id="map" class="maquinaria-wizard__map"
-                    style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    <div id="map-home">
+                        <div id="map" class="maquinaria-wizard__map"
+                            style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        </div>
+                    </div>
                 </div>
 
                 <input type="hidden" name="latitud" id="latitud"
@@ -260,6 +282,8 @@
                     value="{{ old('provincia', $maquinaria->provincia ?? '') }}">
                 <input type="hidden" name="ciudad" id="ciudad"
                     value="{{ old('ciudad', $maquinaria->ciudad ?? '') }}">
+                <input type="hidden" id="ubicacion_confirmada"
+                    value="{{ old('latitud', $maquinaria->latitud ?? '') && old('longitud', $maquinaria->longitud ?? '') ? '1' : '' }}">
 
                 <input type="text" id="ubicacion" name="ubicacion"
                     class="form-control mt-2 @error('ubicacion') is-invalid @enderror"
@@ -337,21 +361,22 @@
                         <div class="row" id="imagenes-actuales">
                             @foreach ($maquinaria->imagenes as $imagen)
                                 <div class="col-md-3 mb-3 imagen-item" data-imagen-id="{{ $imagen->id }}">
-                                    <div class="mb-2">
+                                    <div class="maquinaria-image-card">
+                                        <div class="maquinaria-image-card__preview">
                                         <img src="{{ asset('storage/' . $imagen->ruta) }}"
-                                            alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
-                                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                    </div>
-                                    <div class="btn-group btn-group-sm d-flex" role="group">
-                                        <button type="button" class="btn btn-outline-danger eliminar-imagen"
-                                            data-imagen-id="{{ $imagen->id }}">
-                                            <i class="fas fa-trash mr-1"></i> Eliminar
-                                        </button>
-                                        <label class="btn btn-outline-success mb-0">
-                                            <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
-                                                {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
-                                            Portada
-                                        </label>
+                                                alt="Imagen {{ $loop->iteration }}">
+                                        </div>
+                                        <div class="maquinaria-image-card__actions">
+                                            <button type="button" class="maquinaria-image-card__delete eliminar-imagen"
+                                                data-imagen-id="{{ $imagen->id }}">
+                                                <i class="fas fa-trash mr-1"></i> Eliminar
+                                            </button>
+                                            <label class="maquinaria-image-card__cover mb-0">
+                                                <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
+                                                    {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
+                                                <span><i class="fas fa-star mr-1"></i> Portada</span>
+                                            </label>
+                                        </div>
                                     </div>
                                     <input type="hidden" name="imagenes_eliminar[]" value=""
                                         class="imagen-eliminar-input">
@@ -406,6 +431,131 @@
     </div>
 </div>
 
+<div class="modal fade maquinaria-preview-modal" id="modal-preview-publicacion-maquinaria" tabindex="-1" role="dialog"
+    aria-labelledby="modal-preview-publicacion-maquinaria-title" aria-hidden="true" data-publication-preview>
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <div>
+                    <h5 class="modal-title font-weight-bold" id="modal-preview-publicacion-maquinaria-title">
+                        <i class="fas fa-eye mr-2 text-success"></i>Vista previa de la publicación
+                    </h5>
+                    <small class="text-muted">Revisa cómo verá el comprador tu maquinaria antes de publicarla.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="maquinaria-preview-shell">
+                    <div class="maquinaria-preview-note">
+                        <span><i class="fas fa-check-circle"></i></span>
+                        <div>
+                            <strong>Revisión final antes de guardar</strong>
+                            <small>Si necesitas corregir algo, vuelve al formulario con el botón Editar datos.</small>
+                        </div>
+                    </div>
+
+                    <div class="maquinaria-publication-preview">
+                        <div class="maquinaria-publication-preview__media">
+                            <img src="{{ asset('img/maquinaria-placeholder.jpg') }}" alt="Vista previa de maquinaria"
+                                data-preview-image data-preview-image-empty="{{ asset('img/maquinaria-placeholder.jpg') }}">
+                            <span class="maquinaria-publication-preview__status" data-preview-status>
+                                Disponible
+                            </span>
+                        </div>
+
+                        <div class="maquinaria-publication-preview__body">
+                            <span class="maquinaria-publication-preview__category">
+                                <i class="fas fa-tractor mr-1"></i> Maquinaria
+                            </span>
+                            <h4 data-preview-name>Nombre de la maquinaria</h4>
+                            <p data-preview-description>
+                                La descripción aparecerá aquí para que puedas revisar el mensaje principal del anuncio.
+                            </p>
+
+                            <div class="maquinaria-publication-preview__meta">
+                                <span><i class="fas fa-cog"></i><strong data-preview-type>Tipo</strong></span>
+                                <span><i class="fas fa-tag"></i><strong data-preview-brand>Marca</strong></span>
+                                <span><i class="fas fa-map-marker-alt"></i><strong data-preview-location>Ubicación</strong></span>
+                            </div>
+
+                            <div class="maquinaria-publication-preview__footer">
+                                <div>
+                                    <small>Precio de alquiler</small>
+                                    <strong data-preview-price>Bs 0.00/día</strong>
+                                </div>
+                                <span>
+                                    <i class="fas fa-eye mr-1"></i> Vista del anuncio
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maquinaria-preview-summary">
+                        <div>
+                            <small>Modelo</small>
+                            <strong data-preview-model>Sin modelo</strong>
+                        </div>
+                        <div>
+                            <small>Teléfono</small>
+                            <strong data-preview-phone>Sin teléfono</strong>
+                        </div>
+                        <div>
+                            <small>Imágenes</small>
+                            <strong data-preview-images-count>0 de 3</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-edit mr-1"></i> Editar datos
+                </button>
+                <button type="button" class="btn btn-success" data-confirm-publication>
+                    <i class="fas fa-check-circle mr-1"></i> Confirmar publicación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade maquinaria-map-modal" id="modal-mapa-maquinaria" tabindex="-1" role="dialog"
+    aria-labelledby="modal-mapa-maquinaria-title" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header align-items-start">
+                <div>
+                    <h5 class="modal-title font-weight-bold" id="modal-mapa-maquinaria-title">
+                        <i class="fas fa-map-marked-alt mr-2 text-success"></i>Ubicación de la maquinaria
+                    </h5>
+                    <small class="text-muted">Haz zoom, arrastra el mapa o selecciona un punto con mayor precisión.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="maquinaria-map-modal__body" id="map-modal-target"></div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="maquinaria-map-modal__summary">
+                    <i class="fas fa-map-marker-alt text-success mr-1"></i>
+                    <span id="modal-ubicacion-resumen">Selecciona una ubicación en el mapa.</span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-success" id="btn-confirmar-ubicacion-modal">
+                        <i class="fas fa-check mr-1"></i> Confirmar ubicación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ========== LEAFLET ========== --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -429,29 +579,213 @@
     var lastLocationQuery = '';
     var locationSearchAbort = null;
     var locationSearchCache = {};
+    var locationSearchRequestId = 0;
+    var locationSuggestions = [];
+    var highlightedSuggestionIndex = -1;
+    var lastSelectedLocation = null;
+    var accuracyCircle = null;
+    var lastAccuracy = null;
+
+    var searchInput = document.getElementById('buscar-ubicacion');
+    var searchButton = document.getElementById('btn-buscar-ubicacion');
+    var currentLocationButton = document.getElementById('btn-ubicacion-actual');
+    var confirmLocationButton = document.getElementById('btn-confirmar-ubicacion');
+    var enlargeMapButton = document.getElementById('btn-ampliar-mapa');
+    var modalConfirmLocationButton = document.getElementById('btn-confirmar-ubicacion-modal');
+    var modalLocationSummary = document.getElementById('modal-ubicacion-resumen');
+    var mapHome = document.getElementById('map-home');
+    var mapModalTarget = document.getElementById('map-modal-target');
+    var suggestionsContainer = document.getElementById('sugerencias-ubicacion');
+    var searchStatus = document.getElementById('ubicacion-search-status');
+    var confirmedInput = document.getElementById('ubicacion_confirmada');
+    var maquinariaMarkerIcon = L.divIcon({
+        className: 'maquinaria-map-marker',
+        html: '<span><i class="fas fa-tractor"></i></span>',
+        iconSize: [42, 42],
+        iconAnchor: [21, 42],
+        popupAnchor: [0, -38]
+    });
+
+    var centerMarkerControl = L.control({ position: 'topright' });
+    centerMarkerControl.onAdd = function() {
+        var button = L.DomUtil.create('button', 'maquinaria-map-control');
+        button.type = 'button';
+        button.title = 'Centrar en la ubicación seleccionada';
+        button.innerHTML = '<i class="fas fa-crosshairs"></i>';
+
+        L.DomEvent.disableClickPropagation(button);
+        L.DomEvent.on(button, 'click', function(event) {
+            L.DomEvent.preventDefault(event);
+            centerSelectedLocation();
+        });
+
+        return button;
+    };
+    centerMarkerControl.addTo(map);
 
     // Si hay coordenadas existentes, mostrar el marcador
     @if (isset($maquinaria) && $maquinaria->latitud && $maquinaria->longitud)
-        marker = L.marker([initialLat, initialLng]).addTo(map);
+        marker = L.marker([initialLat, initialLng], {
+            icon: maquinariaMarkerIcon
+        }).addTo(map);
     @endif
 
-    function setMapLocation(lat, lng, label, zoom) {
+    function setSearchStatus(message, type) {
+        if (!searchStatus) return;
+        searchStatus.textContent = message || '';
+        searchStatus.style.display = message ? 'block' : 'none';
+        searchStatus.className = 'form-text ' + (type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-muted');
+    }
+
+    function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, function(character) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[character];
+        });
+    }
+
+    function setButtonLoading(button, isLoading, text) {
+        if (!button) return;
+
+        if (isLoading) {
+            if (!button.dataset.originalHtml) {
+                button.dataset.originalHtml = button.innerHTML;
+            }
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> ' + text;
+            return;
+        }
+
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+
+    function resetLocationConfirmation() {
+        confirmedInput.value = '';
+        confirmLocationButton.classList.remove('btn-success');
+        confirmLocationButton.classList.add('btn-outline-success');
+        confirmLocationButton.innerHTML = '<i class="fas fa-check mr-1"></i> Confirmar ubicación';
+        document.getElementById('ubicacion-confirmada').style.display = 'none';
+    }
+
+    function enableLocationConfirmation() {
+        confirmLocationButton.disabled = false;
+        resetLocationConfirmation();
+    }
+
+    function locationLabel() {
+        return document.getElementById('ubicacion').value || (lastSelectedLocation ? lastSelectedLocation.label : '') || 'Ubicación seleccionada';
+    }
+
+    function popupContent() {
+        var lat = document.getElementById('latitud').value;
+        var lng = document.getElementById('longitud').value;
+        var label = escapeHtml(locationLabel());
+        var confirmed = confirmedInput.value === '1';
+
+        return [
+            '<div class="maquinaria-map-popup">',
+                '<strong>', confirmed ? 'Ubicación confirmada' : 'Ubicación seleccionada', '</strong>',
+                '<span>', label, '</span>',
+                '<small>Lat ', escapeHtml(lat), ' / Lng ', escapeHtml(lng), '</small>',
+                '<button type="button" class="btn btn-sm ', confirmed ? 'btn-success' : 'btn-outline-success', ' btn-block mt-2" data-map-confirm-location>',
+                    '<i class="fas ', confirmed ? 'fa-check-circle' : 'fa-check', ' mr-1"></i>',
+                    confirmed ? 'Confirmada' : 'Confirmar aquí',
+                '</button>',
+            '</div>'
+        ].join('');
+    }
+
+    function openMarkerPopup() {
+        if (!marker) return;
+        marker.bindPopup(popupContent(), {
+            closeButton: true,
+            minWidth: 230
+        }).openPopup();
+    }
+
+    function refreshExpandedMapSummary() {
+        if (!modalLocationSummary) return;
+        modalLocationSummary.textContent = document.getElementById('ubicacion').value || 'Selecciona una ubicación en el mapa.';
+    }
+
+    function refreshMapSize(delay) {
+        setTimeout(function() {
+            map.invalidateSize();
+            if (marker) {
+                map.panTo(marker.getLatLng(), {
+                    animate: false
+                });
+            }
+        }, delay || 160);
+    }
+
+    function centerSelectedLocation() {
+        if (!marker) {
+            setSearchStatus('Todavía no hay una ubicación seleccionada para centrar.', 'error');
+            return;
+        }
+
+        map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15));
+        openMarkerPopup();
+    }
+
+    function drawAccuracyCircle(lat, lng, accuracy) {
+        if (accuracyCircle) {
+            map.removeLayer(accuracyCircle);
+            accuracyCircle = null;
+        }
+
+        lastAccuracy = accuracy || null;
+        if (!accuracy) return;
+
+        accuracyCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: '#2f621f',
+            weight: 1,
+            fillColor: '#4f8f2f',
+            fillOpacity: 0.14
+        }).addTo(map);
+    }
+
+    function setMapLocation(lat, lng, label, zoom, skipReverse, accuracy) {
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
-            marker = L.marker([lat, lng]).addTo(map);
+            marker = L.marker([lat, lng], {
+                icon: maquinariaMarkerIcon
+            }).addTo(map);
         }
 
         document.getElementById('latitud').value = lat;
         document.getElementById('longitud').value = lng;
         document.getElementById('ubicacion').value = label || ("Lat: " + lat + " - Lng: " + lng);
-        document.getElementById('ubicacion-confirmada').style.display = 'none';
+        refreshExpandedMapSummary();
+        lastSelectedLocation = {
+            lat: lat,
+            lng: lng,
+            label: label || ''
+        };
+        enableLocationConfirmation();
 
         if (zoom) {
             map.setView([lat, lng], zoom);
         }
 
-        obtenerInformacionGeografica(lat, lng);
+        drawAccuracyCircle(lat, lng, accuracy);
+        openMarkerPopup();
+
+        if (!skipReverse) {
+            obtenerInformacionGeografica(lat, lng);
+        }
     }
 
     // Evento click en mapa
@@ -459,43 +793,101 @@
         var lat = e.latlng.lat.toFixed(7);
         var lng = e.latlng.lng.toFixed(7);
 
+        setSearchStatus('Punto seleccionado en el mapa. Confírmalo para continuar.', 'success');
         setMapLocation(lat, lng, null);
     });
 
+    function closeLocationSuggestions() {
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.style.display = 'none';
+        searchInput.setAttribute('aria-expanded', 'false');
+        highlightedSuggestionIndex = -1;
+    }
+
+    function suggestionTitle(result) {
+        return result.name || result.city || result.municipality || result.display_name.split(',')[0] || 'Ubicación';
+    }
+
+    function suggestionSubtitle(result) {
+        if (result.address_line) return result.address_line;
+        var parts = result.display_name.split(',').map(function(part) {
+            return part.trim();
+        }).filter(Boolean);
+        return parts.slice(1, 5).join(', ');
+    }
+
+    function highlightSuggestion(index) {
+        var items = Array.from(suggestionsContainer.querySelectorAll('[data-location-suggestion]'));
+        highlightedSuggestionIndex = Math.max(-1, Math.min(index, items.length - 1));
+
+        items.forEach(function(item, itemIndex) {
+            var active = itemIndex === highlightedSuggestionIndex;
+            item.classList.toggle('active', active);
+            item.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+    }
+
+    function selectLocationSuggestion(result) {
+        var lat = Number(result.lat).toFixed(7);
+        var lng = Number(result.lon).toFixed(7);
+        var label = result.display_name;
+
+        closeLocationSuggestions();
+        searchInput.value = label;
+        setSearchStatus('Destino seleccionado. Confirma la ubicación para usarla en la publicación.', 'success');
+        setMapLocation(lat, lng, label, 15, true);
+
+        document.getElementById('info-ubicacion').style.display = 'block';
+        document.getElementById('ciudad-texto').textContent = result.city || result.municipality || 'No disponible';
+        document.getElementById('direccion-texto').textContent = result.address_line || result.display_name;
+        document.getElementById('departamento').value = result.state || '';
+        document.getElementById('municipio').value = result.municipality || result.city || '';
+        document.getElementById('provincia').value = result.county || '';
+        document.getElementById('ciudad').value = result.city || result.municipality || '';
+    }
+
     function renderLocationSuggestions(results) {
-        var container = document.getElementById('sugerencias-ubicacion');
-        container.innerHTML = '';
+        locationSuggestions = results || [];
+        suggestionsContainer.innerHTML = '';
 
         if (!results.length) {
-            container.style.display = 'none';
+            closeLocationSuggestions();
+            setSearchStatus('No encontramos coincidencias. Prueba con una zona, avenida o ciudad cercana.', 'error');
             return;
         }
 
-        results.forEach(function(result) {
+        results.forEach(function(result, index) {
             var option = document.createElement('button');
             option.type = 'button';
-            option.className = 'list-group-item list-group-item-action';
-            option.textContent = result.display_name;
+            option.className = 'list-group-item list-group-item-action maquinaria-location-suggestion';
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', 'false');
+            option.setAttribute('data-location-suggestion', index);
+            option.innerHTML = [
+                '<span class="maquinaria-location-suggestion__icon"><i class="fas fa-map-marker-alt"></i></span>',
+                '<span class="maquinaria-location-suggestion__copy">',
+                    '<strong>', escapeHtml(suggestionTitle(result)), '</strong>',
+                    '<small>', escapeHtml(suggestionSubtitle(result)), '</small>',
+                '</span>'
+            ].join('');
             option.addEventListener('click', function() {
-                var lat = Number(result.lat).toFixed(7);
-                var lng = Number(result.lon).toFixed(7);
-                container.style.display = 'none';
-                document.getElementById('buscar-ubicacion').value = result.display_name;
-                setMapLocation(lat, lng, result.display_name, 14);
+                selectLocationSuggestion(result);
             });
-            container.appendChild(option);
+            suggestionsContainer.appendChild(option);
         });
 
-        container.style.display = 'block';
+        suggestionsContainer.style.display = 'block';
+        searchInput.setAttribute('aria-expanded', 'true');
+        highlightSuggestion(0);
+        setSearchStatus(results.length + ' sugerencia(s) encontrada(s).', 'success');
     }
 
     function buscarUbicacion(force) {
-        var input = document.getElementById('buscar-ubicacion');
-        var query = input.value.trim();
-        var suggestions = document.getElementById('sugerencias-ubicacion');
+        var query = searchInput.value.trim();
 
         if (query.length < 3) {
-            suggestions.style.display = 'none';
+            closeLocationSuggestions();
+            setSearchStatus(query ? 'Escribe al menos 3 letras para buscar.' : '', 'muted');
             return;
         }
 
@@ -515,12 +907,17 @@
         }
 
         locationSearchAbort = new AbortController();
+        var requestId = ++locationSearchRequestId;
+
+        setButtonLoading(searchButton, true, 'Buscando');
+        setSearchStatus('Buscando destinos...', 'muted');
 
         fetch('/api/geocodificacion/buscar?q=' + encodeURIComponent(query), {
                 signal: locationSearchAbort.signal
             })
             .then(response => response.json())
             .then(data => {
+                if (requestId !== locationSearchRequestId) return;
                 var results = data.success ? data.data : [];
                 locationSearchCache[query] = results;
                 renderLocationSuggestions(results);
@@ -528,47 +925,142 @@
             .catch(error => {
                 if (error.name !== 'AbortError') {
                     console.error('Error al buscar ubicación:', error);
+                    setSearchStatus('No se pudo buscar la ubicación. Intenta nuevamente.', 'error');
+                }
+            })
+            .finally(function() {
+                if (requestId === locationSearchRequestId) {
+                    setButtonLoading(searchButton, false);
                 }
             });
     }
 
-    document.getElementById('buscar-ubicacion').addEventListener('input', function() {
+    searchInput.addEventListener('input', function() {
         clearTimeout(locationSearchTimer);
+        resetLocationConfirmation();
         locationSearchTimer = setTimeout(function() {
             buscarUbicacion(false);
-        }, 700);
+        }, 350);
     });
 
-    document.getElementById('btn-buscar-ubicacion').addEventListener('click', function() {
+    searchInput.addEventListener('keydown', function(event) {
+        if (suggestionsContainer.style.display === 'none') return;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            highlightSuggestion(highlightedSuggestionIndex + 1);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            highlightSuggestion(highlightedSuggestionIndex - 1);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            var selected = locationSuggestions[highlightedSuggestionIndex] || locationSuggestions[0];
+            if (selected) selectLocationSuggestion(selected);
+        } else if (event.key === 'Escape') {
+            closeLocationSuggestions();
+        }
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[data-location-search]')) {
+            closeLocationSuggestions();
+        }
+    });
+
+    searchButton.addEventListener('click', function() {
         clearTimeout(locationSearchTimer);
         buscarUbicacion(true);
     });
 
-    document.getElementById('btn-ubicacion-actual').addEventListener('click', function() {
+    enlargeMapButton.addEventListener('click', function() {
+        refreshExpandedMapSummary();
+    });
+
+    window.addEventListener('load', function() {
+        if (!window.jQuery) return;
+
+        $('#modal-mapa-maquinaria').on('shown.bs.modal', function() {
+            mapModalTarget.appendChild(document.getElementById('map'));
+            refreshMapSize(120);
+            if (marker) {
+                openMarkerPopup();
+            }
+        });
+
+        $('#modal-mapa-maquinaria').on('hidden.bs.modal', function() {
+            mapHome.appendChild(document.getElementById('map'));
+            refreshMapSize(120);
+        });
+    });
+
+    modalConfirmLocationButton.addEventListener('click', function() {
+        confirmLocationButton.click();
+        refreshExpandedMapSummary();
+    });
+
+    currentLocationButton.addEventListener('click', function() {
         if (!navigator.geolocation) {
-            alert('Tu navegador no permite obtener la ubicación actual.');
+            setSearchStatus('Tu navegador no permite obtener la ubicación actual.', 'error');
             return;
         }
+
+        setButtonLoading(currentLocationButton, true, 'Ubicando');
+        setSearchStatus('Solicitando permiso y buscando tu ubicación actual...', 'muted');
 
         navigator.geolocation.getCurrentPosition(function(position) {
             var lat = position.coords.latitude.toFixed(7);
             var lng = position.coords.longitude.toFixed(7);
-            setMapLocation(lat, lng, null, 14);
-        }, function() {
-            alert('No se pudo obtener tu ubicación actual.');
+            var accuracy = Math.round(position.coords.accuracy || 0);
+            setSearchStatus('Ubicación actual detectada' + (accuracy ? ' con precisión aproximada de ' + accuracy + ' m.' : '.') + ' Confírmala para usarla.', 'success');
+            setMapLocation(lat, lng, 'Mi ubicación actual', 16, false, position.coords.accuracy || null);
+            setButtonLoading(currentLocationButton, false);
+        }, function(error) {
+            var message = 'No se pudo obtener tu ubicación actual.';
+            if (error.code === error.PERMISSION_DENIED) {
+                message = 'Permiso de ubicación denegado. Actívalo en el navegador para usar este botón.';
+            } else if (error.code === error.TIMEOUT) {
+                message = 'La búsqueda de tu ubicación tardó demasiado. Intenta otra vez.';
+            }
+            setSearchStatus(message, 'error');
+            setButtonLoading(currentLocationButton, false);
         }, {
             enableHighAccuracy: true,
-            timeout: 10000
+            timeout: 12000,
+            maximumAge: 30000
         });
     });
 
-    document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function() {
+    confirmLocationButton.addEventListener('click', function() {
         if (!document.getElementById('latitud').value || !document.getElementById('longitud').value) {
-            alert('Primero selecciona una ubicación en el mapa.');
+            setSearchStatus('Primero selecciona una ubicación en el mapa o desde el buscador.', 'error');
             return;
         }
 
+        confirmedInput.value = '1';
+        confirmLocationButton.classList.remove('btn-outline-success');
+        confirmLocationButton.classList.add('btn-success');
+        confirmLocationButton.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Ubicación confirmada';
         document.getElementById('ubicacion-confirmada').style.display = 'block';
+        setSearchStatus('La ubicación quedó confirmada para esta maquinaria.', 'success');
+        refreshExpandedMapSummary();
+        openMarkerPopup();
+    });
+
+    if (confirmedInput.value === '1' && document.getElementById('latitud').value && document.getElementById('longitud').value) {
+        confirmLocationButton.classList.remove('btn-outline-success');
+        confirmLocationButton.classList.add('btn-success');
+        confirmLocationButton.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Ubicación confirmada';
+        document.getElementById('ubicacion-confirmada').style.display = 'block';
+        openMarkerPopup();
+    }
+
+    map.on('popupopen', function(event) {
+        var button = event.popup.getElement().querySelector('[data-map-confirm-location]');
+        if (!button) return;
+
+        button.addEventListener('click', function() {
+            confirmLocationButton.click();
+        });
     });
 
     // Función para obtener información geográfica
@@ -607,6 +1099,9 @@
                     // Actualizar campo ubicación
                     if (direccionCompleta) {
                         document.getElementById('ubicacion').value = direccionCompleta;
+                        if (marker && marker.isPopupOpen()) {
+                            marker.setPopupContent(popupContent());
+                        }
                     }
                 } else {
                     document.getElementById('ciudad-texto').textContent = 'No disponible';
@@ -637,7 +1132,10 @@
         const progressBar = wizard.querySelector('[data-wizard-progressbar]');
         const currentLabel = wizard.querySelector('[data-wizard-current-label]');
         const serverErrors = @json($errors->messages());
+        const previewModal = document.getElementById('modal-preview-publicacion-maquinaria');
+        const confirmPublicationButton = document.querySelector('[data-confirm-publication]');
         let currentStep = 0;
+        let allowSubmit = false;
 
         form.setAttribute('novalidate', 'novalidate');
 
@@ -736,6 +1234,10 @@
             const controls = Array.from(steps[index].querySelectorAll('input, select, textarea'))
                 .filter(control => !control.disabled && control.type !== 'hidden');
             const invalidControls = [];
+            const locationNeedsConfirmation = index === 2 &&
+                document.getElementById('latitud')?.value &&
+                document.getElementById('longitud')?.value &&
+                document.getElementById('ubicacion_confirmada')?.value !== '1';
 
             controls.forEach(control => {
                 clearFieldError(control);
@@ -746,18 +1248,32 @@
                 }
             });
 
-            steps[index].classList.toggle('has-errors', invalidControls.length > 0);
-            indicators[index].classList.toggle('has-errors', invalidControls.length > 0);
+            steps[index].classList.toggle('has-errors', invalidControls.length > 0 || locationNeedsConfirmation);
+            indicators[index].classList.toggle('has-errors', invalidControls.length > 0 || locationNeedsConfirmation);
 
-            if (invalidControls.length > 0) {
-                errorSummary.textContent = 'Revisa los campos marcados antes de continuar.';
+            if (invalidControls.length > 0 || locationNeedsConfirmation) {
+                errorSummary.textContent = locationNeedsConfirmation
+                    ? 'Confirma la ubicación seleccionada antes de continuar.'
+                    : 'Revisa los campos marcados antes de continuar.';
                 errorSummary.classList.remove('d-none');
 
-                if (shouldFocus) {
+                if (locationNeedsConfirmation && typeof setSearchStatus === 'function') {
+                    setSearchStatus('Confirma la ubicación seleccionada para continuar.', 'error');
+                }
+
+                if (shouldFocus && invalidControls.length > 0) {
                     invalidControls[0].focus({
                         preventScroll: true
                     });
                     invalidControls[0].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                } else if (shouldFocus && locationNeedsConfirmation) {
+                    document.getElementById('btn-confirmar-ubicacion')?.focus({
+                        preventScroll: true
+                    });
+                    document.getElementById('btn-confirmar-ubicacion')?.scrollIntoView({
                         behavior: 'smooth',
                         block: 'center'
                     });
@@ -766,7 +1282,7 @@
                 errorSummary.classList.add('d-none');
             }
 
-            return invalidControls.length === 0;
+            return invalidControls.length === 0 && !locationNeedsConfirmation;
         }
 
         function validateUntil(targetStep) {
@@ -863,6 +1379,8 @@
         });
 
         form.addEventListener('submit', function(event) {
+            if (allowSubmit) return;
+
             for (let index = 0; index < steps.length; index++) {
                 if (!validateStep(index, false)) {
                     event.preventDefault();
@@ -870,6 +1388,16 @@
                     validateStep(index, true);
                     return;
                 }
+            }
+
+            event.preventDefault();
+            renderPublicationPreview();
+
+            if (window.jQuery && previewModal) {
+                $('#modal-preview-publicacion-maquinaria').modal('show');
+            } else if (window.confirm('¿Confirmar la publicación de esta maquinaria?')) {
+                allowSubmit = true;
+                form.submit();
             }
         });
 
@@ -900,6 +1428,84 @@
             {{ isset($maquinaria) && $maquinaria->imagenes ? $maquinaria->imagenes->count() : 0 }};
         let imagenesAEliminar = [];
         let selectedFiles = [];
+
+        function formValue(name, fallback = '') {
+            const control = form.querySelector(`[name="${name}"]`);
+            return control && control.value ? control.value.trim() : fallback;
+        }
+
+        function selectedOptionText(name, fallback = '') {
+            const control = form.querySelector(`select[name="${name}"]`);
+            if (!control || control.selectedIndex < 0) return fallback;
+            const option = control.options[control.selectedIndex];
+            return option && option.value ? option.textContent.trim() : fallback;
+        }
+
+        function setPreviewText(selector, value, fallback) {
+            const element = previewModal ? previewModal.querySelector(selector) : document.querySelector(selector);
+            if (!element) return;
+            element.textContent = value || fallback;
+        }
+
+        function formatPreviewPrice() {
+            const rawPrice = Number(formValue('precio_dia', '0'));
+            const unit = formValue('tarifa_unidad', 'dia') === 'hora' ? 'hora' : 'día';
+            const price = Number.isFinite(rawPrice) ? rawPrice : 0;
+            return `Bs ${price.toFixed(2)}/${unit}`;
+        }
+
+        function activeExistingImageItems() {
+            return Array.from(form.querySelectorAll('.imagen-item')).filter(item => {
+                const inputEliminar = item.querySelector('.imagen-eliminar-input');
+                return !inputEliminar || inputEliminar.value === '';
+            });
+        }
+
+        function previewImages() {
+            const existing = activeExistingImageItems().map(item => {
+                const radio = item.querySelector('input[name="imagen_portada"]');
+                const image = item.querySelector('.maquinaria-image-card__preview img');
+                return {
+                    key: radio ? radio.value : '',
+                    src: image ? image.src : '',
+                };
+            }).filter(item => item.src);
+
+            const fresh = selectedFiles.map((item, index) => ({
+                key: `new:${index}`,
+                src: item.url,
+            }));
+
+            return existing.concat(fresh);
+        }
+
+        function renderPublicationPreview() {
+            const images = previewImages();
+            const selectedCover = form.querySelector('input[name="imagen_portada"]:checked');
+            const cover = selectedCover
+                ? images.find(item => item.key === selectedCover.value)
+                : images[0];
+            const previewImage = previewModal ? previewModal.querySelector('[data-preview-image]') : document.querySelector('[data-preview-image]');
+
+            if (previewImage) {
+                previewImage.src = cover ? cover.src : previewImage.dataset.previewImageEmpty;
+            }
+
+            setPreviewText('[data-preview-name]', formValue('nombre'), 'Nombre de la maquinaria');
+            setPreviewText('[data-preview-description]', formValue('descripcion'), 'Sin descripción adicional.');
+            setPreviewText('[data-preview-type]', selectedOptionText('tipo_maquinaria_id'), 'Tipo sin seleccionar');
+            setPreviewText('[data-preview-brand]', selectedOptionText('marca_maquinaria_id'), 'Marca sin seleccionar');
+            setPreviewText('[data-preview-location]', formValue('ubicacion'), 'Ubicación sin confirmar');
+            setPreviewText('[data-preview-price]', formatPreviewPrice(), 'Bs 0.00/día');
+            setPreviewText('[data-preview-model]', formValue('modelo'), 'Sin modelo');
+            setPreviewText('[data-preview-phone]', formValue('telefono'), 'Sin teléfono');
+            setPreviewText('[data-preview-images-count]', `${images.length} de 3`, '0 de 3');
+
+            const statusText = selectedOptionText('estado_maquinaria_id') ||
+                form.querySelector('select[disabled] option:checked')?.textContent.trim() ||
+                'Disponible';
+            setPreviewText('[data-preview-status]', statusText, 'Disponible');
+        }
 
         function refreshInputFiles() {
             const dataTransfer = new DataTransfer();
@@ -936,22 +1542,21 @@
                 col.className = 'col-md-3 mb-3';
                 col.setAttribute('data-file-id', item.id);
                 col.innerHTML = `
-                    <div class="mb-2">
-                        <img src="${item.url}"
-                             alt="Preview ${index + 1}"
-                             class="img-thumbnail"
-                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                    </div>
-                    <div class="btn-group btn-group-sm d-flex" role="group">
-                        <button type="button"
-                                class="btn btn-outline-danger eliminar-preview"
-                                data-file-id="${item.id}">
-                            <i class="fas fa-trash mr-1"></i> Eliminar
-                        </button>
-                        <label class="btn btn-outline-success mb-0">
-                            <input type="radio" name="imagen_portada" value="new:${index}">
-                            Portada
-                        </label>
+                    <div class="maquinaria-image-card">
+                        <div class="maquinaria-image-card__preview">
+                            <img src="${item.url}" alt="Preview ${index + 1}">
+                        </div>
+                        <div class="maquinaria-image-card__actions">
+                            <button type="button"
+                                    class="maquinaria-image-card__delete eliminar-preview"
+                                    data-file-id="${item.id}">
+                                <i class="fas fa-trash mr-1"></i> Eliminar
+                            </button>
+                            <label class="maquinaria-image-card__cover mb-0">
+                                <input type="radio" name="imagen_portada" value="new:${index}">
+                                <span><i class="fas fa-star mr-1"></i> Portada</span>
+                            </label>
+                        </div>
                     </div>
                 `;
                 previewContainer.appendChild(col);
@@ -983,6 +1588,7 @@
 
                 ensureCoverSelection();
                 updateCount();
+                renderPublicationPreview();
             });
         });
 
@@ -1042,6 +1648,7 @@
             });
 
             renderSelectedFiles();
+            renderPublicationPreview();
         });
 
         previewContainer.addEventListener('click', function(event) {
@@ -1056,8 +1663,19 @@
 
             selectedFiles = selectedFiles.filter(item => item.id !== fileId);
             renderSelectedFiles();
+            renderPublicationPreview();
         });
 
         updateCount();
+        renderPublicationPreview();
+
+        if (confirmPublicationButton) {
+            confirmPublicationButton.addEventListener('click', function() {
+                allowSubmit = true;
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Publicando';
+                form.submit();
+            });
+        }
     });
 </script>

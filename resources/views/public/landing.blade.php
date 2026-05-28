@@ -10,319 +10,1054 @@
             scroll-padding-top: 5rem;
         }
 
-        .landing-page section[id] {
-            scroll-margin-top: 5rem;
+        .agv-landing {
+            --agv-agro: #3f7e2a;
+            --agv-agro-700: #2f621f;
+            --agv-agro-900: #1a3a10;
+            --agv-agro-50: #f1f7ec;
+            --agv-agro-100: #e2efd9;
+            --agv-earth: #b85c28;
+            --agv-bg: #fafaf6;
+            --agv-surface: #ffffff;
+            --agv-ink: #162014;
+            --agv-ink-2: #3a4636;
+            --agv-muted: #6c7866;
+            --agv-line: #e6ebde;
+            --agv-line-strong: #d3dcc8;
+            --agv-radius: 12px;
+            --agv-radius-lg: 20px;
+            --agv-shadow: 0 6px 18px rgba(22, 32, 20, .06), 0 1px 2px rgba(22, 32, 20, .04);
+            background: var(--agv-bg);
+            color: var(--agv-ink);
+            font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.55;
         }
 
-        .landing-nav-shell,
-        .landing-hero-shell {
-            max-width: 1216px;
+        .agv-landing *,
+        .agv-landing *::before,
+        .agv-landing *::after {
+            box-sizing: border-box;
         }
 
-        .landing-nav {
-            transition: opacity .28s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .28s ease;
+        .agv-landing a {
+            color: inherit;
+            text-decoration: none;
         }
 
-        .landing-nav .landing-nav-shell {
+        .agv-landing img {
+            display: block;
+            max-width: 100%;
+        }
+
+        .agv-container {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .agv-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--agv-agro-50);
+            color: var(--agv-agro-700);
+            border: 1px solid var(--agv-agro-100);
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .agv-eyebrow::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--agv-agro);
+        }
+
+        .agv-title,
+        .agv-section-title,
+        .agv-landing h3 {
+            margin: 0;
+            color: var(--agv-ink);
+            letter-spacing: 0;
+        }
+
+        .agv-title {
+            max-width: 640px;
+            margin-top: 18px;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(34px, 4.6vw, 56px);
+            font-weight: 700;
+            line-height: 1.04;
+        }
+
+        .agv-title em {
+            position: relative;
+            color: var(--agv-agro-700);
+            font-style: normal;
+            white-space: nowrap;
+        }
+
+        .agv-title em::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 4px;
+            z-index: -1;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--agv-agro-100);
+        }
+
+        .agv-section-title {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(28px, 3.4vw, 40px);
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .agv-copy {
+            margin: 0;
+            color: var(--agv-ink-2);
+        }
+
+        .agv-muted {
+            color: var(--agv-muted);
+        }
+
+        .agv-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 12px 20px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: transform .12s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .agv-btn:hover {
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .agv-btn-primary {
+            background: var(--agv-agro);
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(63, 126, 42, .18);
+        }
+
+        .agv-btn-primary:hover {
+            background: var(--agv-agro-700);
+            color: #fff;
+        }
+
+        .agv-btn-ghost {
+            background: transparent;
+            color: var(--agv-ink);
+            border-color: var(--agv-line-strong);
+        }
+
+        .agv-btn-ghost:hover {
+            background: #fff;
+            color: var(--agv-ink);
+            border-color: var(--agv-ink-2);
+        }
+
+        .agv-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(250, 250, 246, .9);
+            border-bottom: 1px solid var(--agv-line);
+            backdrop-filter: saturate(140%) blur(8px);
+            -webkit-backdrop-filter: saturate(140%) blur(8px);
+            transition: background-color .25s ease, box-shadow .25s ease;
+        }
+
+        .agv-topbar.is-stuck {
+            background: rgba(250, 250, 246, .97);
+            box-shadow: 0 14px 30px rgba(22, 32, 20, .1);
+        }
+
+        .agv-topbar__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            min-height: 68px;
             transition: min-height .25s ease;
         }
 
-        .landing-nav.is-stuck {
-            border-color: rgba(47, 98, 31, .16);
-            background-color: rgba(247, 251, 242, .96);
-            box-shadow: 0 18px 45px rgba(20, 33, 18, .12);
-            transform: translateY(0);
+        .agv-topbar.is-stuck .agv-topbar__inner {
+            min-height: 58px;
         }
 
-        .landing-nav.is-stuck .landing-nav-shell {
-            min-height: 4.25rem;
+        .agv-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--agv-ink);
+            font-size: 17px;
+            font-weight: 800;
         }
 
-        .landing-nav.is-hidden {
-            opacity: 0;
+        .agv-brand__mark {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: linear-gradient(160deg, var(--agv-agro), var(--agv-agro-700));
+            color: #fff;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .18), 0 4px 10px rgba(63, 126, 42, .18);
+        }
+
+        .agv-brand__name b {
+            color: var(--agv-agro-700);
+        }
+
+        .agv-brand__name small {
+            display: block;
+            margin-top: 2px;
+            color: var(--agv-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        .agv-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .agv-nav a {
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: var(--agv-ink-2);
+            font-size: 14.5px;
+            font-weight: 700;
+        }
+
+        .agv-nav a:hover {
+            background: rgba(63, 126, 42, .06);
+            color: var(--agv-ink);
+        }
+
+        .agv-auth {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agv-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 64px 0 88px;
+        }
+
+        .agv-hero::before {
+            content: "";
+            position: absolute;
+            top: -200px;
+            right: -180px;
+            width: 520px;
+            height: 520px;
+            background: radial-gradient(closest-side, rgba(63, 126, 42, .1), rgba(63, 126, 42, 0));
             pointer-events: none;
-            transform: translateY(-100%);
         }
 
-        .landing-hero {
-            min-height: calc(100vh - 5rem);
-            min-height: calc(100svh - 5rem);
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+        .agv-hero__grid {
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 64px;
+            align-items: center;
         }
 
-        .landing-hero-shell {
-            grid-template-columns: minmax(0, 620px) minmax(0, 532px);
-            gap: 4rem;
+        .agv-hero__sub {
+            max-width: 540px;
+            margin-top: 20px;
+            color: var(--agv-ink-2);
+            font-size: 17px;
+            line-height: 1.6;
         }
 
-        .landing-hero-title {
-            max-width: 590px;
-            margin-top: 3rem;
-            font-size: 3.05rem;
-            line-height: .94;
+        .agv-hero__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 32px;
         }
 
-        .landing-hero-copy {
-            max-width: 36rem;
-            margin-top: 3rem;
-            line-height: 1.75;
+        .agv-hero__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            margin-top: 36px;
+            padding-top: 28px;
+            border-top: 1px solid var(--agv-line);
         }
 
-        .landing-hero-cta {
-            margin-top: 3rem;
+        .agv-hero__meta strong {
+            display: block;
+            color: var(--agv-ink);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1;
         }
 
-        .landing-hero-stats {
-            max-width: 622px;
-            margin-top: 3.5rem;
-            gap: .75rem;
+        .agv-hero__meta span {
+            display: block;
+            margin-top: 6px;
+            color: var(--agv-muted);
+            font-size: 13px;
         }
 
-        .landing-hero-visual {
-            min-height: 728px;
+        .agv-visual {
+            position: relative;
+            min-height: 580px;
         }
 
-        .landing-hero-image {
-            inset: 1.75rem 0 .5rem;
+        .agv-visual__photo {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: var(--agv-radius-lg);
+            background: #dde2d2;
+            box-shadow: var(--agv-shadow);
         }
 
-        .landing-hero-feature {
-            top: 0;
-            right: 2rem;
+        .agv-visual__photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
+        .agv-chip {
+            position: absolute;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--agv-line);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .96);
+            box-shadow: var(--agv-shadow);
+        }
+
+        .agv-chip--top {
+            top: 24px;
+            left: 24px;
+        }
+
+        .agv-chip--right {
+            right: 24px;
+            bottom: 30%;
+        }
+
+        .agv-chip--bottom {
+            left: 24px;
+            bottom: 24px;
+        }
+
+        .agv-chip__icon {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 36px;
+            border-radius: 10px;
+            background: var(--agv-agro-50);
+            color: var(--agv-agro-700);
+            font-size: 16px;
+            line-height: 1;
+            margin-top: 0;
+        }
+
+        .agv-chip__icon i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.1em;
+            height: 1.1em;
+            line-height: 1;
+        }
+
+        .agv-chip b,
+        .agv-chip > div span {
+            display: block;
+        }
+
+        .agv-chip b {
+            color: var(--agv-ink);
+            font-size: 14px;
+        }
+
+        .agv-chip > div span {
+            margin-top: 1px;
+            color: var(--agv-muted);
+            font-size: 12px;
+        }
+
+        .agv-section {
+            padding: 88px 0;
+        }
+
+        .agv-section--white {
+            background: #fff;
+            border-top: 1px solid var(--agv-line);
+            border-bottom: 1px solid var(--agv-line);
+        }
+
+        .agv-section--soft {
+            background: linear-gradient(180deg, #f4f6ee 0%, #fafaf6 100%);
+            border-top: 1px solid var(--agv-line);
+            border-bottom: 1px solid var(--agv-line);
+        }
+
+        .agv-section__head {
+            max-width: 680px;
+            margin: 0 auto 48px;
+            text-align: center;
+        }
+
+        .agv-section__head p {
+            margin-top: 14px;
+            font-size: 16px;
+        }
+
+        .agv-section__head--split {
+            max-width: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 48px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        .agv-section__head--split > div {
+            max-width: 560px;
+        }
+
+        .agv-section__head--split p {
+            max-width: 380px;
+        }
+
+        .agv-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .agv-grid--4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .agv-grid--3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .agv-card {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--agv-line);
+            border-radius: var(--agv-radius);
+            background: var(--agv-surface);
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .agv-card:hover {
+            border-color: var(--agv-line-strong);
+            box-shadow: var(--agv-shadow);
+            transform: translateY(-2px);
+        }
+
+        .agv-category:hover {
+            border-color: var(--agv-line);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .agv-card__image {
+            position: relative;
+            min-height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: repeating-linear-gradient(135deg, #d8dfcc 0 14px, #cdd5be 14px 28px);
+            color: #5b6552;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .agv-card__image--green {
+            background: repeating-linear-gradient(135deg, #cde1bf 0 14px, #bbd6ac 14px 28px);
+        }
+
+        .agv-card__image--earth {
+            background: repeating-linear-gradient(135deg, #e6d3bf 0 14px, #d8c2a9 14px 28px);
+        }
+
+        .agv-card__visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--agv-agro-700);
+            font-weight: 800;
+        }
+
+        .agv-card__icon {
+            width: 62px;
+            height: 62px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(63, 126, 42, .16);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .72);
+            box-shadow: 0 12px 24px rgba(31, 42, 27, .08);
+            font-size: 26px;
+        }
+
+        .agv-card__body {
+            padding: 18px 18px 20px;
+        }
+
+        .agv-card__count {
+            color: var(--agv-agro-700);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .agv-card__title {
+            margin: 6px 0;
+            color: var(--agv-ink);
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .agv-card__desc {
+            color: var(--agv-muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .agv-card__info {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 14px;
+            color: var(--agv-muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .agv-benefit {
+            border-top: 2px solid var(--agv-agro);
+            padding-top: 14px;
+        }
+
+        .agv-benefit__num {
+            color: var(--agv-agro-700);
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: .04em;
+        }
+
+        .agv-benefit h3,
+        .agv-step h3 {
+            margin: 14px 0 8px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .agv-products-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .agv-products-head > div:first-child {
+            max-width: 560px;
+        }
+
+        .agv-product {
+            background: #fff;
+        }
+
+        .agv-product__image {
+            min-height: 185px;
+        }
+
+        .agv-product__image img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .agv-product__image::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(22, 32, 20, .06), rgba(22, 32, 20, .18));
+            pointer-events: none;
+        }
+
+        .agv-product__placeholder {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            border: 1px solid rgba(63, 126, 42, .16);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .72);
+            color: var(--agv-agro-700);
+            font-size: 26px;
+            box-shadow: 0 12px 24px rgba(31, 42, 27, .08);
+        }
+
+        .agv-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            padding: 4px 10px;
+            border: 1px solid var(--agv-line);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .96);
+            color: var(--agv-ink-2);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .agv-tag--earth {
+            color: var(--agv-earth);
+        }
+
+        .agv-product__body {
+            padding: 14px 16px 16px;
+        }
+
+        .agv-product__loc {
+            color: var(--agv-muted);
+            font-size: 12px;
+        }
+
+        .agv-product__title {
+            margin-top: 6px;
+            color: var(--agv-ink);
+            font-size: 15.5px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .agv-product__bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--agv-line);
+        }
+
+        .agv-product__price {
+            color: var(--agv-agro-700);
+            font-size: 15.5px;
+            font-weight: 900;
+        }
+
+        .agv-product__seller {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--agv-muted);
+            font-size: 12px;
+        }
+
+        .agv-avatar {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--agv-agro-100);
+            color: var(--agv-agro-700);
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .agv-step {
+            padding: 24px 22px;
+            border: 1px solid var(--agv-line);
+            border-radius: var(--agv-radius);
+            background: #fff;
+        }
+
+        .agv-step__num {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: var(--agv-agro);
+            color: #fff;
+            font-family: Georgia, "Times New Roman", serif;
+            font-weight: 700;
+        }
+
+        .agv-cta {
+            padding: 64px 0 96px;
+        }
+
+        .agv-cta__box {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 48px;
+            align-items: center;
+            padding: 56px;
+            border-radius: var(--agv-radius-lg);
+            background: linear-gradient(135deg, var(--agv-agro-900) 0%, var(--agv-agro-700) 60%, var(--agv-agro) 100%);
+            color: #fff;
+        }
+
+        .agv-cta__box h2 {
+            color: #fff;
+        }
+
+        .agv-cta__box p {
+            max-width: 520px;
+            margin-top: 14px;
+            color: rgba(255, 255, 255, .86);
+        }
+
+        .agv-cta__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .agv-cta__box .agv-btn-primary {
+            background: #fff;
+            color: var(--agv-agro-900);
+        }
+
+        .agv-cta__box .agv-btn-ghost {
+            color: #fff;
+            border-color: rgba(255, 255, 255, .42);
+        }
+
+        .agv-cta__list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .agv-cta__list span {
+            display: flex;
+            gap: 12px;
+            color: rgba(255, 255, 255, .92);
+            font-size: 14.5px;
+        }
+
+        .agv-footer {
+            padding: 56px 0 32px;
+            border-top: 1px solid var(--agv-line);
+            background: #fff;
+        }
+
+        .agv-footer__grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .agv-footer h4 {
+            margin-bottom: 14px;
+            color: var(--agv-ink);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .agv-footer ul {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .agv-footer a,
+        .agv-footer p {
+            color: var(--agv-muted);
+            font-size: 14px;
+        }
+
+        .agv-footer a:hover {
+            color: var(--agv-agro-700);
+        }
+
+        .agv-footer__bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-top: 20px;
+            border-top: 1px solid var(--agv-line);
+            color: var(--agv-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 980px) {
+            .agv-hero {
+                padding: 48px 0 64px;
             }
 
-            .landing-nav,
-            .landing-nav .landing-nav-shell {
-                transition: none;
-            }
-        }
-
-        @media (max-width: 1023.98px) {
-            .landing-hero {
-                min-height: auto;
-                padding-top: 3rem;
-                padding-bottom: 4rem;
-            }
-
-            .landing-hero-shell {
+            .agv-hero__grid,
+            .agv-cta__box {
                 grid-template-columns: 1fr;
-                gap: 2.5rem;
             }
 
-            .landing-hero-title {
-                margin-top: 2rem;
-                font-size: clamp(2.25rem, 8vw, 3.75rem);
-                line-height: 1.04;
+            .agv-visual {
+                min-height: 500px;
             }
 
-            .landing-hero-copy,
-            .landing-hero-cta {
-                margin-top: 2rem;
+            .agv-chip--top,
+            .agv-chip--right,
+            .agv-chip--bottom {
+                left: 8px;
+                right: auto;
             }
 
-            .landing-hero-stats {
-                margin-top: 2.5rem;
-                gap: 1rem;
+            .agv-chip--right {
+                bottom: 30%;
             }
 
-            .landing-hero-visual {
-                min-height: 600px;
+            .agv-grid--4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .landing-hero-image {
-                inset: .5rem 0;
+            .agv-grid--3 {
+                grid-template-columns: 1fr;
+            }
+
+            .agv-footer__grid {
+                grid-template-columns: 1fr 1fr;
             }
         }
 
-        @media (max-width: 639.98px) {
-            .landing-hero-visual {
-                min-height: 460px;
+        @media (max-width: 720px) {
+            .agv-container {
+                padding: 0 18px;
             }
 
-            .landing-hero-feature {
-                right: .5rem;
+            .agv-nav,
+            .agv-auth .agv-btn-ghost {
+                display: none;
+            }
+
+            .agv-section {
+                padding: 64px 0;
+            }
+
+            .agv-title {
+                font-size: 38px;
+            }
+
+            .agv-section__head--split,
+            .agv-products-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .agv-cta {
+                padding: 48px 0 72px;
+            }
+
+            .agv-cta__box {
+                gap: 32px;
+                padding: 32px 24px;
+                border-radius: 16px;
+            }
+
+            .agv-footer__grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 460px) {
+            .agv-grid--4 {
+                grid-template-columns: 1fr;
+            }
+
+            .agv-visual {
+                min-height: 440px;
+            }
+
+            .agv-chip {
+                min-width: 170px;
+                padding: 10px 12px;
             }
         }
     </style>
 
-    <main class="landing-page min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
-        <nav class="landing-nav sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl" data-landing-nav>
-            <div class="landing-nav-shell mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-4 xl:px-0">
-                <a href="{{ route('landing') }}" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white shadow-lg shadow-[#2f621f]/10">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
+    <main class="agv-landing">
+        <header class="agv-topbar" data-agv-topbar>
+            <div class="agv-container agv-topbar__inner">
+                <a href="{{ route('landing') }}" class="agv-brand">
+                    <span class="agv-brand__mark" aria-hidden="true">
+                        <i class="fas fa-seedling"></i>
                     </span>
-                    <span>Mercado Agricola</span>
+                    <span class="agv-brand__name">
+                        Agro<b>Vida</b>
+                        <small>Mercado agrícola</small>
+                    </span>
                 </a>
 
-                <div class="hidden items-center gap-7 lg:flex">
-                    <a href="#inicio" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Inicio</a>
-                    <a href="#beneficios" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Beneficios</a>
-                    <a href="#categorias" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Categorías</a>
-                    <a href="#como-funciona" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Cómo funciona</a>
-                </div>
+                <nav class="agv-nav" aria-label="Principal">
+                    <a href="#mercado">Mercado</a>
+                    <a href="#categorias">Categorías</a>
+                    <a href="#beneficios">Por qué AgroVida</a>
+                    <a href="#como-funciona">Cómo funciona</a>
+                </nav>
 
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-                        Iniciar sesión
-                    </a>
+                <div class="agv-auth">
+                    <a href="{{ route('login') }}" class="agv-btn agv-btn-ghost">Login</a>
                 </div>
             </div>
-        </nav>
+        </header>
 
-        <section id="inicio" class="landing-hero relative flex items-center overflow-hidden bg-gradient-to-br from-[#f8fcf3] via-[#edf8e6] to-white">
-            <div class="absolute right-[-10rem] bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-[#2f621f]/10"></div>
-            <div class="absolute top-10 left-6 h-40 w-40 rounded-full bg-[#a6c85f]/20 blur-3xl"></div>
-
-            <div class="landing-hero-shell relative mx-auto grid w-full items-center px-4 sm:px-6 lg:px-4 xl:px-0">
+        <section class="agv-hero" id="inicio">
+            <div class="agv-container agv-hero__grid">
                 <div>
-                    <span class="inline-flex items-center gap-2 rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">
-                        <i class="fas fa-seedling"></i>
-                        Plataforma agropecuaria integral
-                    </span>
-
-                    <h1 class="landing-hero-title text-4xl font-black tracking-normal text-[#142112] sm:text-5xl">
-                        Mercado Agrícola para conectar productos, animales y maquinaria en un solo lugar.
+                    <span class="agv-eyebrow">Plataforma agropecuaria - Bolivia</span>
+                    <h1 class="agv-title">
+                        Compra y vende <em>productos del campo</em> en un solo lugar.
                     </h1>
-
-                    <p class="landing-hero-copy text-base text-[#66735f]">
-                        Una plataforma moderna para publicar, explorar y gestionar oportunidades del mercado agropecuario:
-                        productos orgánicos, ganado, maquinaria agrícola y servicios relacionados.
+                    <p class="agv-hero__sub">
+                        AgroVida conecta a productores, vendedores y compradores locales. Publica ganado,
+                        maquinaria y productos orgánicos, o encuentra ofertas cerca de tu zona.
                     </p>
 
-                    <div class="landing-hero-cta flex flex-col gap-3 sm:flex-row">
-                        <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
-                            Comenzar ahora
-                            <i class="fas fa-arrow-right text-sm"></i>
+                    <div class="agv-hero__actions">
+                        <a href="{{ route('register') }}" class="agv-btn agv-btn-primary">
+                            Regístrate
                         </a>
                     </div>
 
-                    <div class="landing-hero-stats grid sm:grid-cols-2">
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
-                            <strong class="block text-2xl font-black text-[#183b18]">4 áreas</strong>
-                            <span class="mt-1 block leading-6 text-[#66735f]">Animales, maquinaria, orgánicos y servicios</span>
+                    <div class="agv-hero__meta">
+                        <div>
+                            <strong>3 categorías</strong>
+                            <span>Animales, maquinaria y orgánicos</span>
                         </div>
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
-                            <strong class="block text-2xl font-black text-[#183b18]">24/7</strong>
-                            <span class="mt-1 block leading-6 text-[#66735f]">Consulta publicaciones cuando lo necesites</span>
+                        <div>
+                            <strong>9 departamentos</strong>
+                            <span>Vendedores activos en todo el país</span>
+                        </div>
+                        <div>
+                            <strong>Contacto directo</strong>
+                            <span>Habla con el productor sin comisiones</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="landing-hero-visual relative">
-                    <div class="landing-hero-image absolute overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20">
-                        <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#142112]/70"></div>
-                        <div class="absolute right-5 bottom-5 max-w-xs rounded-2xl border border-white/20 bg-[#142112]/75 p-5 text-white shadow-xl backdrop-blur">
-                            <span class="block text-sm text-white/70">Publicaciones activas</span>
-                            <strong class="mt-1 block text-xl font-black">Mercado organizado</strong>
+                <div class="agv-visual" aria-label="Productos, ganado y maquinaria agrícola">
+                    <div class="agv-visual__photo">
+                        <img src="{{ asset('img/hero-agrovida.png') }}" alt="Collage de ganado, maquinaria y productos agrícolas">
+                    </div>
+
+                    <div class="agv-chip agv-chip--top">
+                        <span class="agv-chip__icon"><i class="fas fa-tractor"></i></span>
+                        <div>
+                            <b>Maquinaria</b>
+                            <span>Venta y alquiler</span>
                         </div>
                     </div>
 
-                    <div class="landing-hero-feature absolute flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
-                            <i class="fas fa-tractor"></i>
-                        </span>
+                    <div class="agv-chip agv-chip--right">
+                        <span class="agv-chip__icon"><i class="fas fa-horse"></i></span>
                         <div>
-                            <strong class="block font-black text-[#142112]">Maquinaria</strong>
-                            <span class="text-sm text-[#66735f]">Venta o alquiler</span>
+                            <b>Ganado certificado</b>
+                            <span>Registro y trazabilidad</span>
                         </div>
                     </div>
 
-                    <div class="absolute bottom-0 left-2 flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10 sm:left-0">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
-                            <i class="fas fa-leaf"></i>
-                        </span>
+                    <div class="agv-chip agv-chip--bottom">
+                        <span class="agv-chip__icon"><i class="fas fa-leaf"></i></span>
                         <div>
-                            <strong class="block font-black text-[#142112]">Orgánicos</strong>
-                            <span class="text-sm text-[#66735f]">Productos frescos</span>
+                            <b>Productos orgánicos</b>
+                            <span>Producción local</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="beneficios" class="bg-white py-16 sm:py-20">
-            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="mx-auto max-w-3xl text-center">
-                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Beneficios</span>
-                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Una experiencia clara para compradores, vendedores y productores.</h2>
-                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Centraliza publicaciones y mejora la forma de encontrar oportunidades dentro del mercado agropecuario.</p>
+        <section class="agv-section" id="categorias">
+            <div class="agv-container">
+                <div class="agv-section__head">
+                    <span class="agv-eyebrow">Categorías</span>
+                    <h2 class="agv-section-title mt-3">Todo el mercado agropecuario, organizado.</h2>
+                    <p class="agv-copy">Conoce las áreas principales de AgroVida: animales en pie, maquinaria agrícola y productos orgánicos.</p>
                 </div>
 
-                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div class="agv-grid agv-grid--3">
                     @foreach ([
-                        ['icon' => 'fa-box-open', 'title' => 'Publicación de productos', 'text' => 'Presenta productos agrícolas con información clara, imágenes y detalles comerciales.'],
-                        ['icon' => 'fa-horse', 'title' => 'Gestión de animales', 'text' => 'Organiza información de ganado, características, ubicación y datos relevantes.'],
-                        ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Publica maquinaria para venta, alquiler o consulta con una presentación profesional.'],
-                        ['icon' => 'fa-handshake', 'title' => 'Contacto comercial', 'text' => 'Facilita la conexión entre compradores, vendedores y operadores del sector.'],
-                    ] as $benefit)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
-                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $benefit['icon'] }}"></i>
-                            </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $benefit['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $benefit['text'] }}</p>
-                        </article>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-
-        <section id="categorias" class="bg-gradient-to-b from-[#f4faef] to-white py-16 sm:py-20">
-            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="grid items-end gap-6 lg:grid-cols-[1fr_0.7fr]">
-                    <div>
-                        <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Categorías</span>
-                        <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Todo el mercado agropecuario presentado con orden.</h2>
-                    </div>
-                    <p class="text-lg leading-8 text-[#66735f]">Tarjetas visuales para encontrar rápidamente el tipo de publicación que cada usuario necesita.</p>
-                </div>
-
-                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                    @foreach ([
-                        ['icon' => 'fa-horse', 'title' => 'Animales', 'text' => 'Ganado y publicaciones pecuarias con datos útiles para evaluar cada oportunidad.'],
-                        ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Equipos, marcas, estados y opciones para trabajo agrícola o productivo.'],
-                        ['icon' => 'fa-carrot', 'title' => 'Productos orgánicos', 'text' => 'Producción fresca, trazabilidad y productos naturales para el mercado local.'],
-                        ['icon' => 'fa-bullhorn', 'title' => 'Servicios y anuncios', 'text' => 'Publicaciones relacionadas con operaciones, oferta y demanda del sector.'],
+                        ['tone' => 'green', 'icon' => 'fa-horse', 'count' => 'Ganado', 'title' => 'Animales y ganado', 'desc' => 'Bovinos, ovinos, porcinos y aves con datos de edad, procedencia y ubicación.'],
+                        ['tone' => '', 'icon' => 'fa-tractor', 'count' => 'Maquinaria', 'title' => 'Maquinaria agrícola', 'desc' => 'Tractores, sembradoras, cosechadoras e implementos en venta o alquiler.'],
+                        ['tone' => 'green', 'icon' => 'fa-leaf', 'count' => 'Orgánicos', 'title' => 'Productos orgánicos', 'desc' => 'Hortalizas, frutas, granos y derivados con producción local trazable.'],
                     ] as $category)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
-                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $category['icon'] }}"></i>
-                            </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $category['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $category['text'] }}</p>
-                        </article>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-
-        <section id="como-funciona" class="bg-white py-16 sm:py-20">
-            <div class="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1fr] lg:px-8">
-                <div>
-                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Cómo funciona</span>
-                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Encuentra, publica y organiza oportunidades del campo con facilidad.</h2>
-                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Crea tu cuenta para explorar el mercado, compartir tus productos y gestionar contactos comerciales desde un entorno claro y ordenado.</p>
-                </div>
-
-                <div class="grid gap-5">
-                    @foreach ([
-                        ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
-                        ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
-                        ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
-                    ] as $item)
-                        <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">{{ $item['step'] }}</span>
-                            <div>
-                                <h3 class="text-xl font-black text-[#142112]">{{ $item['title'] }}</h3>
-                                <p class="mt-2 leading-7 text-[#66735f]">{{ $item['text'] }}</p>
+                        <article class="agv-card agv-category">
+                            <div class="agv-card__image {{ $category['tone'] === 'green' ? 'agv-card__image--green' : '' }} {{ $category['tone'] === 'earth' ? 'agv-card__image--earth' : '' }}">
+                                <div class="agv-card__visual">
+                                    <span class="agv-card__icon" aria-hidden="true"><i class="fas {{ $category['icon'] }}"></i></span>
+                                    <span>{{ $category['title'] }}</span>
+                                </div>
+                            </div>
+                            <div class="agv-card__body">
+                                <span class="agv-card__count">{{ $category['count'] }}</span>
+                                <div class="agv-card__title">{{ $category['title'] }}</div>
+                                <p class="agv-card__desc">{{ $category['desc'] }}</p>
+                                <span class="agv-card__info"><i class="fas fa-info-circle"></i> Información de la categoría</span>
                             </div>
                         </article>
                     @endforeach
@@ -330,57 +1065,181 @@
             </div>
         </section>
 
-        <section class="bg-white px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-            <div class="mx-auto grid max-w-7xl items-center gap-8 rounded-[2rem] bg-[linear-gradient(135deg,rgba(24,59,24,0.98),rgba(47,98,31,0.95)),url('/img/bg-agrovida.jpg')] bg-cover bg-center p-8 text-white shadow-2xl shadow-[#183b18]/25 sm:p-12 lg:grid-cols-[1fr_auto]">
-                <div>
-                    <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase text-white">Mercado Agrícola</span>
-                    <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">Impulsa tus publicaciones agropecuarias con una plataforma profesional.</h2>
-                    <p class="mt-5 max-w-2xl text-lg leading-8 text-white/75">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
+        <section class="agv-section agv-section--white" id="beneficios">
+            <div class="agv-container">
+                <div class="agv-section__head agv-section__head--split">
+                    <div>
+                        <span class="agv-eyebrow">Por qué AgroVida</span>
+                        <h2 class="agv-section-title mt-3">Una herramienta pensada para el productor, no para la portada.</h2>
+                    </div>
+                    <p class="agv-copy">Lo que importa es publicar rápido, encontrar lo que buscas y contactar al productor.</p>
                 </div>
-                <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                    <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#183b18] no-underline shadow-xl transition hover:-translate-y-0.5">Registrarse</a>
-                    <a href="{{ route('login') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 font-black text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15">Iniciar sesión</a>
+
+                <div class="agv-grid agv-grid--3">
+                    @foreach ([
+                        ['num' => '01', 'title' => 'Publica en menos de 3 minutos', 'desc' => 'Sube fotos, agrega precio y ubicación. Tu anuncio queda visible y editable cuando lo necesites.'],
+                        ['num' => '02', 'title' => 'Contacta al comprador directo', 'desc' => 'Sin comisiones por venta. Mensajes, llamadas o WhatsApp gestionados desde el perfil del anuncio.'],
+                        ['num' => '03', 'title' => 'Filtra por zona y categoría', 'desc' => 'Encuentra ofertas por departamento, municipio, categoría y palabra clave.'],
+                    ] as $benefit)
+                        <article class="agv-benefit">
+                            <span class="agv-benefit__num">{{ $benefit['num'] }}</span>
+                            <h3>{{ $benefit['title'] }}</h3>
+                            <p class="agv-copy">{{ $benefit['desc'] }}</p>
+                        </article>
+                    @endforeach
                 </div>
             </div>
         </section>
 
-        <footer class="bg-[#132714] py-8 text-[#dfeada]">
-            <div class="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_auto_auto] lg:px-8">
-                <div>
-                    <strong class="block text-lg font-black text-white">Mercado Agrícola</strong>
-                    <p class="mt-2 max-w-md text-white/65">Plataforma para conectar productos, animales, maquinaria y servicios agropecuarios.</p>
+        <section class="agv-section" id="mercado">
+            <div class="agv-container">
+                <div class="agv-products-head">
+                    <div>
+                        <span class="agv-eyebrow">Mercado</span>
+                        <h2 class="agv-section-title mt-3">Publicaciones recientes en tu zona.</h2>
+                        <p class="agv-copy mt-2">Inicia sesión para guardar favoritos y contactar al vendedor.</p>
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-4">
-                    <a href="#beneficios" class="font-bold text-[#dfeada] no-underline hover:text-white">Beneficios</a>
-                    <a href="#categorias" class="font-bold text-[#dfeada] no-underline hover:text-white">Categorías</a>
-                    <a href="#como-funciona" class="font-bold text-[#dfeada] no-underline hover:text-white">Cómo funciona</a>
+
+                @php
+                    $fallbackProducts = collect([
+                        ['tone' => 'green', 'tag' => 'Ganado', 'loc' => 'Santa Cruz - Warnes', 'title' => 'Lote de 12 novillos Nelore - 380kg promedio', 'price' => 'Bs. 9.800', 'seller' => 'JM', 'image' => null, 'icon' => 'fa-horse'],
+                        ['tone' => '', 'tag' => 'Maquinaria', 'loc' => 'Cochabamba - Quillacollo', 'title' => 'Tractor John Deere 5075E - uso ligero, mantenido', 'price' => 'Bs. 145.000', 'seller' => 'LR', 'image' => null, 'icon' => 'fa-tractor'],
+                        ['tone' => 'green', 'tag' => 'Orgánico', 'loc' => 'Oruro - Challapata', 'title' => 'Quinua real orgánica - cosecha reciente, lote 500kg', 'price' => 'Bs. 24/kg', 'seller' => 'AC', 'image' => null, 'icon' => 'fa-leaf'],
+                    ]);
+
+                    $products = ($landingProducts ?? collect())->isNotEmpty() ? $landingProducts : $fallbackProducts;
+                @endphp
+
+                <div class="agv-grid agv-grid--3">
+                    @foreach ($products as $product)
+                        <article class="agv-card agv-product">
+                            <div class="agv-card__image agv-product__image {{ $product['tone'] === 'green' ? 'agv-card__image--green' : '' }} {{ $product['tone'] === 'earth' ? 'agv-card__image--earth' : '' }}">
+                                @if (!empty($product['image']))
+                                    <img src="{{ asset('storage/' . $product['image']) }}" alt="{{ $product['title'] }}">
+                                @else
+                                    <span class="agv-product__placeholder" aria-hidden="true"><i class="fas {{ $product['icon'] ?? 'fa-leaf' }}"></i></span>
+                                @endif
+                                <span class="agv-tag {{ $product['tone'] === 'earth' ? 'agv-tag--earth' : '' }}">{{ $product['tag'] }}</span>
+                            </div>
+                            <div class="agv-product__body">
+                                <div class="agv-product__loc"><i class="fas fa-map-marker-alt mr-1"></i>{{ $product['loc'] }}</div>
+                                <div class="agv-product__title">{{ $product['title'] }}</div>
+                                <div class="agv-product__bottom">
+                                    <div class="agv-product__price">{{ $product['price'] }}</div>
+                                    <div class="agv-product__seller">
+                                        <span class="agv-avatar">{{ $product['seller'] }}</span>
+                                        Vendedor
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
-                <span class="text-white/60">© {{ date('Y') }} Mercado Agrícola</span>
+            </div>
+        </section>
+
+        <section class="agv-section agv-section--soft" id="como-funciona">
+            <div class="agv-container">
+                <div class="agv-section__head">
+                    <span class="agv-eyebrow">Cómo funciona</span>
+                    <h2 class="agv-section-title mt-3">Tres pasos. Sin vueltas.</h2>
+                    <p class="agv-copy">Diseñado para que cualquier productor pueda usarlo, incluso desde el celular.</p>
+                </div>
+
+                <div class="agv-grid agv-grid--3">
+                    @foreach ([
+                        ['num' => '1', 'title' => 'Crea tu cuenta', 'desc' => 'Regístrate para acceder al mercado y mantener tus publicaciones ordenadas.'],
+                        ['num' => '2', 'title' => 'Publica o explora', 'desc' => 'Sube fotos, ubicación y precio, o filtra por categoría y zona.'],
+                        ['num' => '3', 'title' => 'Conecta y cierra el trato', 'desc' => 'Contacta directo por mensaje, llamada o WhatsApp.'],
+                    ] as $step)
+                        <article class="agv-step">
+                            <span class="agv-step__num">{{ $step['num'] }}</span>
+                            <h3>{{ $step['title'] }}</h3>
+                            <p class="agv-copy">{{ $step['desc'] }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
+        <section class="agv-cta">
+            <div class="agv-container">
+                <div class="agv-cta__box">
+                    <div>
+                        <h2 class="agv-section-title">Empieza a publicar tu producción hoy.</h2>
+                        <p>Únete a productores, vendedores y compradores de toda Bolivia que ya están usando AgroVida para mover el campo.</p>
+                        <div class="agv-cta__actions">
+                            <a href="{{ route('register') }}" class="agv-btn agv-btn-primary">Crear cuenta gratis</a>
+                            <a href="{{ route('login') }}" class="agv-btn agv-btn-ghost">Iniciar sesión</a>
+                        </div>
+                    </div>
+                    <div class="agv-cta__list">
+                        <span><i class="fas fa-check"></i> Sin costo por registrarte.</span>
+                        <span><i class="fas fa-check"></i> Soporte en español.</span>
+                        <span><i class="fas fa-check"></i> Publicaciones moderadas.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="agv-footer">
+            <div class="agv-container">
+                <div class="agv-footer__grid">
+                    <div>
+                        <a href="{{ route('landing') }}" class="agv-brand">
+                            <span class="agv-brand__mark" aria-hidden="true"><i class="fas fa-seedling"></i></span>
+                            <span class="agv-brand__name">Agro<b>Vida</b><small>Mercado agrícola</small></span>
+                        </a>
+                        <p class="mt-3">Plataforma boliviana para conectar productores, vendedores y compradores del sector agropecuario.</p>
+                    </div>
+                    <div>
+                        <h4>Mercado</h4>
+                        <ul>
+                            <li><a href="{{ route('ads.index') }}">Ganado</a></li>
+                            <li><a href="{{ route('ads.index') }}">Maquinaria</a></li>
+                            <li><a href="{{ route('ads.index') }}">Productos orgánicos</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Plataforma</h4>
+                        <ul>
+                            <li><a href="#como-funciona">Cómo funciona</a></li>
+                            <li><a href="{{ route('ads.create') }}">Publicar producto</a></li>
+                            <li><a href="{{ route('register') }}">Crear cuenta</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Contacto</h4>
+                        <ul>
+                            <li><a href="mailto:soporte@agrovida.bo">soporte@agrovida.bo</a></li>
+                            <li><a href="{{ route('login') }}">Iniciar sesión</a></li>
+                            <li><a href="{{ route('register') }}">Registrarse</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="agv-footer__bottom">
+                    <span>© {{ date('Y') }} AgroVida - Hecho en Bolivia.</span>
+                    <span>Mercado agrícola para productores y compradores locales.</span>
+                </div>
             </div>
         </footer>
     </main>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const nav = document.querySelector('[data-landing-nav]');
-            if (!nav) {
+        document.addEventListener('DOMContentLoaded', function () {
+            var topbar = document.querySelector('[data-agv-topbar]');
+
+            if (!topbar) {
                 return;
             }
 
-            let lastScrollY = window.scrollY;
-
-            const updateNav = () => {
-                const currentScrollY = window.scrollY;
-                const isScrollingDown = currentScrollY > lastScrollY;
-
-                nav.classList.toggle('is-stuck', currentScrollY > 12);
-                nav.classList.toggle('is-hidden', isScrollingDown && currentScrollY > 48);
-
-                lastScrollY = Math.max(currentScrollY, 0);
+            var updateTopbar = function () {
+                topbar.classList.toggle('is-stuck', window.scrollY > 8);
             };
 
-            updateNav();
-            window.addEventListener('scroll', updateNav, { passive: true });
+            updateTopbar();
+            window.addEventListener('scroll', updateTopbar, { passive: true });
         });
     </script>
 @endsection

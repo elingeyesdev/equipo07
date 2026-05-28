@@ -19,7 +19,101 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\VendedorSolicitudController;
 
 
-Route::view('/', 'public.landing')->name('landing');
+Route::get('/', function () {
+    $formatPrice = function ($value, string $suffix = '') {
+        if ($value === null || $value === '') {
+            return 'Consultar precio';
+        }
+
+        $amount = number_format((float) $value, 2, ',', '.');
+        $amount = rtrim(rtrim($amount, '0'), ',');
+
+        return 'Bs. ' . $amount . $suffix;
+    };
+
+    $formatLocation = function (?string $departamento, ?string $municipio, ?string $fallback = null) {
+        $parts = array_filter([$departamento, $municipio]);
+
+        return $parts ? implode(' - ', $parts) : ($fallback ?: 'Bolivia');
+    };
+
+    $sellerInitials = function ($user) {
+        $name = trim((string) ($user->name ?? 'Vendedor'));
+        $words = preg_split('/\s+/', $name) ?: [];
+
+        return strtoupper(collect($words)->take(2)->map(fn ($word) => mb_substr($word, 0, 1))->implode('')) ?: 'AV';
+    };
+
+    $landingProducts = \App\Models\Ganado::with([
+            'user',
+            'imagenes',
+            'datoComercial',
+            'ubicacionGanado.ubicacionGeografica',
+        ])
+        ->latest()
+        ->take(3)
+        ->get()
+        ->map(fn ($ganado) => [
+            'tone' => 'green',
+            'tag' => 'Ganado',
+            'loc' => $formatLocation($ganado->departamento, $ganado->municipio, $ganado->ubicacion),
+            'title' => $ganado->nombre,
+            'price' => $formatPrice($ganado->precio),
+            'seller' => $sellerInitials($ganado->user),
+            'image' => optional($ganado->imagenes->first())->ruta,
+            'icon' => 'fa-horse',
+            'created_at' => $ganado->created_at,
+        ])
+        ->concat(
+            \App\Models\Maquinaria::with([
+                    'user',
+                    'imagenes',
+                    'ubicacionMaquinaria.ubicacionGeografica',
+                ])
+                ->latest()
+                ->take(3)
+                ->get()
+                ->map(fn ($maquinaria) => [
+                    'tone' => '',
+                    'tag' => 'Maquinaria',
+                    'loc' => $formatLocation($maquinaria->departamento, $maquinaria->municipio, $maquinaria->ubicacion),
+                    'title' => $maquinaria->nombre,
+                    'price' => $formatPrice($maquinaria->precio_dia, $maquinaria->tarifa_unidad ? '/' . $maquinaria->tarifa_unidad : ''),
+                    'seller' => $sellerInitials($maquinaria->user),
+                    'image' => optional($maquinaria->imagenes->first())->ruta,
+                    'icon' => 'fa-tractor',
+                    'created_at' => $maquinaria->created_at,
+                ])
+        )
+        ->concat(
+            \App\Models\Organico::with([
+                    'user',
+                    'imagenes',
+                    'datoComercial',
+                    'unidadOrganico',
+                    'ubicacionOrganico.ubicacionGeografica',
+                ])
+                ->latest()
+                ->take(3)
+                ->get()
+                ->map(fn ($organico) => [
+                    'tone' => 'green',
+                    'tag' => 'Orgánico',
+                    'loc' => $formatLocation($organico->departamento_origen, $organico->municipio_origen, $organico->origen),
+                    'title' => $organico->nombre,
+                    'price' => $formatPrice($organico->precio, $organico->unidadOrganico?->nombre ? '/' . $organico->unidadOrganico->nombre : ''),
+                    'seller' => $sellerInitials($organico->user),
+                    'image' => optional($organico->imagenes->first())->ruta,
+                    'icon' => 'fa-leaf',
+                    'created_at' => $organico->created_at,
+                ])
+        )
+        ->sortByDesc('created_at')
+        ->take(3)
+        ->values();
+
+    return view('public.landing', compact('landingProducts'));
+})->name('landing');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');

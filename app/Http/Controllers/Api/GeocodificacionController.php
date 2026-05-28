@@ -34,11 +34,35 @@ class GeocodificacionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => collect($response->json())->map(fn ($item) => [
-                'display_name' => $item['display_name'] ?? '',
-                'lat' => $item['lat'] ?? null,
-                'lon' => $item['lon'] ?? null,
-            ])->filter(fn ($item) => $item['lat'] && $item['lon'])->values(),
+            'data' => collect($response->json())->map(function ($item) {
+                $address = $item['address'] ?? [];
+
+                return [
+                    'display_name' => $item['display_name'] ?? '',
+                    'name' => $item['name'] ?? null,
+                    'lat' => $item['lat'] ?? null,
+                    'lon' => $item['lon'] ?? null,
+                    'city' => $address['city']
+                        ?? $address['town']
+                        ?? $address['village']
+                        ?? null,
+                    'municipality' => $address['municipality']
+                        ?? $address['city']
+                        ?? $address['town']
+                        ?? $address['village']
+                        ?? null,
+                    'county' => $address['county'] ?? null,
+                    'state' => $address['state'] ?? null,
+                    'address_line' => collect([
+                        $address['road'] ?? null,
+                        $address['suburb'] ?? null,
+                        $address['city'] ?? $address['town'] ?? $address['village'] ?? null,
+                        $address['county'] ?? null,
+                        $address['state'] ?? null,
+                        $address['country'] ?? null,
+                    ])->filter()->unique()->implode(', '),
+                ];
+            })->filter(fn ($item) => $item['lat'] && $item['lon'])->values(),
         ]);
     }
 
