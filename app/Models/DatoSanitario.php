@@ -11,8 +11,11 @@ class DatoSanitario extends Model
     protected $fillable = [
         'user_id',
         'ganado_id',
+        'has_sanity',
+        'documento_pdf',
         'destino_matadero_campo',
         'hoja_ruta_foto',
+        
     ];
 
     public function ganado()

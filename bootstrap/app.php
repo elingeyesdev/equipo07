@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust the reverse proxy headers so Laravel can detect HTTPS when
+        // the app is served behind a proxy like GitHub Codespaces.
+        $middleware->trustProxies('*');
+
         // Alias de tus middlewares personalizados
         $middleware->alias([
             'admin'         => \App\Http\Middleware\AdminMiddleware::class,

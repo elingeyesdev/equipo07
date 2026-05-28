@@ -9,15 +9,10 @@ class Ganado extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'nombre',
-        'user_id',
-        'tipo_animal_id',
-        'raza_id',
-        'categoria_id',
-        'ubicacion_ganado_id',
-        'es_campeon',
-    ];
+protected $fillable = [
+    'nombre', 'user_id', 'tipo_animal_id', 'raza_id', 'categoria_id', 'ubicacion_ganado_id', 'es_campeon',
+    'modalidad', 'proposito', 'tipo_genetica' // <-- NUEVOS
+];
 
     protected $appends = [
         'ubicacion',

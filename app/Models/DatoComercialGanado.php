@@ -8,12 +8,7 @@ class DatoComercialGanado extends Model
 {
     protected $table = 'datos_comerciales_ganado';
 
-    protected $fillable = [
-        'ganado_id',
-        'precio',
-        'stock',
-        'fecha_publicacion',
-    ];
+    protected $fillable = ['ganado_id', 'precio', 'forma_cobro', 'stock', 'fecha_publicacion'];
 
     public function ganado()
     {
