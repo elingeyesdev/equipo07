@@ -1,6 +1,6 @@
 @extends('layouts.adminlte')
 
-@section('title', 'Unidades de Medida')
+@section('title', 'Propósitos Comerciales')
 @section('page_title', 'Gestor de Ganado')
 
 @section('content')
@@ -28,7 +28,7 @@
     <div class="card card-outline card-success">
         <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
             <div>
-                <h3 class="card-title font-weight-bold">Unidades de Medida</h3>
+                <h3 class="card-title font-weight-bold">Propósitos Comerciales</h3>
             </div>
             <button type="button" class="btn btn-success mt-3 mt-md-0" onclick="abrirModalCrear()">
                 <i class="fas fa-plus mr-2"></i> Nuevo Registro
@@ -40,7 +40,7 @@
                 <table class="table table-hover mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th>Nombre de la Unidad</th>
+                            <th>Nombre</th>
                             <th>Descripción</th>
                             <th>Estado</th>
                             <th class="text-right">Acciones</th>
@@ -57,7 +57,7 @@
                                         onclick="abrirModalEditar({{ $item->id }}, '{{ addslashes($item->nombre) }}', '{{ addslashes($item->descripcion) }}')">
                                         <i class="fas fa-pen mr-1"></i> Editar
                                     </button>
-                                    <form action="{{ route('admin.unidades_organicos.destroy', $item) }}" method="POST" class="d-inline delete-form" data-message="¿Está seguro de eliminar {{ $item->nombre }}?">
+                                    <form action="{{ route('admin.propositos.destroy', $item) }}" method="POST" class="d-inline delete-form" data-message="¿Está seguro de eliminar {{ $item->nombre }}?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -68,7 +68,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-5">No hay unidades registradas aún.</td>
+                                <td colspan="4" class="text-center text-muted py-5">No hay propósitos registrados aún.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -85,7 +85,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Agregar Unidad</h5>
+                    <h5 class="modal-title" id="modalTitle">Agregar Propósito</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -99,7 +99,7 @@
                             <input type="text" class="form-control" id="inputNombre" name="nombre" required maxlength="255">
                         </div>
                         <div class="form-group">
-                            <label for="inputDescripcion">Descripción</label>
+                            <label for="inputDescripcion">Descripción (Opcional)</label>
                             <textarea class="form-control" id="inputDescripcion" name="descripcion" rows="3"></textarea>
                         </div>
                     </div>
@@ -117,11 +117,11 @@
 
 @section('js')
 <script>
-    const urlStore = "{{ route('admin.unidades_organicos.store') }}";
-    const urlUpdateBase = "{{ url('admin/unidades_organicos') }}";
+    const urlStore = "{{ route('admin.propositos.store') }}";
+    const urlUpdateBase = "{{ url('admin/propositos') }}";
 
     function abrirModalCrear() {
-        $('#modalTitle').text('Agregar Unidad');
+        $('#modalTitle').text('Agregar Propósito');
         $('#formularioGestor').attr('action', urlStore);
         $('#formMethod').val('POST');
         $('#inputNombre').val('');
@@ -130,7 +130,7 @@
     }
 
     function abrirModalEditar(id, nombre, descripcion) {
-        $('#modalTitle').text('Editar Unidad');
+        $('#modalTitle').text('Editar Propósito');
         $('#formularioGestor').attr('action', urlUpdateBase + '/' + id);
         $('#formMethod').val('PUT');
         $('#inputNombre').val(nombre);

@@ -8,6 +8,7 @@ use App\Http\Controllers\TipoAnimalController;
 use App\Http\Controllers\TipoPesoController;
 use App\Http\Controllers\DatoSanitarioController;
 use App\Http\Controllers\RazaController;
+use App\Http\Controllers\PropositoController;
 use App\Http\Controllers\EstadoMaquinariaController;
 use App\Http\Controllers\SolicitudVendedorController;
 use App\Http\Controllers\Auth\LoginController;
@@ -51,6 +52,7 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('tipo_animals', TipoAnimalController::class);
     Route::resource('tipo-pesos', TipoPesoController::class);
     Route::resource('razas', RazaController::class);
+    Route::resource('propositos', PropositoController::class);
     Route::resource('tipo_maquinarias', App\Http\Controllers\TipoMaquinariaController::class);
     Route::resource('marcas_maquinarias', App\Http\Controllers\MarcaMaquinariaController::class);
     Route::resource('estado_maquinarias', EstadoMaquinariaController::class);
