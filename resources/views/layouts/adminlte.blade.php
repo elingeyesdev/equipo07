@@ -177,8 +177,8 @@
                                     </a>
                                 </li>
 
-                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*', 'admin.propositos.*', 'admin.tipo-pesos.*', 'admin.unidades_organicos.*') ? 'menu-open' : '' }}">
-                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*', 'admin.propositos.*', 'admin.tipo-pesos.*', 'admin.unidades_organicos.*') ? 'active' : '' }}">
+                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*', 'admin.propositos.*', 'admin.tipo-pesos.*') ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_animals.*', 'admin.razas.*', 'admin.propositos.*', 'admin.tipo-pesos.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-sliders-h"></i>
                                         <p>
                                             Gestor de Selectores
@@ -214,11 +214,37 @@
                                                 <p>Tipos de Pesaje</p>
                                             </a>
                                         </li>
+                                    </ul>
+                                </li>
+
+                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-seedling"></i>
+                                        <p>
+                                            Selectores Organicos
+                                            <i class="right fas fa-angle-left"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.tipo_cultivos.index') }}"
+                                                class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Tipos de Cultivo</p>
+                                            </a>
+                                        </li>
                                         <li class="nav-item">
                                             <a href="{{ route('admin.unidades_organicos.index') }}"
                                                 class="nav-link {{ request()->routeIs('admin.unidades_organicos.*') ? 'active' : '' }}">
                                                 <i class="far fa-circle nav-icon"></i>
                                                 <p>Unidades de Medida</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.certificados_organicos.index') }}"
+                                                class="nav-link {{ request()->routeIs('admin.certificados_organicos.*') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Certificados</p>
                                             </a>
                                         </li>
                                     </ul>

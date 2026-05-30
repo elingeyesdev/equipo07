@@ -5,6 +5,9 @@
     $registrosCertificados = collect($organico?->certificadoRegistros ?? [])->keyBy('certificado_organico_id');
     $obligatorios = $certificados->where('es_obligatorio', true);
     $opcionales = $certificados->where('es_obligatorio', false);
+    $unidadSeleccionadaId = old('unidad_id', $organico->unidad_id ?? '');
+    $unidadSeleccionada = $unidades->first(fn($unidad) => (string) $unidad->id === (string) $unidadSeleccionadaId);
+    $precioLabel = $unidadSeleccionada ? 'Precio por ' . \Illuminate\Support\Str::lower($unidadSeleccionada->nombre) : 'Precio';
     $wizardSteps = [
         [
             'icon' => 'fas fa-leaf',
@@ -101,8 +104,8 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Nombre *</label>
-                            <input type="text" name="nombre" class="form-control"
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" name="nombre" id="nombre" class="form-control"
                                 placeholder="Ej: Zanahoria organica fresca"
                                 value="{{ old('nombre', $organico->nombre ?? '') }}" required>
                         </div>
@@ -119,7 +122,9 @@
                                 @endforeach
                             </select>
                         </div>
+                    </div>
 
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="unidad_id">Unidad de medida</label>
                             <select name="unidad_id" id="unidad_id" class="form-control">
@@ -133,21 +138,19 @@
                             </select>
                         </div>
 
-                        <div class="form-group mb-md-0">
-                            <label>Stock *</label>
-                            <input type="number" name="stock" class="form-control" placeholder="Cantidad disponible"
+                        <div class="form-group">
+                            <label for="stock">Stock *</label>
+                            <input type="number" name="stock" id="stock" class="form-control" placeholder="Cantidad disponible"
                                 value="{{ old('stock', $organico->stock ?? 0) }}" required min="0">
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Precio *</label>
+                        <div class="form-group mb-md-0">
+                            <label for="precio" id="precio-label">{{ $precioLabel }} *</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Bs</span>
                                 </div>
-                                <input type="number" step="0.01" name="precio" class="form-control"
+                                <input type="number" step="0.01" name="precio" id="precio" class="form-control"
                                     placeholder="0.00" value="{{ old('precio', $organico->precio ?? 0) }}" required min="0">
                             </div>
                         </div>
@@ -506,6 +509,22 @@
         let markerOrigen = null;
 
         form.setAttribute('novalidate', 'novalidate');
+
+        const unidadSelect = document.getElementById('unidad_id');
+        const precioLabel = document.getElementById('precio-label');
+
+        function updatePrecioLabel() {
+            if (!unidadSelect || !precioLabel) return;
+
+            const selectedOption = unidadSelect.options[unidadSelect.selectedIndex];
+            const unidad = selectedOption && selectedOption.value ? selectedOption.textContent.trim().toLowerCase() : '';
+            precioLabel.textContent = unidad ? `Precio por ${unidad} *` : 'Precio *';
+        }
+
+        if (unidadSelect) {
+            unidadSelect.addEventListener('change', updatePrecioLabel);
+            updatePrecioLabel();
+        }
 
         const fieldStepMap = {
             nombre: 0,

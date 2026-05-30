@@ -5,7 +5,9 @@ use App\Http\Controllers\OrganicoController;
 use App\Http\Controllers\MaquinariaController;
 use App\Http\Controllers\GanadoController;
 use App\Http\Controllers\TipoAnimalController;
+use App\Http\Controllers\TipoCultivoController;
 use App\Http\Controllers\TipoPesoController;
+use App\Http\Controllers\CertificadoOrganicoController;
 use App\Http\Controllers\DatoSanitarioController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\PropositoController;
@@ -57,6 +59,8 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('marcas_maquinarias', App\Http\Controllers\MarcaMaquinariaController::class);
     Route::resource('estado_maquinarias', EstadoMaquinariaController::class);
     Route::resource('unidades_organicos', App\Http\Controllers\UnidadOrganicoController::class);
+    Route::resource('tipo_cultivos', TipoCultivoController::class)->except(['show', 'create', 'edit']);
+    Route::resource('certificados_organicos', CertificadoOrganicoController::class)->except(['show', 'create', 'edit']);
     Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
         ->name('organicos.certificados.estado');
 

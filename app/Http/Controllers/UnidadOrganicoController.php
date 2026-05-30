@@ -84,12 +84,6 @@ class UnidadOrganicoController extends Controller
      */
     public function destroy(UnidadOrganico $unidadesOrganico)
     {
-        // Verificar si hay orgánicos usando esta unidad
-        if ($unidadesOrganico->organicos()->count() > 0) {
-            return redirect()->route('admin.unidades_organicos.index')
-                ->with('error', 'No se puede eliminar esta unidad porque tiene orgánicos asociados.');
-        }
-
         $unidadesOrganico->delete();
 
         return redirect()->route('admin.unidades_organicos.index')->with('ok', 'Unidad de orgánico eliminada');
