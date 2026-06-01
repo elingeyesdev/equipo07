@@ -11,6 +11,12 @@
             'rechazada' => 'secondary',
             'cancelada_producto_vendido' => 'danger',
         ][$solicitud->estado_solicitud] ?? 'secondary';
+        $mapsUrl = null;
+        if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud) {
+            $mapsUrl = $solicitud->product_latitud && $solicitud->product_longitud
+                ? 'https://www.google.com/maps/dir/?api=1&origin=' . $solicitud->product_latitud . ',' . $solicitud->product_longitud . '&destination=' . $solicitud->pedido->destino_latitud . ',' . $solicitud->pedido->destino_longitud . '&travelmode=driving'
+                : 'https://www.google.com/maps/search/?api=1&query=' . $solicitud->pedido->destino_latitud . ',' . $solicitud->pedido->destino_longitud;
+        }
     @endphp
 
     <div class="container-fluid">
@@ -120,8 +126,8 @@
                             <div id="solicitud-destino-map"
                                 style="height: 460px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
                             <a class="btn btn-sm btn-outline-success mt-3" target="_blank"
-                                href="https://www.openstreetmap.org/?mlat={{ $solicitud->pedido->destino_latitud }}&mlon={{ $solicitud->pedido->destino_longitud }}#map=16/{{ $solicitud->pedido->destino_latitud }}/{{ $solicitud->pedido->destino_longitud }}">
-                                <i class="fas fa-external-link-alt mr-1"></i>Abrir mapa
+                                href="{{ $mapsUrl }}">
+                                <i class="fas fa-external-link-alt mr-1"></i>Abrir ruta en Google Maps
                             </a>
                         @else
                             <div class="alert alert-warning mb-0">
@@ -147,6 +153,7 @@
                 var destinoLng = {{ $solicitud->pedido->destino_longitud }};
                 var productoLat = @json($solicitud->product_latitud);
                 var productoLng = @json($solicitud->product_longitud);
+                var googleMapsUrl = @json($mapsUrl);
                 var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -162,24 +169,84 @@
                         .addTo(map)
                         .bindPopup('<strong>Tu producto</strong><br>' + @json($solicitud->nombre_producto));
 
-                    var routeLine = L.polyline([
-                        [productoLat, productoLng],
-                        [destinoLat, destinoLng]
-                    ], {
-                        color: '#28a745',
-                        weight: 4,
-                        opacity: 0.85,
-                        dashArray: '8, 8'
-                    }).addTo(map);
+                    function drawFallbackLine() {
+                        var fallbackLine = L.polyline([
+                            [productoLat, productoLng],
+                            [destinoLat, destinoLng]
+                        ], {
+                            color: '#28a745',
+                            weight: 4,
+                            opacity: 0.85,
+                            dashArray: '8, 8'
+                        }).addTo(map);
 
-                    routeLine.bindPopup('Distancia aproximada: {{ number_format($solicitud->distancia_destino_km ?? 0, 1) }} km');
+                        fallbackLine.bindPopup('Distancia aproximada: {{ number_format($solicitud->distancia_destino_km ?? 0, 1) }} km');
 
-                    map.fitBounds(routeLine.getBounds(), {
-                        padding: [40, 40],
-                        maxZoom: 14
-                    });
+                        map.fitBounds(fallbackLine.getBounds(), {
+                            padding: [40, 40],
+                            maxZoom: 14
+                        });
+                    }
 
-                    destinoMarker.openPopup();
+                    var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
+                        productoLng + ',' + productoLat + ';' + destinoLng + ',' + destinoLat +
+                        '?overview=full&geometries=geojson';
+
+                    fetch(osrmUrl)
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('No se pudo obtener la ruta');
+                            }
+
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            var route = data.routes && data.routes[0];
+
+                            if (!route || !route.geometry || !route.geometry.coordinates) {
+                                drawFallbackLine();
+                                return;
+                            }
+
+                            var routeCoordinates = route.geometry.coordinates.map(function(coordinate) {
+                                return [coordinate[1], coordinate[0]];
+                            });
+
+                            var routeLine = L.polyline(routeCoordinates, {
+                                color: '#28a745',
+                                weight: 5,
+                                opacity: 0.9
+                            }).addTo(map);
+
+                            var distanceKm = route.distance ? (route.distance / 1000).toFixed(1) : null;
+                            var durationMin = route.duration ? Math.round(route.duration / 60) : null;
+                            var popup = '<strong>Ruta vehicular estimada</strong>';
+
+                            if (distanceKm) {
+                                popup += '<br>Recorrido: ' + distanceKm + ' km';
+                            }
+
+                            if (durationMin) {
+                                popup += '<br>Tiempo aprox.: ' + durationMin + ' min';
+                            }
+
+                            if (googleMapsUrl) {
+                                popup += '<br><a href="' + googleMapsUrl + '" target="_blank" rel="noopener">Abrir en Google Maps</a>';
+                            }
+
+                            routeLine.bindPopup(popup);
+
+                            map.fitBounds(routeLine.getBounds(), {
+                                padding: [40, 40],
+                                maxZoom: 14
+                            });
+                        })
+                        .catch(function() {
+                            drawFallbackLine();
+                        })
+                        .finally(function() {
+                            destinoMarker.openPopup();
+                        });
                 } else {
                     destinoMarker.openPopup();
                 }
