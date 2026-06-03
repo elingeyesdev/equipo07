@@ -9,7 +9,6 @@ class DatoSanitario extends Model
     protected $table = 'datos_sanitarios';
 
     protected $fillable = [
-        'user_id',
         'ganado_id',
         'has_sanity',
         'documento_pdf',

@@ -61,6 +61,7 @@ class VendedorSolicitudController extends Controller
 
                 $solicitud->update([
                     'estado_solicitud' => 'aceptada',
+                    'estado_alquiler' => $solicitud->product_type === 'maquinaria' ? 'aceptado' : null,
                     'respondido_at' => now(),
                 ]);
 
@@ -100,6 +101,60 @@ class VendedorSolicitudController extends Controller
         ]);
 
         return back()->with('success', 'Solicitud rechazada.');
+    }
+
+    public function finalizarPedido(PedidoDetalle $solicitud)
+    {
+        $this->authorizeSeller($solicitud);
+
+        if ($solicitud->estado_solicitud !== 'aceptada') {
+            return back()->with('error', 'Solo puedes finalizar pedidos con una solicitud aceptada.');
+        }
+
+        if ($solicitud->product_type === 'maquinaria' && $solicitud->estado_alquiler_actual !== 'devuelto') {
+            return back()->with('error', 'Primero debes marcar la maquinaria como devuelta antes de finalizar el alquiler.');
+        }
+
+        if ($solicitud->product_type === 'maquinaria') {
+            $solicitud->update([
+                'estado_alquiler' => 'finalizado',
+            ]);
+        }
+
+        $solicitud->pedido()->update([
+            'estado' => 'finalizado',
+        ]);
+
+        return back()->with('success', 'Pedido finalizado correctamente.');
+    }
+
+    public function avanzarAlquiler(PedidoDetalle $solicitud)
+    {
+        $this->authorizeSeller($solicitud);
+
+        if ($solicitud->product_type !== 'maquinaria') {
+            return back()->with('error', 'Este seguimiento solo aplica a alquileres de maquinaria.');
+        }
+
+        if ($solicitud->estado_solicitud !== 'aceptada') {
+            return back()->with('error', 'Primero debes aceptar la solicitud para iniciar el seguimiento.');
+        }
+
+        $siguienteEstado = $solicitud->siguiente_estado_alquiler;
+
+        if (!$siguienteEstado) {
+            return back()->with('error', 'No hay un siguiente estado disponible para este alquiler.');
+        }
+
+        $solicitud->update([
+            'estado_alquiler' => $siguienteEstado,
+        ]);
+
+        $solicitud->pedido()->update([
+            'estado' => $siguienteEstado === 'devuelto' ? 'en_proceso' : $siguienteEstado,
+        ]);
+
+        return back()->with('success', 'Estado del alquiler actualizado a: ' . PedidoDetalle::alquilerEstados()[$siguienteEstado] . '.');
     }
 
     private function authorizeSeller(PedidoDetalle $solicitud): void

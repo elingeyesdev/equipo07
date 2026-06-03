@@ -107,6 +107,8 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::get('/vendedor/solicitudes/{solicitud}', [VendedorSolicitudController::class, 'show'])->name('vendedor.solicitudes.show');
     Route::post('/vendedor/solicitudes/{solicitud}/aceptar', [VendedorSolicitudController::class, 'aceptar'])->name('vendedor.solicitudes.aceptar');
     Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
+    Route::post('/vendedor/solicitudes/{solicitud}/alquiler/avanzar', [VendedorSolicitudController::class, 'avanzarAlquiler'])->name('vendedor.solicitudes.alquiler.avanzar');
+    Route::post('/vendedor/solicitudes/{solicitud}/finalizar', [VendedorSolicitudController::class, 'finalizarPedido'])->name('vendedor.solicitudes.finalizar');
 });
 
 // TODOS LOS USUARIOS AUTENTICADOS

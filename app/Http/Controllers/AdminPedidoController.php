@@ -37,6 +37,7 @@ class AdminPedidoController extends Controller
             'pendiente'   => 'Pendiente',
             'en_proceso'  => 'En proceso',
             'entregado'   => 'Entregado',
+            'finalizado'  => 'Finalizado',
             'cancelado'   => 'Cancelado',
         ];
 
@@ -51,6 +52,7 @@ class AdminPedidoController extends Controller
             'pendiente'   => 'Pendiente',
             'en_proceso'  => 'En proceso',
             'entregado'   => 'Entregado',
+            'finalizado'  => 'Finalizado',
             'cancelado'   => 'Cancelado',
         ];
 
@@ -60,7 +62,7 @@ class AdminPedidoController extends Controller
     public function updateEstado(Request $request, Pedido $pedido)
     {
         $request->validate([
-            'estado' => 'required|in:pendiente,en_proceso,entregado,cancelado',
+            'estado' => 'required|in:pendiente,en_proceso,entregado,finalizado,cancelado',
         ]);
 
         $pedido->estado = $request->estado;

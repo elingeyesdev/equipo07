@@ -40,7 +40,7 @@
                             <tr>
                                 <th>Producto</th>
                                 <th>Comprador</th>
-                                <th>Cantidad</th>
+                                <th>Cantidad/Tiempo</th>
                                 <th>Total</th>
                                 <th>Destino</th>
                                 <th>Estado</th>
@@ -56,6 +56,7 @@
                                         'rechazada' => 'secondary',
                                         'cancelada_producto_vendido' => 'danger',
                                     ][$solicitud->estado_solicitud] ?? 'secondary';
+                                    $cantidadTexto = $solicitud->cantidad_tiempo_texto;
                                 @endphp
                                 <tr>
                                     <td>
@@ -64,9 +65,14 @@
                                     </td>
                                     <td>
                                         {{ $solicitud->pedido->user->name ?? 'Comprador no disponible' }}<br>
+                                        @if ($solicitud->pedido->telefono_contacto)
+                                            <small>
+                                                <i class="fas fa-phone-alt mr-1"></i>{{ $solicitud->pedido->telefono_contacto }}
+                                            </small><br>
+                                        @endif
                                         <small class="text-muted">{{ $solicitud->pedido->created_at->format('d/m/Y H:i') }}</small>
                                     </td>
-                                    <td>{{ $solicitud->cantidad }}</td>
+                                    <td>{{ $cantidadTexto }}</td>
                                     <td><strong>Bs {{ number_format($solicitud->subtotal, 2) }}</strong></td>
                                     <td>
                                         <small>{{ \Illuminate\Support\Str::limit($solicitud->pedido->destino_entrega, 45) }}</small>

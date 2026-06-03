@@ -41,15 +41,18 @@ class CartController extends Controller
             'product_id'    => 'required|integer',
             'cantidad'      => 'nullable|integer|min:1',
             'dias_alquiler' => 'nullable|integer|min:1',
+            'alquiler_unidad' => 'nullable|in:hora,dia',
         ]);
 
         $productType = $request->product_type;
         $productId   = $request->product_id;
 
         if ($productType === 'maquinaria') {
-            $cantidad = $request->dias_alquiler ?? 1;
+            $cantidad = $request->cantidad ?? $request->dias_alquiler ?? 1;
+            $alquilerUnidad = $request->alquiler_unidad === 'dia' ? 'dia' : 'hora';
         } else {
             $cantidad = $request->cantidad;
+            $alquilerUnidad = null;
         }
 
         if (!$cantidad || $cantidad < 1) {
@@ -65,8 +68,15 @@ class CartController extends Controller
 
             case 'maquinaria':
                 $product = Maquinaria::findOrFail($productId);
-                $precioUnitario = $product->precio_dia ?? 0;
-                $notas = "Alquiler por {$cantidad} día(s)";
+                $precioBase = $product->precio_dia ?? 0;
+                if (($product->tarifa_unidad ?? 'hora') === 'dia') {
+                    $precioUnitario = $alquilerUnidad === 'dia' ? $precioBase : $precioBase / 8;
+                } else {
+                    $precioUnitario = $alquilerUnidad === 'dia' ? $precioBase * 8 : $precioBase;
+                }
+                $notas = $alquilerUnidad === 'dia'
+                    ? "Alquiler por {$cantidad} día(s)"
+                    : "Alquiler por {$cantidad} hora(s)";
                 break;
 
             case 'organico':
@@ -83,6 +93,10 @@ class CartController extends Controller
             return back()->with('error', 'Este producto no tiene precio disponible.');
         }
 
+        if ((int) ($product->user_id ?? 0) === (int) Auth::id()) {
+            return back()->with('error', 'No puedes agregar al carrito una publicación propia.');
+        }
+
         if (in_array($productType, ['ganado', 'organico'])) {
             $stock = $product->stock ?? 0;
             if ($stock < $cantidad) {
@@ -96,7 +110,16 @@ class CartController extends Controller
             ->first();
 
         if ($existingItem) {
-            $existingItem->cantidad += $cantidad;
+            $shouldReplaceQuantity = $productType === 'maquinaria'
+                && $existingItem->alquiler_unidad
+                && $existingItem->alquiler_unidad !== $alquilerUnidad;
+
+            $existingItem->alquiler_unidad = $alquilerUnidad;
+            $existingItem->precio_unitario = $precioUnitario;
+            $existingItem->cantidad = $shouldReplaceQuantity ? $cantidad : $existingItem->cantidad + $cantidad;
+            $existingItem->notas = $alquilerUnidad === 'dia'
+                ? "Alquiler por {$existingItem->cantidad} día(s)"
+                : "Alquiler por {$existingItem->cantidad} hora(s)";
             $existingItem->subtotal = $existingItem->precio_unitario * $existingItem->cantidad;
             $existingItem->save();
         } else {
@@ -105,6 +128,7 @@ class CartController extends Controller
                 'product_type'   => $productType,
                 'product_id'     => $productId,
                 'cantidad'       => $cantidad,
+                'alquiler_unidad' => $alquilerUnidad,
                 'precio_unitario' => $precioUnitario,
                 'subtotal'       => $precioUnitario * $cantidad,
                 'notas'          => $notas,
@@ -139,10 +163,15 @@ class CartController extends Controller
         }
 
         $cartItem->cantidad = $cantidad;
+        if ($cartItem->product_type === 'maquinaria') {
+            $cartItem->notas = ($cartItem->alquiler_unidad ?? 'hora') === 'dia'
+                ? "Alquiler por {$cantidad} día(s)"
+                : "Alquiler por {$cantidad} hora(s)";
+        }
         $cartItem->subtotal = $cartItem->precio_unitario * $cantidad;
         $cartItem->save();
 
-        return back()->with('success', 'Cantidad actualizada correctamente.');
+        return back()->with('success', 'Carrito actualizado correctamente.');
     }
 
     /**

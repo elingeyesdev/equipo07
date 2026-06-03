@@ -13,6 +13,7 @@ class Pedido extends Model
         'metodo_pago',
         'observaciones',
         'destino_entrega',
+        'telefono_contacto',
         'destino_latitud',
         'destino_longitud',
     ];

@@ -17,7 +17,69 @@
                 ? 'https://www.google.com/maps/dir/?api=1&origin=' . $solicitud->product_latitud . ',' . $solicitud->product_longitud . '&destination=' . $solicitud->pedido->destino_latitud . ',' . $solicitud->pedido->destino_longitud . '&travelmode=driving'
                 : 'https://www.google.com/maps/search/?api=1&query=' . $solicitud->pedido->destino_latitud . ',' . $solicitud->pedido->destino_longitud;
         }
+        $isMaquinaria = $solicitud->es_alquiler_maquinaria;
+        $cantidadLabel = $solicitud->cantidad_label;
+        $precioLabel = $solicitud->precio_label;
+        $totalLabel = $isMaquinaria ? 'Total del alquiler' : 'Subtotal';
+        $alquilerEstados = \App\Models\PedidoDetalle::alquilerEstados();
+        $estadoAlquilerActual = $solicitud->estado_alquiler_actual;
+        $estadoKeys = array_keys($alquilerEstados);
+        $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
     @endphp
+
+    <style>
+        .rental-tracking-card {
+            border: 1px solid rgba(63, 126, 42, .16);
+            border-radius: 12px;
+            background: #f7fbf4;
+        }
+
+        .rental-tracking-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: .65rem;
+        }
+
+        .rental-tracking-step {
+            min-height: 74px;
+            padding: .65rem;
+            border: 1px solid #dfe8dc;
+            border-radius: 10px;
+            background: #fff;
+            color: #6b776b;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .rental-tracking-step span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.7rem;
+            height: 1.7rem;
+            margin-bottom: .35rem;
+            border-radius: 999px;
+            background: #eef4ea;
+            color: #3f7e2a;
+        }
+
+        .rental-tracking-step.is-done,
+        .rental-tracking-step.is-current {
+            border-color: rgba(63, 126, 42, .35);
+            color: #1f2a1b;
+        }
+
+        .rental-tracking-step.is-current {
+            background: #eef8ea;
+            box-shadow: 0 8px 18px rgba(63, 126, 42, .08);
+        }
+
+        .rental-tracking-step.is-done span,
+        .rental-tracking-step.is-current span {
+            color: #fff;
+            background: #2f7d24;
+        }
+    </style>
 
     <div class="container-fluid">
         @if (session('success'))
@@ -57,16 +119,27 @@
                                 <small class="text-muted">{{ $solicitud->pedido->user->email ?? '' }}</small>
                             </dd>
 
+                            <dt class="col-sm-5">Telefono</dt>
+                            <dd class="col-sm-7">
+                                @if ($solicitud->pedido->telefono_contacto)
+                                    <a href="tel:{{ $solicitud->pedido->telefono_contacto }}">
+                                        {{ $solicitud->pedido->telefono_contacto }}
+                                    </a>
+                                @else
+                                    No especificado
+                                @endif
+                            </dd>
+
                             <dt class="col-sm-5">Fecha solicitud</dt>
                             <dd class="col-sm-7">{{ $solicitud->pedido->created_at->format('d/m/Y H:i') }}</dd>
 
-                            <dt class="col-sm-5">Cantidad</dt>
-                            <dd class="col-sm-7">{{ $solicitud->cantidad }}</dd>
+                            <dt class="col-sm-5">{{ $cantidadLabel }}</dt>
+                            <dd class="col-sm-7">{{ $solicitud->cantidad_tiempo_texto }}</dd>
 
-                            <dt class="col-sm-5">Precio unitario</dt>
+                            <dt class="col-sm-5">{{ $precioLabel }}</dt>
                             <dd class="col-sm-7">Bs {{ number_format($solicitud->precio_unitario, 2) }}</dd>
 
-                            <dt class="col-sm-5">Subtotal</dt>
+                            <dt class="col-sm-5">{{ $totalLabel }}</dt>
                             <dd class="col-sm-7"><strong>Bs {{ number_format($solicitud->subtotal, 2) }}</strong></dd>
 
                             @if ($solicitud->notas)
@@ -75,6 +148,69 @@
                             @endif
                         </dl>
                     </div>
+
+                    @if ($isMaquinaria && $solicitud->estado_solicitud === 'aceptada')
+                        <div class="card-body border-top">
+                            <div class="rental-tracking-card p-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="mb-1 font-weight-bold">
+                                            <i class="fas fa-route mr-1"></i>Seguimiento del alquiler
+                                        </h5>
+                                        <small class="text-muted">Avanza el estado conforme se mueve la maquinaria.</small>
+                                    </div>
+                                    <span class="badge badge-success mt-2 mt-md-0">
+                                        {{ $solicitud->estado_alquiler_label }}
+                                    </span>
+                                </div>
+
+                                <div class="rental-tracking-steps mb-3">
+                                    @foreach ($alquilerEstados as $estadoKey => $estadoLabel)
+                                        @php
+                                            $index = array_search($estadoKey, $estadoKeys, true);
+                                            $stepClass = '';
+                                            if ($estadoActualIndex !== false && $index < $estadoActualIndex) {
+                                                $stepClass = 'is-done';
+                                            } elseif ($estadoKey === $estadoAlquilerActual) {
+                                                $stepClass = 'is-current';
+                                            }
+                                        @endphp
+                                        <div class="rental-tracking-step {{ $stepClass }}">
+                                            <span>
+                                                @if ($stepClass === 'is-done')
+                                                    <i class="fas fa-check"></i>
+                                                @else
+                                                    {{ $index + 1 }}
+                                                @endif
+                                            </span>
+                                            <div>{{ $estadoLabel }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if ($solicitud->siguiente_estado_alquiler)
+                                    <form action="{{ route('vendedor.solicitudes.alquiler.avanzar', $solicitud) }}"
+                                        method="POST" class="mb-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-arrow-right mr-1"></i>
+                                            Marcar como {{ strtolower($solicitud->siguiente_estado_alquiler_label) }}
+                                        </button>
+                                    </form>
+                                @elseif ($solicitud->estado_alquiler_actual === 'devuelto')
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        La maquinaria fue devuelta. Ya puedes finalizar el alquiler.
+                                    </div>
+                                @else
+                                    <div class="alert alert-light border mb-0">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        El seguimiento de este alquiler ya no tiene pasos pendientes.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
 
                     @if ($solicitud->estado_solicitud === 'pendiente')
                         <div class="card-footer d-flex flex-wrap">
@@ -94,6 +230,22 @@
                                 <button type="submit" class="btn btn-outline-secondary">
                                     <i class="fas fa-times mr-1"></i>Rechazar
                                 </button>
+                            </form>
+                        </div>
+                    @elseif ($solicitud->estado_solicitud === 'aceptada' && $solicitud->pedido->estado !== 'finalizado')
+                        <div class="card-footer">
+                            <form action="{{ route('vendedor.solicitudes.finalizar', $solicitud) }}" method="POST"
+                                onsubmit="return confirm('¿Finalizar este pedido?')">
+                                @csrf
+                                <button type="submit" class="btn btn-success"
+                                    {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
+                                    <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
+                                </button>
+                                @if (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
+                                    <small class="text-muted d-block mt-2">
+                                        Para finalizar, primero marca el alquiler como devuelto.
+                                    </small>
+                                @endif
                             </form>
                         </div>
                     @endif

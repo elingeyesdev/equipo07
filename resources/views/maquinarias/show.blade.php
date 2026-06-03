@@ -679,17 +679,51 @@
                         @endif
 
                         @auth
-                            @if ($maquinaria->precio_dia)
+                            @if ($maquinaria->precio_dia && auth()->id() !== $maquinaria->user_id)
                                 <div class="border-top pt-4">
                                     <form action="{{ route('cart.add') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="product_type" value="maquinaria">
                                         <input type="hidden" name="product_id" value="{{ $maquinaria->id }}">
+                                        @php
+                                            $precioBase = $maquinaria->precio_dia ?? 0;
+                                            $precioHora = ($maquinaria->tarifa_unidad ?? 'hora') === 'dia'
+                                                ? $precioBase / 8
+                                                : $precioBase;
+                                            $precioDia = ($maquinaria->tarifa_unidad ?? 'hora') === 'dia'
+                                                ? $precioBase
+                                                : $precioBase * 8;
+                                        @endphp
+                                        <div class="rental-choice mb-3">
+                                            <label class="section-title mb-2 d-block">Tipo de alquiler</label>
+                                            <div class="rental-choice__options">
+                                                <label>
+                                                    <input type="radio" name="alquiler_unidad" value="hora" checked
+                                                        data-rental-option
+                                                        data-label="Horas de alquiler"
+                                                        data-price="Bs {{ number_format($precioHora, 2) }}/hora">
+                                                    <span>
+                                                        <strong>Por horas</strong>
+                                                        <small>Bs {{ number_format($precioHora, 2) }}/hora</small>
+                                                    </span>
+                                                </label>
+                                                <label>
+                                                    <input type="radio" name="alquiler_unidad" value="dia"
+                                                        data-rental-option
+                                                        data-label="Días de alquiler"
+                                                        data-price="Bs {{ number_format($precioDia, 2) }}/día">
+                                                    <span>
+                                                        <strong>Por días</strong>
+                                                        <small>Bs {{ number_format($precioDia, 2) }}/día (8 horas)</small>
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
                                         <div class="form-row align-items-end">
                                             <div class="col-auto">
-                                                <label class="section-title mb-2 d-block">Días de alquiler</label>
+                                                <label class="section-title mb-2 d-block" data-rental-quantity-label>Horas de alquiler</label>
                                                 <input type="number" 
-                                                    name="dias_alquiler" 
+                                                    name="cantidad" 
                                                     class="form-control form-control-lg"
                                                     value="1" 
                                                     min="1" 
@@ -700,9 +734,17 @@
                                                 <button type="submit" class="btn btn-success-modern btn-lg btn-block btn-modern">
                                                     <i class="fas fa-cart-plus mr-2"></i> Agregar al Carrito
                                                 </button>
+                                                <small class="text-muted d-block mt-2" data-rental-price-help>
+                                                    Se cobrará Bs {{ number_format($precioHora, 2) }}/hora.
+                                                </small>
                                             </div>
                                         </div>
                                     </form>
+                                </div>
+                            @elseif ($maquinaria->precio_dia && auth()->id() === $maquinaria->user_id)
+                                <div class="owner-product-notice border-top pt-4">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Esta publicación es tuya, por eso no se puede agregar al carrito.
                                 </div>
                             @endif
                         @endauth
@@ -1095,4 +1137,25 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rentalOptions = document.querySelectorAll('[data-rental-option]');
+            const quantityLabel = document.querySelector('[data-rental-quantity-label]');
+            const priceHelp = document.querySelector('[data-rental-price-help]');
+
+            rentalOptions.forEach(function(option) {
+                option.addEventListener('change', function() {
+                    if (!option.checked) return;
+
+                    if (quantityLabel) {
+                        quantityLabel.textContent = option.dataset.label || 'Cantidad';
+                    }
+
+                    if (priceHelp) {
+                        priceHelp.textContent = `Se cobrará ${option.dataset.price || 'la tarifa seleccionada'}.`;
+                    }
+                });
+            });
+        });
+    </script>
 @endsection

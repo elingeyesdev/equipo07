@@ -160,26 +160,40 @@
                     </div>
 
                     <div class="form-group mb-md-0">
-                        <label class="mb-1">Precio *</label>
-                        <div class="input-group">
+                        <label class="mb-1">Tarifa por hora *</label>
+                        <input type="hidden" name="tarifa_unidad" value="hora">
+                        <div class="input-group maquinaria-hourly-rate">
                             <div class="input-group-prepend">
-                                @php
-                                    $tarifaUnidad = old('tarifa_unidad', $maquinaria->tarifa_unidad ?? 'dia');
-                                @endphp
-                                <select name="tarifa_unidad"
-                                    class="custom-select @error('tarifa_unidad') is-invalid @enderror"
-                                    style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                    <option value="hora" {{ $tarifaUnidad === 'hora' ? 'selected' : '' }}>Bs/hora</option>
-                                    <option value="dia" {{ $tarifaUnidad === 'dia' ? 'selected' : '' }}>Bs/día</option>
-                                </select>
+                                <span class="input-group-text">Bs/hora</span>
                             </div>
                             <input type="number" step="0.01" name="precio_dia"
                                 class="form-control @error('precio_dia') is-invalid @enderror" placeholder="0.00"
-                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required>
+                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required
+                                data-hourly-price>
                         </div>
                         <small class="form-text text-muted">
-                            Monto a cobrar según la unidad seleccionada.
+                            Ingresa el costo de una hora de alquiler. El estimado diario se calcula abajo.
                         </small>
+
+                        <div class="maquinaria-price-info mt-3" data-price-day-info>
+                            <div class="maquinaria-price-info__icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="maquinaria-price-info__body">
+                                <div class="maquinaria-price-info__header">
+                                    <span>Estimación por día</span>
+                                    <strong data-day-price-result>Bs 0.00</strong>
+                                </div>
+                                <div class="maquinaria-price-info__controls">
+                                    <label for="horas-dia-estimadas" class="mb-0">Horas de trabajo al día</label>
+                                    <input type="number" id="horas-dia-estimadas" class="form-control"
+                                        min="1" max="24" step="1" value="8" data-hours-per-day>
+                                </div>
+                                <small data-day-price-detail>
+                                    Calculado con Bs 0.00 por hora durante 8 horas.
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -208,7 +222,7 @@
 
                     <div class="form-group mb-0">
                         <label class="mb-1">Descripción</label>
-                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4" style="resize: none;"
+                        <textarea name="descripcion" class="form-control maquinaria-rental-description @error('descripcion') is-invalid @enderror" rows="6" style="resize: none;"
                             placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
                     </div>
                 </div>
@@ -231,21 +245,29 @@
         <div class="card-body">
             <div class="form-group mb-3">
                 <label class="mb-1">Ubicación (seleccione en el mapa)</label>
-                <div class="input-group mb-2">
-                    <input type="search" id="buscar-ubicacion" class="form-control"
-                        placeholder="Buscar lugar, ciudad o dirección">
-                    <div class="input-group-append">
-                        <button type="button" class="btn btn-outline-secondary" id="btn-buscar-ubicacion">
-                            <i class="fas fa-search mr-1"></i> Buscar
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btn-ubicacion-actual">
-                            <i class="fas fa-location-arrow mr-1"></i> Ubicación actual
+                <div class="maquinaria-location-search mb-2">
+                    <div class="maquinaria-location-search__bar">
+                        <span class="maquinaria-location-search__icon">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="search" id="buscar-ubicacion" class="form-control"
+                            placeholder="Buscar dirección, zona o ciudad">
+                        <button type="button" class="maquinaria-location-search__submit" id="btn-buscar-ubicacion">
+                            Buscar
                         </button>
                     </div>
+                    <button type="button" class="maquinaria-location-search__current" id="btn-ubicacion-actual">
+                        <i class="fas fa-location-arrow mr-1"></i> Usar mi ubicación actual
+                    </button>
+                    <div id="sugerencias-ubicacion" class="maquinaria-location-suggestions" style="display: none;"></div>
                 </div>
-                <div id="sugerencias-ubicacion" class="list-group mb-2" style="display: none;"></div>
-                <div id="map" class="maquinaria-wizard__map"
-                    style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                <div class="maquinaria-map-shell">
+                    <button type="button" class="maquinaria-map-expand" id="btn-expandir-mapa">
+                        <i class="fas fa-expand-alt mr-1"></i> Ver mapa grande
+                    </button>
+                    <div id="map" class="maquinaria-wizard__map"
+                        style="height: 400px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    </div>
                 </div>
 
                 <input type="hidden" name="latitud" id="latitud"
@@ -406,6 +428,131 @@
     </div>
 </div>
 
+<div class="modal fade maquinaria-map-modal" id="maquinariaMapModal" tabindex="-1" role="dialog"
+    aria-labelledby="maquinariaMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="maquinariaMapModalLabel">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Seleccionar ubicación
+                    </h5>
+                    <small>Haz clic sobre el mapa para marcar el punto exacto de la maquinaria.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="map-maquinaria-modal" class="maquinaria-map-modal__map"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal">
+                    <i class="fas fa-check mr-1"></i> Usar esta ubicación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade maquinaria-publication-preview" id="maquinariaPublicationPreviewModal" tabindex="-1"
+    role="dialog" aria-labelledby="maquinariaPublicationPreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="maquinaria-publication-preview__eyebrow">Vista previa de publicación</span>
+                    <h5 class="modal-title" id="maquinariaPublicationPreviewLabel">
+                        Revisa cómo se verá tu maquinaria
+                    </h5>
+                    <small>Confirma si los datos están correctos o vuelve para editarlos antes de publicar.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="maquinaria-publication-preview__layout">
+                    <div class="maquinaria-publication-preview__media" data-publication-preview-media>
+                        <img src="" alt="Vista previa de maquinaria" data-publication-preview-image>
+                        <div class="maquinaria-publication-preview__empty" data-publication-preview-empty>
+                            <i class="fas fa-image"></i>
+                            <span>Sin imagen seleccionada</span>
+                        </div>
+                    </div>
+                    <div class="maquinaria-publication-preview__info">
+                        <h3 data-publication-preview-name>Nombre de la maquinaria</h3>
+                        <div class="maquinaria-publication-preview__badges">
+                            <span data-publication-preview-type>Tipo</span>
+                            <span data-publication-preview-brand>Marca</span>
+                            <span data-publication-preview-status>Estado</span>
+                        </div>
+                        <div class="maquinaria-publication-preview__price">
+                            <small>Tarifa</small>
+                            <strong data-publication-preview-price>Bs 0.00/hora</strong>
+                        </div>
+                        <dl class="maquinaria-publication-preview__details">
+                            <div>
+                                <dt>Modelo</dt>
+                                <dd data-publication-preview-model>-</dd>
+                            </div>
+                            <div>
+                                <dt>Categoría</dt>
+                                <dd data-publication-preview-category>-</dd>
+                            </div>
+                            <div>
+                                <dt>Teléfono</dt>
+                                <dd data-publication-preview-phone>-</dd>
+                            </div>
+                            <div>
+                                <dt>Estimado diario</dt>
+                                <dd data-publication-preview-day-price>-</dd>
+                            </div>
+                            <div>
+                                <dt>Ubicación</dt>
+                                <dd data-publication-preview-location>-</dd>
+                            </div>
+                            <div>
+                                <dt>Ciudad / Municipio</dt>
+                                <dd data-publication-preview-city>-</dd>
+                            </div>
+                            <div>
+                                <dt>Provincia</dt>
+                                <dd data-publication-preview-province>-</dd>
+                            </div>
+                            <div>
+                                <dt>Departamento</dt>
+                                <dd data-publication-preview-department>-</dd>
+                            </div>
+                            <div>
+                                <dt>Coordenadas</dt>
+                                <dd data-publication-preview-coordinates>-</dd>
+                            </div>
+                            <div>
+                                <dt>Imágenes</dt>
+                                <dd data-publication-preview-images-count>-</dd>
+                            </div>
+                        </dl>
+                        <div class="maquinaria-publication-preview__description">
+                            <span>Descripción</span>
+                            <p data-publication-preview-description>Sin descripción.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-edit mr-1"></i> Editar datos
+                </button>
+                <button type="button" class="btn btn-success" data-publication-preview-confirm>
+                    <i class="fas fa-check mr-1"></i> Confirmar publicación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ========== LEAFLET ========== --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -425,6 +572,8 @@
     }).addTo(map);
 
     var marker;
+    var modalMap;
+    var modalMarker;
     var locationSearchTimer = null;
     var lastLocationQuery = '';
     var locationSearchAbort = null;
@@ -434,6 +583,16 @@
     @if (isset($maquinaria) && $maquinaria->latitud && $maquinaria->longitud)
         marker = L.marker([initialLat, initialLng]).addTo(map);
     @endif
+
+    function syncModalMarker(lat, lng) {
+        if (!modalMap) return;
+
+        if (modalMarker) {
+            modalMarker.setLatLng([lat, lng]);
+        } else {
+            modalMarker = L.marker([lat, lng]).addTo(modalMap);
+        }
+    }
 
     function setMapLocation(lat, lng, label, zoom) {
         if (marker) {
@@ -451,6 +610,7 @@
             map.setView([lat, lng], zoom);
         }
 
+        syncModalMarker(lat, lng);
         obtenerInformacionGeografica(lat, lng);
     }
 
@@ -473,9 +633,22 @@
 
         results.forEach(function(result) {
             var option = document.createElement('button');
+            var pin = document.createElement('span');
+            var copy = document.createElement('span');
+            var title = document.createElement('strong');
+            var detail = document.createElement('small');
+
             option.type = 'button';
-            option.className = 'list-group-item list-group-item-action';
-            option.textContent = result.display_name;
+            option.className = 'maquinaria-location-suggestions__item';
+            pin.className = 'maquinaria-location-suggestions__pin';
+            pin.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+            copy.className = 'maquinaria-location-suggestions__copy';
+            title.textContent = result.display_name.split(',')[0] || 'Ubicación encontrada';
+            detail.textContent = result.display_name;
+            copy.appendChild(title);
+            copy.appendChild(detail);
+            option.appendChild(pin);
+            option.appendChild(copy);
             option.addEventListener('click', function() {
                 var lat = Number(result.lat).toFixed(7);
                 var lng = Number(result.lon).toFixed(7);
@@ -539,6 +712,14 @@
         }, 700);
     });
 
+    document.getElementById('buscar-ubicacion').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(locationSearchTimer);
+            buscarUbicacion(true);
+        }
+    });
+
     document.getElementById('btn-buscar-ubicacion').addEventListener('click', function() {
         clearTimeout(locationSearchTimer);
         buscarUbicacion(true);
@@ -561,6 +742,54 @@
             timeout: 10000
         });
     });
+
+    var expandMapButton = document.getElementById('btn-expandir-mapa');
+
+    function ensureModalMap() {
+        var selectedLat = parseFloat(document.getElementById('latitud').value) || map.getCenter().lat;
+        var selectedLng = parseFloat(document.getElementById('longitud').value) || map.getCenter().lng;
+        var selectedZoom = map.getZoom() || 14;
+
+        if (!modalMap) {
+            modalMap = L.map('map-maquinaria-modal').setView([selectedLat, selectedLng], selectedZoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'OpenStreetMap'
+            }).addTo(modalMap);
+
+            modalMap.on('click', function(e) {
+                var lat = e.latlng.lat.toFixed(7);
+                var lng = e.latlng.lng.toFixed(7);
+                setMapLocation(lat, lng, null, 14);
+                modalMap.setView([lat, lng], 14);
+            });
+        } else {
+            modalMap.setView([selectedLat, selectedLng], selectedZoom);
+        }
+
+        if (document.getElementById('latitud').value && document.getElementById('longitud').value) {
+            syncModalMarker(selectedLat, selectedLng);
+        }
+
+        setTimeout(function() {
+            modalMap.invalidateSize();
+        }, 220);
+    }
+
+    if (expandMapButton) {
+        expandMapButton.addEventListener('click', function() {
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#maquinariaMapModal').modal('show');
+                setTimeout(ensureModalMap, 350);
+            } else {
+                document.getElementById('maquinariaMapModal').style.display = 'block';
+                ensureModalMap();
+            }
+        });
+    }
+
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        $('#maquinariaMapModal').on('shown.bs.modal', ensureModalMap);
+    }
 
     document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function() {
         if (!document.getElementById('latitud').value || !document.getElementById('longitud').value) {
@@ -636,8 +865,13 @@
         const errorSummary = wizard.querySelector('[data-wizard-error-summary]');
         const progressBar = wizard.querySelector('[data-wizard-progressbar]');
         const currentLabel = wizard.querySelector('[data-wizard-current-label]');
+        const hourlyPriceInput = wizard.querySelector('[data-hourly-price]');
+        const hoursPerDayInput = wizard.querySelector('[data-hours-per-day]');
+        const dayPriceResult = wizard.querySelector('[data-day-price-result]');
+        const dayPriceDetail = wizard.querySelector('[data-day-price-detail]');
         const serverErrors = @json($errors->messages());
         let currentStep = 0;
+        let allowSubmit = false;
 
         form.setAttribute('novalidate', 'novalidate');
 
@@ -730,6 +964,29 @@
             if (feedback && feedback.classList.contains('wizard-field-error')) {
                 feedback.textContent = '';
             }
+        }
+
+        function bolivianoAmount(value) {
+            return `Bs ${value.toLocaleString('es-BO', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+
+        function updateDayPriceEstimate() {
+            if (!hourlyPriceInput || !hoursPerDayInput || !dayPriceResult || !dayPriceDetail) return;
+
+            const hourlyPrice = Math.max(parseFloat(hourlyPriceInput.value) || 0, 0);
+            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput.value, 10) || 1, 1), 24);
+            const dayPrice = hourlyPrice * hoursPerDay;
+
+            if (String(hoursPerDayInput.value) !== String(hoursPerDay)) {
+                hoursPerDayInput.value = hoursPerDay;
+            }
+
+            dayPriceResult.textContent = bolivianoAmount(dayPrice);
+            dayPriceDetail.textContent =
+                `Calculado con ${bolivianoAmount(hourlyPrice)} por hora durante ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}.`;
         }
 
         function validateStep(index, shouldFocus = true) {
@@ -862,16 +1119,39 @@
             }
         });
 
+        if (hourlyPriceInput && hoursPerDayInput) {
+            hourlyPriceInput.addEventListener('input', updateDayPriceEstimate);
+            hoursPerDayInput.addEventListener('input', updateDayPriceEstimate);
+            updateDayPriceEstimate();
+        }
+
         form.addEventListener('submit', function(event) {
+            if (allowSubmit) {
+                return;
+            }
+
+            event.preventDefault();
+
             for (let index = 0; index < steps.length; index++) {
                 if (!validateStep(index, false)) {
-                    event.preventDefault();
                     showStep(index);
                     validateStep(index, true);
                     return;
                 }
             }
+
+            openPublicationPreview();
         });
+
+        const publicationConfirmButton = document.querySelector('[data-publication-preview-confirm]');
+        if (publicationConfirmButton) {
+            publicationConfirmButton.addEventListener('click', function() {
+                allowSubmit = true;
+                publicationConfirmButton.disabled = true;
+                publicationConfirmButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+                form.submit();
+            });
+        }
 
         Object.entries(serverErrors).forEach(([key, messages]) => {
             const control = findControlByErrorKey(key);
@@ -900,6 +1180,111 @@
             {{ isset($maquinaria) && $maquinaria->imagenes ? $maquinaria->imagenes->count() : 0 }};
         let imagenesAEliminar = [];
         let selectedFiles = [];
+
+        function fieldValue(name) {
+            const control = form.querySelector(`[name="${name}"]`);
+            return control ? control.value.trim() : '';
+        }
+
+        function selectedText(name, fallbackSelector = null) {
+            const control = form.querySelector(`select[name="${name}"]`) ||
+                (fallbackSelector ? form.querySelector(fallbackSelector) : null);
+
+            if (!control) return '-';
+            const option = control.options[control.selectedIndex];
+            return option ? option.textContent.trim() : '-';
+        }
+
+        function setPreviewText(selector, value, fallback = '-') {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.textContent = value && String(value).trim() ? value : fallback;
+            }
+        }
+
+        function coverImageUrl() {
+            const checkedCover = form.querySelector('input[name="imagen_portada"]:checked');
+
+            if (checkedCover && checkedCover.value.startsWith('new:')) {
+                const index = Number(checkedCover.value.replace('new:', ''));
+                return selectedFiles[index] ? selectedFiles[index].url : '';
+            }
+
+            if (checkedCover && checkedCover.value.startsWith('existing:')) {
+                const imageId = checkedCover.value.replace('existing:', '');
+                const item = form.querySelector(`.imagen-item[data-imagen-id="${imageId}"]`);
+                if (item && !imagenesAEliminar.includes(imageId)) {
+                    const image = item.querySelector('img');
+                    return image ? image.src : '';
+                }
+            }
+
+            if (selectedFiles.length > 0) {
+                return selectedFiles[0].url;
+            }
+
+            const existingImage = Array.from(form.querySelectorAll('.imagen-item'))
+                .find(item => !imagenesAEliminar.includes(item.getAttribute('data-imagen-id')));
+
+            return existingImage ? existingImage.querySelector('img')?.src || '' : '';
+        }
+
+        function buildPublicationPreview() {
+            const price = Math.max(parseFloat(fieldValue('precio_dia')) || 0, 0);
+            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput?.value, 10) || 1, 1), 24);
+            const dayPrice = price * hoursPerDay;
+            const imageUrl = coverImageUrl();
+            const previewImage = document.querySelector('[data-publication-preview-image]');
+            const previewEmpty = document.querySelector('[data-publication-preview-empty]');
+            const visibleImagesCount = liveExistingImagesCount() + selectedFiles.length;
+            const lat = fieldValue('latitud');
+            const lng = fieldValue('longitud');
+
+            setPreviewText('[data-publication-preview-name]', fieldValue('nombre'), 'Nombre de la maquinaria');
+            setPreviewText('[data-publication-preview-type]', selectedText('tipo_maquinaria_id'), 'Tipo');
+            setPreviewText('[data-publication-preview-brand]', selectedText('marca_maquinaria_id'), 'Marca');
+            setPreviewText(
+                '[data-publication-preview-status]',
+                selectedText('estado_maquinaria_id', '[data-wizard-step="1"] select[disabled]'),
+                'Disponible'
+            );
+            setPreviewText('[data-publication-preview-price]', `${bolivianoAmount(price)}/hora`, 'Bs 0.00/hora');
+            setPreviewText('[data-publication-preview-model]', fieldValue('modelo'), 'Sin modelo');
+            setPreviewText('[data-publication-preview-category]', 'Maquinaria agrícola', 'Maquinaria agrícola');
+            setPreviewText('[data-publication-preview-phone]', fieldValue('telefono'), 'Sin teléfono');
+            setPreviewText(
+                '[data-publication-preview-day-price]',
+                `${bolivianoAmount(dayPrice)} por ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}`,
+                '-'
+            );
+            setPreviewText('[data-publication-preview-location]', fieldValue('ubicacion'), 'Sin ubicación seleccionada');
+            setPreviewText('[data-publication-preview-city]', fieldValue('ciudad') || fieldValue('municipio'), 'Sin ciudad o municipio');
+            setPreviewText('[data-publication-preview-province]', fieldValue('provincia'), 'Sin provincia');
+            setPreviewText('[data-publication-preview-department]', fieldValue('departamento'), 'Sin departamento');
+            setPreviewText('[data-publication-preview-coordinates]', lat && lng ? `${lat}, ${lng}` : '', 'Sin coordenadas');
+            setPreviewText(
+                '[data-publication-preview-images-count]',
+                `${visibleImagesCount} ${visibleImagesCount === 1 ? 'imagen' : 'imágenes'} cargadas`,
+                'Sin imágenes'
+            );
+            setPreviewText('[data-publication-preview-description]', fieldValue('descripcion'), 'Sin descripción.');
+
+            if (previewImage && previewEmpty) {
+                previewImage.classList.toggle('d-none', !imageUrl);
+                previewEmpty.classList.toggle('d-none', Boolean(imageUrl));
+                if (imageUrl) {
+                    previewImage.src = imageUrl;
+                }
+            }
+        }
+
+        function openPublicationPreview() {
+            buildPublicationPreview();
+
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#maquinariaPublicationPreviewModal').modal('show');
+            }
+        }
 
         function refreshInputFiles() {
             const dataTransfer = new DataTransfer();

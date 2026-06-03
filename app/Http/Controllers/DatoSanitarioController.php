@@ -11,7 +11,7 @@ class DatoSanitarioController extends Controller
 {
     public function index()
     {
-        // Si es admin, mostrar todos. Si es vendedor, solo los de sus ganados o los que creó
+        // Si es admin, mostrar todos. Si es vendedor, solo los datos de sus ganados.
         // Cargar relaciones para mostrar información completa
         if (auth()->user()->isAdmin()) {
             $items = DatoSanitario::with($this->relacionesDatoSanitario())
@@ -20,10 +20,7 @@ class DatoSanitarioController extends Controller
         } else {
             $ganadoIds = Ganado::where('user_id', auth()->id())->pluck('id');
             $items = DatoSanitario::with($this->relacionesDatoSanitario())
-                ->where(function ($query) use ($ganadoIds) {
-                    $query->whereIn('ganado_id', $ganadoIds)
-                        ->orWhere('user_id', auth()->id());
-                })
+                ->whereIn('ganado_id', $ganadoIds)
                 ->orderBy('id', 'desc')
                 ->get();
         }
@@ -107,7 +104,6 @@ class DatoSanitarioController extends Controller
         ]);
 
         $data = $request->only(['ganado_id']);
-        $data['user_id'] = auth()->id();
 
         // Convertir checkboxes a boolean (si vienen como null, serán false)
         $datosNormalizados['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;

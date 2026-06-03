@@ -9,7 +9,7 @@
         $color = match ($estadoNorm) {
             'pendiente' => 'warning',
             'en_proceso' => 'info',
-            'entregado', 'completado' => 'success',
+            'entregado', 'completado', 'finalizado' => 'success',
             'cancelado' => 'danger',
             default => 'secondary',
         };
@@ -69,6 +69,14 @@
                 <div class="alert alert-light border mb-4">
                     <strong><i class="fas fa-map-marker-alt mr-1"></i>Destino solicitado:</strong>
                     <div class="mt-1">{{ $pedido->destino_entrega ?: 'No especificado' }}</div>
+                    <div class="mt-2">
+                        <strong><i class="fas fa-phone-alt mr-1"></i>Telefono de contacto:</strong>
+                        @if ($pedido->telefono_contacto)
+                            <a href="tel:{{ $pedido->telefono_contacto }}">{{ $pedido->telefono_contacto }}</a>
+                        @else
+                            No especificado
+                        @endif
+                    </div>
                     @if ($pedido->destino_latitud && $pedido->destino_longitud)
                         <div id="pedido-destino-map" class="mt-3"
                             style="height: 320px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
@@ -85,9 +93,9 @@
                             <tr>
                                 <th>Producto</th>
                                 <th>Tipo</th>
-                                <th>Cantidad</th>
-                                <th>Precio unit.</th>
-                                <th>Subtotal</th>
+                                <th>Cantidad/Tiempo</th>
+                                <th>Precio</th>
+                                <th>Total</th>
                                 <th>Respuesta</th>
                             </tr>
                         </thead>
@@ -103,6 +111,8 @@
                             @foreach ($pedido->detalles as $detalle)
                                 @php
                                     [$labelSolicitud, $colorSolicitud] = $estadoSolicitudLabels[$detalle->estado_solicitud] ?? ['Pendiente', 'warning'];
+                                    $cantidadTexto = $detalle->cantidad_tiempo_texto;
+                                    $precioLabel = $detalle->precio_corto_label;
                                 @endphp
                                 <tr>
                                     <td>
@@ -112,8 +122,11 @@
                                         @endif
                                     </td>
                                     <td>{{ ucfirst($detalle->product_type) }}</td>
-                                    <td>{{ $detalle->cantidad }}</td>
-                                    <td>Bs {{ number_format($detalle->precio_unitario, 2) }}</td>
+                                    <td>{{ $cantidadTexto }}</td>
+                                    <td>
+                                        Bs {{ number_format($detalle->precio_unitario, 2) }}
+                                        <br><small class="orders-table__muted">{{ $precioLabel }}</small>
+                                    </td>
                                     <td class="orders-table__total">Bs {{ number_format($detalle->subtotal, 2) }}</td>
                                     <td>
                                         <span class="badge badge-{{ $colorSolicitud }}">{{ $labelSolicitud }}</span>
