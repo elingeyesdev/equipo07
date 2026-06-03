@@ -7,6 +7,8 @@ use App\Models\EstadoMaquinaria;
 use App\Models\Maquinaria;
 use App\Models\MarcaMaquinaria;
 use App\Models\TipoMaquinaria;
+use App\Models\UbicacionGeograficaMaquinaria;
+use App\Models\UbicacionMaquinaria;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -16,6 +18,27 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class MaquinariaFactory extends Factory
 {
     protected $model = Maquinaria::class;
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Maquinaria $maquinaria) {
+            $ubicacionGeografica = UbicacionGeograficaMaquinaria::firstOrCreate([
+                'departamento' => fake()->randomElement(['La Paz', 'Santa Cruz', 'Cochabamba', 'Tarija', 'Beni']),
+                'municipio' => fake()->city(),
+                'provincia' => fake()->lastName(),
+                'ciudad' => fake()->city(),
+            ]);
+
+            $ubicacion = UbicacionMaquinaria::create([
+                'ubicacion' => fake()->city() . ', Bolivia',
+                'latitud' => fake()->randomFloat(7, -22.9, -9.6),
+                'longitud' => fake()->randomFloat(7, -69.7, -57.4),
+                'ubicacion_geografica_maquinaria_id' => $ubicacionGeografica->id,
+            ]);
+
+            $maquinaria->update(['ubicacion_maquinaria_id' => $ubicacion->id]);
+        });
+    }
 
     public function definition(): array
     {
@@ -31,18 +54,11 @@ class MaquinariaFactory extends Factory
             'modelo' => strtoupper(fake()->bothify('??-###')),
             'telefono' => fake()->numerify('7#######'),
             'precio_dia' => fake()->randomFloat(2, 150, 3500),
-            'estado' => $estadoNombre,
+            'tarifa_unidad' => fake()->randomElement(['hora', 'dia']),
             'estado_maquinaria_id' => EstadoMaquinaria::query()->where('nombre', $estadoNombre)->value('id'),
             'descripcion' => fake()->sentence(18),
             'categoria_id' => Categoria::query()->where('nombre', 'like', '%maquinaria%')->value('id')
                 ?? Categoria::query()->inRandomOrder()->value('id'),
-            'ubicacion' => fake()->city() . ', Bolivia',
-            'departamento' => fake()->randomElement(['La Paz', 'Santa Cruz', 'Cochabamba', 'Tarija', 'Beni']),
-            'municipio' => fake()->city(),
-            'provincia' => fake()->lastName(),
-            'ciudad' => fake()->city(),
-            'latitud' => fake()->randomFloat(7, -22.9, -9.6),
-            'longitud' => fake()->randomFloat(7, -69.7, -57.4),
         ];
     }
 }

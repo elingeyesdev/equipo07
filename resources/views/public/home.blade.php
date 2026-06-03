@@ -606,7 +606,7 @@
                                                     <small class="text-muted d-block mb-0">Precio</small>
                                                     <h4 class="text-success font-weight-bold mb-0">
                                                         <i class="fas fa-boliviano-sign"></i>
-                                                        {{ number_format($maquinaria->precio_dia, 2) }}/día
+                                                        {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                                     </h4>
                                                 </div>
                                             @else
@@ -620,7 +620,7 @@
                                             class="card-footer d-flex justify-content-between align-items-center bg-white border-top border-success border-2 p-2">
                                             @if ($maquinaria->precio_dia)
                                                 <span class="price font-weight-bold text-success">Bs
-                                                    {{ number_format($maquinaria->precio_dia, 2) }}/día</span>
+                                                    {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}</span>
                                             @else
                                                 <span class="price font-weight-bold text-muted small">Consultar</span>
                                             @endif
@@ -1003,7 +1003,7 @@
                                                     <small class="text-muted d-block mb-0">Precio</small>
                                                     <h4 class="text-success font-weight-bold mb-0">
                                                         <i class="fas fa-boliviano-sign"></i>
-                                                        {{ number_format($maquinaria->precio_dia, 2) }}/día
+                                                        {{ number_format($maquinaria->precio_dia, 2) }}/{{ ($maquinaria->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                                     </h4>
                                                 </div>
                                             @endif

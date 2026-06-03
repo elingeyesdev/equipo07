@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasColumn('ganados', 'dato_sanitario_id')) {
+            return;
+        }
+
         Schema::table('ganados', function (Blueprint $table) {
             $table->dropForeign(['dato_sanitario_id']);
             $table->dropColumn('dato_sanitario_id');

@@ -52,6 +52,22 @@ class PedidoController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'destino_entrega' => 'required|string|min:5|max:500',
+            'telefono_contacto' => ['required', 'string', 'max:25', 'regex:/^[0-9+\-\s()]{7,25}$/'],
+            'destino_latitud' => 'required|numeric|between:-90,90',
+            'destino_longitud' => 'required|numeric|between:-180,180',
+        ], [
+            'destino_entrega.required' => 'Debes agregar detalles extra para el vendedor.',
+            'destino_entrega.min' => 'Los detalles deben tener al menos 5 caracteres.',
+            'destino_entrega.max' => 'Los detalles no deben superar los 500 caracteres.',
+            'telefono_contacto.required' => 'Debes ingresar un numero de telefono para que el vendedor pueda contactarte.',
+            'telefono_contacto.regex' => 'Ingresa un numero de telefono valido.',
+            'telefono_contacto.max' => 'El numero de telefono no debe superar los 25 caracteres.',
+            'destino_latitud.required' => 'Debes marcar el destino en el mapa.',
+            'destino_longitud.required' => 'Debes marcar el destino en el mapa.',
+        ]);
+
         $userId = Auth::id();
 
         $cartItems = CartItem::where('user_id', $userId)
@@ -68,9 +84,13 @@ class PedidoController extends Controller
             $total = $cartItems->sum('subtotal');
 
             $pedido = Pedido::create([
-                'user_id' => $userId,
-                'total'   => $total,
-                'estado'  => 'pendiente',
+                'user_id'         => $userId,
+                'total'           => $total,
+                'estado'          => 'pendiente',
+                'destino_entrega' => $request->destino_entrega,
+                'telefono_contacto' => $request->telefono_contacto,
+                'destino_latitud' => $request->destino_latitud,
+                'destino_longitud' => $request->destino_longitud,
             ]);
 
             foreach ($cartItems as $item) {
@@ -78,10 +98,13 @@ class PedidoController extends Controller
 
                 PedidoDetalle::create([
                     'pedido_id'       => $pedido->id,
+                    'vendedor_id'     => $product?->user_id,
+                    'estado_solicitud' => 'pendiente',
                     'product_id'      => $item->product_id,
                     'product_type'    => $item->product_type,
                     'nombre_producto' => $product ? $product->nombre : 'Producto eliminado',
                     'cantidad'        => $item->cantidad,
+                    'alquiler_unidad' => $item->product_type === 'maquinaria' ? $item->alquiler_unidad : null,
                     'precio_unitario' => $item->precio_unitario,
                     'subtotal'        => $item->subtotal,
                     'notas'           => $item->notas,

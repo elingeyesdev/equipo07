@@ -1,184 +1,75 @@
 @extends('layouts.adminlte')
 
-@section('title', 'Tipos de Animales')
+@section('title', 'Especies Principales')
+@section('page_title', 'Gestor de Ganado')
 
 @section('content')
-<style>
-    .types-card {
-        border-radius: 15px;
-        overflow: hidden;
-        border: 0;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    }
+    @include('components.tabs-gestor-ganado')
 
-    .types-header {
-        background: var(--agro);
-        color: #fff;
-        padding: 1.5rem 1.75rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    @if(session('ok') || session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Listo.</strong> {{ session('ok') ?? session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
 
-    .types-header h2 {
-        font-size: 1.4rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-    }
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-    .types-header h2 i {
-        font-size: 1.5rem;
-    }
-
-    .types-body {
-        background: #fff;
-        padding: 1.5rem 1.75rem 1.25rem;
-    }
-
-    .types-search .input-group {
-        border-radius: 999px;
-        overflow: hidden;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-
-    .types-search input {
-        border: 0;
-        box-shadow: none !important;
-    }
-
-    .types-search .btn {
-        border: 0;
-        background: var(--agro);
-        color: #fff;
-    }
-
-    .types-search .btn:hover {
-        background: var(--agro-700);
-    }
-
-    .table-types thead th {
-        border-top: 0;
-        font-size: .9rem;
-        text-transform: uppercase;
-        letter-spacing: .03em;
-        color: #6c757d;
-        background-color: #f8f9fa;
-    }
-
-    .table-types tbody tr:hover {
-        background-color: #fdfdfd;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-    }
-
-    .table-types td {
-        vertical-align: middle;
-        font-size: .95rem;
-    }
-
-    .btn-action {
-        border-radius: 999px;
-        padding: .25rem .6rem;
-        font-size: .8rem;
-    }
-
-    .types-footer {
-        background: #fff;
-        border-top: 1px solid #e9ecef;
-        padding: .75rem 1.75rem;
-    }
-</style>
-
-<div class="container-fluid">
-    <div class="types-card card">
-
-        {{-- HEADER --}}
-        <div class="types-header">
-            <h2>
-                <i class="fas fa-paw"></i>
-                Tipos de Animales
-            </h2>
-
-            <a href="{{ route('admin.tipo_animals.create') }}" class="btn btn-light btn-sm">
-                <i class="fas fa-plus mr-1"></i> Nuevo tipo
-            </a>
+    <div class="card card-outline card-success">
+        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <div>
+                <h3 class="card-title font-weight-bold">Especies Principales</h3>
+                <p class="card-text text-muted mb-0">Configuración de valores para el formulario de publicación</p>
+            </div>
+            <button type="button" class="btn btn-success mt-3 mt-md-0" onclick="abrirModalCrear()">
+                <i class="fas fa-plus mr-2"></i> Nuevo Registro
+            </button>
         </div>
 
-        {{-- BODY --}}
-        <div class="types-body">
-            @if(session('ok'))
-                <div class="alert alert-success mb-3">
-                    {{ session('ok') }}
-                </div>
-            @endif
-
-            <div class="row align-items-center mb-3">
-                <div class="col-md-6 types-search mb-2 mb-md-0">
-                    <form method="GET" action="{{ route('admin.tipo_animals.index') }}">
-                        <div class="input-group">
-                            <input
-                                type="text"
-                                name="q"
-                                class="form-control"
-                                placeholder="Buscar por nombre o descripción..."
-                                value="{{ $q }}"
-                            >
-                            <div class="input-group-append">
-                                <button class="btn" type="submit">
-                                    <i class="fas fa-search mr-1"></i> Buscar
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="col-md-6 text-md-right text-muted small">
-                    Listado de tipos de animales registrados
-                </div>
-            </div>
-
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-types mb-0">
-                    <thead>
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
                         <tr>
-                            <th style="width: 70px;">#</th>
-                            <th>Nombre</th>
+                            <th>Nombre del Registro</th>
                             <th>Descripción</th>
-                            <th class="text-right" style="width: 160px;">Acciones</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($items as $i)
+                        @forelse($items as $item)
                             <tr>
-                                <td>{{ $i->id }}</td>
-                                <td>{{ $i->nombre }}</td>
-                                <td>{{ $i->descripcion }}</td>
+                                <td><strong>{{ $item->nombre }}</strong></td>
+                                <td>{{ Str::limit($item->descripcion, 60, '...') }}</td>
+                                <td><span class="badge badge-success">Activo</span></td>
                                 <td class="text-right">
-                                    <a href="{{ route('admin.tipo_animals.edit', $i) }}"
-                                       class="btn btn-primary btn-action"
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-
-                                    <form action="{{ route('admin.tipo_animals.destroy', $i) }}"
-                                          method="post"
-                                          class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar este tipo de animal?');">
+                                    <button type="button" class="btn btn-sm btn-outline-primary mr-1"
+                                        onclick="abrirModalEditar({{ $item->id }}, '{{ addslashes($item->nombre) }}', '{{ addslashes($item->descripcion) }}')">
+                                        <i class="fas fa-pen mr-1"></i> Editar
+                                    </button>
+                                    <form action="{{ route('admin.tipo_animals.destroy', $item->id) }}" method="POST" class="d-inline delete-form" data-message="¿Está seguro de eliminar {{ $item->nombre }}?">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-danger btn-action" title="Eliminar">
-                                            <i class="fas fa-trash-alt"></i>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash-alt mr-1"></i> Eliminar
                                         </button>
                                     </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    No hay tipos de animales registrados aún.
-                                </td>
+                                <td colspan="4" class="text-center text-muted py-5">No hay especies registradas aún.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -186,16 +77,66 @@
             </div>
         </div>
 
-        {{-- FOOTER / PAGINACIÓN --}}
-        <div class="types-footer d-flex justify-content-between align-items-center">
-            <span class="text-muted small">
-                Mostrando {{ $items->count() }} de {{ $items->total() }} registros
-            </span>
-            <div class="mb-0">
-                {{ $items->links() }}
+        <div class="card-footer clearfix">
+            {{ $items->links() ?? '' }}
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalGestor" tabindex="-1" role="dialog" aria-labelledby="modalGestorLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Agregar Especie</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="formularioGestor" method="POST">
+                    @csrf
+                    <input type="hidden" id="formMethod" name="_method" value="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="inputNombre">Nombre *</label>
+                            <input type="text" class="form-control" id="inputNombre" name="nombre" required maxlength="255">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputDescripcion">Descripción (Opcional)</label>
+                            <textarea class="form-control" id="inputDescripcion" name="descripcion" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1"></i> Guardar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-
     </div>
-</div>
+@endsection
+
+@section('js')
+<script>
+    const urlStore = "{{ route('admin.tipo_animals.store') }}";
+    const urlUpdateBase = "{{ url('admin/tipo_animals') }}";
+
+    function abrirModalCrear() {
+        $('#modalTitle').text('Agregar Especie');
+        $('#formularioGestor').attr('action', urlStore);
+        $('#formMethod').val('POST');
+        $('#inputNombre').val('');
+        $('#inputDescripcion').val('');
+        $('#modalGestor').modal('show');
+    }
+
+    function abrirModalEditar(id, nombre, descripcion) {
+        $('#modalTitle').text('Editar Especie');
+        $('#formularioGestor').attr('action', urlUpdateBase + '/' + id);
+        $('#formMethod').val('PUT');
+        $('#inputNombre').val(nombre);
+        $('#inputDescripcion').val(descripcion);
+        $('#modalGestor').modal('show');
+    }
+</script>
 @endsection

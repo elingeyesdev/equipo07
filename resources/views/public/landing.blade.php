@@ -7,27 +7,158 @@
     <style>
         html {
             scroll-behavior: smooth;
+            scroll-padding-top: 5rem;
         }
 
         .landing-page section[id] {
             scroll-margin-top: 5rem;
         }
 
+        .landing-nav-shell,
+        .landing-hero-shell {
+            max-width: 1216px;
+        }
+
+        .landing-nav {
+            transition: opacity .28s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .28s ease;
+        }
+
+        .landing-nav .landing-nav-shell {
+            transition: min-height .25s ease;
+        }
+
+        .landing-nav.is-stuck {
+            border-color: rgba(47, 98, 31, .16);
+            background-color: rgba(247, 251, 242, .96);
+            box-shadow: 0 18px 45px rgba(20, 33, 18, .12);
+            transform: translateY(0);
+        }
+
+        .landing-nav.is-stuck .landing-nav-shell {
+            min-height: 4.25rem;
+        }
+
+        .landing-nav.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-100%);
+        }
+
+        .landing-hero {
+            min-height: calc(100vh - 5rem);
+            min-height: calc(100svh - 5rem);
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .landing-hero-shell {
+            grid-template-columns: minmax(0, 620px) minmax(0, 532px);
+            gap: 4rem;
+        }
+
+        .landing-hero-title {
+            max-width: 590px;
+            margin-top: 3rem;
+            font-size: 3.05rem;
+            line-height: .94;
+        }
+
+        .landing-hero-copy {
+            max-width: 36rem;
+            margin-top: 3rem;
+            line-height: 1.75;
+        }
+
+        .landing-hero-cta {
+            margin-top: 3rem;
+        }
+
+        .landing-hero-stats {
+            max-width: 622px;
+            margin-top: 3.5rem;
+            gap: .75rem;
+        }
+
+        .landing-hero-visual {
+            min-height: 728px;
+        }
+
+        .landing-hero-image {
+            inset: 1.75rem 0 .5rem;
+        }
+
+        .landing-hero-feature {
+            top: 0;
+            right: 2rem;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             html {
                 scroll-behavior: auto;
+            }
+
+            .landing-nav,
+            .landing-nav .landing-nav-shell {
+                transition: none;
+            }
+        }
+
+        @media (max-width: 1023.98px) {
+            .landing-hero {
+                min-height: auto;
+                padding-top: 3rem;
+                padding-bottom: 4rem;
+            }
+
+            .landing-hero-shell {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+            }
+
+            .landing-hero-title {
+                margin-top: 2rem;
+                font-size: clamp(2.25rem, 8vw, 3.75rem);
+                line-height: 1.04;
+            }
+
+            .landing-hero-copy,
+            .landing-hero-cta {
+                margin-top: 2rem;
+            }
+
+            .landing-hero-stats {
+                margin-top: 2.5rem;
+                gap: 1rem;
+            }
+
+            .landing-hero-visual {
+                min-height: 600px;
+            }
+
+            .landing-hero-image {
+                inset: .5rem 0;
+            }
+        }
+
+        @media (max-width: 639.98px) {
+            .landing-hero-visual {
+                min-height: 460px;
+            }
+
+            .landing-hero-feature {
+                right: .5rem;
             }
         }
     </style>
 
     <main class="landing-page min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
-        <nav class="sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl">
-            <div class="mx-auto flex min-h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <nav class="landing-nav sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl" data-landing-nav>
+            <div class="landing-nav-shell mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-4 xl:px-0">
                 <a href="{{ route('landing') }}" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
                     <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white shadow-lg shadow-[#2f621f]/10">
                         <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
                     </span>
-                    <span>Mercado Agrícola</span>
+                    <span>Mercado Agricola</span>
                 </a>
 
                 <div class="hidden items-center gap-7 lg:flex">
@@ -41,57 +172,51 @@
                     <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                         Iniciar sesión
                     </a>
-                    <a href="{{ route('register') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-4 text-sm font-black text-white no-underline shadow-xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5 hover:shadow-2xl">
-                        Registrarse
-                    </a>
                 </div>
             </div>
         </nav>
 
-        <section id="inicio" class="relative overflow-hidden bg-gradient-to-br from-[#f8fcf3] via-[#edf8e6] to-white py-16 sm:py-20 lg:py-24">
+        <section id="inicio" class="landing-hero relative flex items-center overflow-hidden bg-gradient-to-br from-[#f8fcf3] via-[#edf8e6] to-white">
             <div class="absolute right-[-10rem] bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-[#2f621f]/10"></div>
             <div class="absolute top-10 left-6 h-40 w-40 rounded-full bg-[#a6c85f]/20 blur-3xl"></div>
 
-            <div class="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.06fr_0.94fr] lg:px-8">
+            <div class="landing-hero-shell relative mx-auto grid w-full items-center px-4 sm:px-6 lg:px-4 xl:px-0">
                 <div>
                     <span class="inline-flex items-center gap-2 rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">
                         <i class="fas fa-seedling"></i>
                         Plataforma agropecuaria integral
                     </span>
 
-                    <h1 class="mt-6 max-w-4xl text-4xl font-black leading-[1.02] tracking-normal text-[#142112] sm:text-5xl lg:text-7xl">
+                    <h1 class="landing-hero-title text-4xl font-black tracking-normal text-[#142112] sm:text-5xl">
                         Mercado Agrícola para conectar productos, animales y maquinaria en un solo lugar.
                     </h1>
 
-                    <p class="mt-6 max-w-2xl text-lg leading-8 text-[#66735f] sm:text-xl">
+                    <p class="landing-hero-copy text-base text-[#66735f]">
                         Una plataforma moderna para publicar, explorar y gestionar oportunidades del mercado agropecuario:
                         productos orgánicos, ganado, maquinaria agrícola y servicios relacionados.
                     </p>
 
-                    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <div class="landing-hero-cta flex flex-col gap-3 sm:flex-row">
                         <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
                             Comenzar ahora
                             <i class="fas fa-arrow-right text-sm"></i>
                         </a>
-                        <a href="{{ route('login') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white px-6 text-base font-black text-[#183b18] no-underline shadow-lg shadow-black/5 transition hover:-translate-y-0.5">
-                            Iniciar sesión
-                        </a>
                     </div>
 
-                    <div class="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/75 p-5 shadow-sm">
+                    <div class="landing-hero-stats grid sm:grid-cols-2">
+                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
                             <strong class="block text-2xl font-black text-[#183b18]">4 áreas</strong>
                             <span class="mt-1 block leading-6 text-[#66735f]">Animales, maquinaria, orgánicos y servicios</span>
                         </div>
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/75 p-5 shadow-sm">
+                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
                             <strong class="block text-2xl font-black text-[#183b18]">24/7</strong>
                             <span class="mt-1 block leading-6 text-[#66735f]">Consulta publicaciones cuando lo necesites</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="relative min-h-[380px] sm:min-h-[500px]">
-                    <div class="absolute inset-8 overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20 sm:inset-y-8 sm:right-0 sm:left-8">
+                <div class="landing-hero-visual relative">
+                    <div class="landing-hero-image absolute overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20">
                         <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#142112]/70"></div>
                         <div class="absolute right-5 bottom-5 max-w-xs rounded-2xl border border-white/20 bg-[#142112]/75 p-5 text-white shadow-xl backdrop-blur">
@@ -100,7 +225,7 @@
                         </div>
                     </div>
 
-                    <div class="absolute top-0 right-2 flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10 sm:right-8">
+                    <div class="landing-hero-feature absolute flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10">
                         <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
                             <i class="fas fa-tractor"></i>
                         </span>
@@ -234,4 +359,28 @@
             </div>
         </footer>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nav = document.querySelector('[data-landing-nav]');
+            if (!nav) {
+                return;
+            }
+
+            let lastScrollY = window.scrollY;
+
+            const updateNav = () => {
+                const currentScrollY = window.scrollY;
+                const isScrollingDown = currentScrollY > lastScrollY;
+
+                nav.classList.toggle('is-stuck', currentScrollY > 12);
+                nav.classList.toggle('is-hidden', isScrollingDown && currentScrollY > 48);
+
+                lastScrollY = Math.max(currentScrollY, 0);
+            };
+
+            updateNav();
+            window.addEventListener('scroll', updateNav, { passive: true });
+        });
+    </script>
 @endsection

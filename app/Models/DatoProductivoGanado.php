@@ -8,12 +8,7 @@ class DatoProductivoGanado extends Model
 {
     protected $table = 'datos_productivos_ganado';
 
-    protected $fillable = [
-        'ganado_id',
-        'tipo_peso_id',
-        'peso_actual',
-        'cantidad_leche_dia',
-    ];
+protected $fillable = ['ganado_id', 'tipo_peso_id', 'peso_actual', 'unidad_peso', 'tipo_pesaje', 'cantidad_leche_dia'];
 
     public function ganado()
     {

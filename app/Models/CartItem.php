@@ -11,6 +11,7 @@ class CartItem extends Model
         'product_type',
         'product_id',
         'cantidad',
+        'alquiler_unidad',
         'precio_unitario',
         'subtotal',
         'notas',

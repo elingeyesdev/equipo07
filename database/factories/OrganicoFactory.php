@@ -2,17 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Categoria;
-use App\Models\Organico;
-use App\Models\TipoCultivo;
-use App\Models\UnidadOrganico;
-use App\Models\User;
 use App\Models\CertificadoOrganico;
+use App\Models\Categoria;
 use App\Models\DatoComercialOrganico;
+use App\Models\Organico;
 use App\Models\OrganicoCertificado;
+use App\Models\TipoCultivo;
+use App\Models\UbicacionGeograficaOrganico;
 use App\Models\UbicacionOrganicoUnificada;
 use App\Models\UbicacionOrganico;
-use App\Models\UbicacionGeograficaOrganico;
+use App\Models\UnidadOrganico;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

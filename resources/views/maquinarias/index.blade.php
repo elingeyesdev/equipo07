@@ -125,13 +125,12 @@
                         @if ($m->precio_dia)
                             <div class="mt-auto">
                                 <div class="font-weight-bold mb-1">
-                                    Bs {{ number_format($m->precio_dia, 2) }}
-                                    <span class="text-muted">/ día</span>
+                                    Bs {{ number_format($m->precio_dia, 2) }}/{{ ($m->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                 </div>
 
                                 <div class="progress" style="height: 18px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
-                                        Precio por día
+                                        Precio
                                     </div>
                                 </div>
                             </div>

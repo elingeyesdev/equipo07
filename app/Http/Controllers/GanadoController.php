@@ -7,6 +7,7 @@ use App\Models\Categoria;
 use App\Models\TipoAnimal;
 use App\Models\TipoPeso;
 use App\Models\Raza;
+use App\Models\DatoSanitario;
 use App\Models\GanadoImagen;
 use App\Models\UbicacionGanado;
 use App\Models\UbicacionGeograficaGanado;
@@ -47,8 +48,9 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
-        $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
-
+        $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
+            ->orderBy('id', 'desc')
+            ->get();
         return view('ganados.create', compact(
             'tipo_animals',
             'categorias',
@@ -64,83 +66,96 @@ class GanadoController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validación alineada al Mockup
         $request->validate([
-            'nombre'          => 'required|string|max:255',
-            'tipo_animal_id'  => 'required|exists:tipo_animals,id',
-            'raza_id'         => 'nullable|exists:razas,id',
-            'edad_anos'       => 'required|integer|min:0|max:25',
-            'edad_meses'      => 'required|integer|min:0|max:11',
-            'edad_dias'       => 'required|integer|min:0|max:30',
-            'tipo_peso_id'    => 'required|exists:tipo_pesos,id',
-            'peso_actual'     => 'nullable|numeric|min:0',
-            'sexo'            => 'nullable|string',
-            'cantidad_leche_dia' => 'nullable|numeric|min:0',
-            'descripcion'     => 'nullable|string',
-            'precio'          => 'nullable|numeric|min:0',
-            'stock'            => 'required|integer|min:0',
-            'imagenes.*'      => 'nullable|image|max:2048',
-            'categoria_id'    => 'required|exists:categorias,id',
-            'ubicacion' => 'nullable|string|max:255',
-            'latitud' => 'nullable|numeric',
-            'longitud' => 'nullable|numeric',
-            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
+            'modalidad'      => 'required|string',
+            'tipo_animal_id' => 'required|exists:tipo_animals,id',
+            'raza_id'        => 'required',
+            'nombre'         => 'required|string|max:255',
+            'stock'          => 'required|integer|min:1',
+            'descripcion'    => 'required|string',
+            'precio'         => 'required|numeric|min:0',
+            'forma_cobro'    => 'required|string',
+            'imagenes.*'     => 'nullable|image|max:10240',
+            'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
+            'latitud'        => 'required|numeric',
+            'longitud'       => 'required|numeric',
         ]);
 
-        // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
-        $edadMeses = ($request->edad_anos * 12) + $request->edad_meses;
-        if ($request->edad_dias >= 15) {
-            $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
+        // Calcular edad en meses para compatibilidad legacy
+        $edadMeses = 0;
+        if ($request->modalidad !== 'Genetica') {
+            $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
         }
 
+        // 2. Guardar datos principales
         $data = [
-            'nombre' => $request->nombre,
+            'nombre'         => $request->nombre,
+            'user_id'        => auth()->id(),
             'tipo_animal_id' => $request->tipo_animal_id,
-            'raza_id' => $request->raza_id,
-            'categoria_id' => $request->categoria_id,
-            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
-        ];
-
-        $datosNormalizados = [
-            'edad' => $edadMeses,
-            'tipo_peso_id' => $request->tipo_peso_id,
-            'peso_actual' => $request->peso_actual,
-            'sexo' => $request->sexo,
-            'cantidad_leche_dia' => $request->cantidad_leche_dia,
-            'descripcion' => $request->descripcion,
-            'precio' => $request->precio,
-            'stock' => $request->stock,
-            'fecha_publicacion' => now(),
+            'raza_id'        => $request->raza_id !== 'Cruce/Mestizo' ? $request->raza_id : null,
+            'modalidad'      => $request->modalidad,
+            'proposito'      => $request->proposito,
+            'tipo_genetica'  => $request->tipo_genetica,
         ];
 
         $this->agregarDatosUbicacion($data, $request);
-
-        // Asignar el usuario autenticado
-        $data['user_id'] = auth()->id();
-
         $this->sincronizarUbicacionNormalizada($data);
 
-        // Crear el ganado
         $ganado = Ganado::create($data);
-        $this->sincronizarDatosNormalizados($ganado, $datosNormalizados);
 
-        // Guardar las imágenes si existen (máximo 3)
+        // 3. Sincronizar Relaciones con los nuevos campos
+        $ganado->caracteristica()->create([
+            'edad'        => $edadMeses,
+            'edad_valor'  => $request->edad_valor,
+            'unidad_edad' => $request->unidad_edad,
+            'sexo'        => $request->sexo,
+            'descripcion' => $request->descripcion,
+        ]);
+
+        $ganado->datoProductivo()->create([
+            'peso_actual' => $request->peso_actual,
+            'unidad_peso' => $request->unidad_peso,
+            'tipo_pesaje' => $request->tipo_pesaje,
+        ]);
+
+        $ganado->datoComercial()->create([
+            'precio'            => $request->precio,
+            'stock'             => $request->stock,
+            'forma_cobro'       => $request->forma_cobro,
+            'fecha_publicacion' => now(),
+        ]);
+
+        // 4. Manejo del PDF de Sanidad
+        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
+            $pdfPath = null;
+            if ($request->hasFile('documento_pdf')) {
+                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
+            }
+            $ganado->datosSanitarios()->create([
+                'has_sanity'    => true,
+                'documento_pdf' => $pdfPath,
+            ]);
+        }
+
+        // 5. Manejo de Imágenes (Max 5 según mockup)
         if ($request->hasFile('imagenes')) {
             $orden = 0;
-            $imagenes = array_slice($request->file('imagenes'), 0, 3); // Limitar a 3 imágenes
+            $imagenes = array_slice($request->file('imagenes'), 0, 5);
             foreach ($imagenes as $imagen) {
-                if ($imagen && $imagen->isValid()) {
+                if ($imagen->isValid()) {
                     $ruta = $imagen->store('ganados', 'public');
                     GanadoImagen::create([
                         'ganado_id' => $ganado->id,
-                        'ruta' => $ruta,
-                        'orden' => $orden++,
+                        'ruta'      => $ruta,
+                        'orden'     => $orden++,
                     ]);
                 }
             }
         }
 
         return redirect()->route('ganados.index')
-            ->with('success', 'Ganado registrado correctamente.');
+            ->with('success', 'Publicación creada exitosamente.');
     }
 
 
@@ -160,8 +175,9 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
-        $datosSanitarios = \App\Models\DatoSanitario::orderBy('id')->get();
-
+        $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
+            ->orderBy('id', 'desc')
+            ->get();
         return view('ganados.edit', compact(
             'ganado',
             'tipo_animals',
@@ -185,85 +201,75 @@ class GanadoController extends Controller
         }
 
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'modalidad'      => 'required|string',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
-            'raza_id' => 'nullable|exists:razas,id',
-            'edad_anos' => 'required|integer|min:0|max:25',
-            'edad_meses' => 'required|integer|min:0|max:11',
-            'edad_dias' => 'required|integer|min:0|max:30',
-            'peso_actual' => 'nullable|numeric|min:0',
-            'sexo' => 'nullable|string',
-            'cantidad_leche_dia' => 'nullable|numeric|min:0',
-            'descripcion' => 'nullable|string',
-            'precio' => 'nullable|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'tipo_peso_id' => 'required|exists:tipo_pesos,id',
-            'imagenes.*' => 'nullable|image|max:2048',
-            'categoria_id' => 'required|exists:categorias,id',
-            'ubicacion' => 'nullable|string|max:255',
-            'latitud' => 'nullable|numeric',
-            'longitud' => 'nullable|numeric',
-            'dato_sanitario_id' => 'nullable|exists:datos_sanitarios,id',
+            'raza_id'        => 'required',
+            'nombre'         => 'required|string|max:255',
+            'stock'          => 'required|integer|min:1',
+            'descripcion'    => 'required|string',
+            'precio'         => 'required|numeric|min:0',
+            'forma_cobro'    => 'required|string',
+            'imagenes.*'     => 'nullable|image|max:10240',
+            'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
+            'latitud'        => 'required|numeric',
+            'longitud'       => 'required|numeric',
         ]);
 
-        // Calcular edad total en meses (años*12 + meses, los días se redondean a meses si >= 15 días)
-        $edadMeses = ($request->edad_anos * 12) + $request->edad_meses;
-        if ($request->edad_dias >= 15) {
-            $edadMeses += 1; // Redondear hacia arriba si tiene 15 o más días
+        // Calcular edad en meses para compatibilidad legacy
+        $edadMeses = 0;
+        if ($request->modalidad !== 'Genetica') {
+            $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
         }
 
         $data = [
-            'nombre' => $request->nombre,
+            'nombre'         => $request->nombre,
             'tipo_animal_id' => $request->tipo_animal_id,
-            'raza_id' => $request->raza_id,
-            'categoria_id' => $request->categoria_id,
-            'dato_sanitario_id' => $request->dato_sanitario_id ?? null,
-        ];
-
-        $datosNormalizados = [
-            'edad' => $edadMeses,
-            'tipo_peso_id' => $request->tipo_peso_id,
-            'peso_actual' => $request->peso_actual,
-            'sexo' => $request->sexo,
-            'cantidad_leche_dia' => $request->cantidad_leche_dia,
-            'descripcion' => $request->descripcion,
-            'precio' => $request->precio,
-            'stock' => $request->stock,
-            'fecha_publicacion' => $ganado->fecha_publicacion ?? now(),
+            'raza_id'        => $request->raza_id !== 'Cruce/Mestizo' ? $request->raza_id : null,
+            'modalidad'      => $request->modalidad,
+            'proposito'      => $request->proposito,
+            'tipo_genetica'  => $request->tipo_genetica,
         ];
 
         $this->agregarDatosUbicacion($data, $request);
         $this->sincronizarUbicacionNormalizada($data, $ganado);
 
-        // Eliminar imágenes marcadas para eliminar
-        if ($request->has('imagenes_eliminar')) {
-            foreach ($request->imagenes_eliminar as $imagenId) {
-                $imagen = GanadoImagen::find($imagenId);
-                if ($imagen && $imagen->ganado_id === $ganado->id) {
-                    if (Storage::disk('public')->exists($imagen->ruta)) {
-                        Storage::disk('public')->delete($imagen->ruta);
-                    }
-                    $imagen->delete();
+        // Manejo del PDF de Sanidad
+        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
+            $datosSanitario = $ganado->datosSanitarios()->latest('id')->first();
+            $pdfPath = $datosSanitario->documento_pdf ?? null;
+
+            if ($request->hasFile('documento_pdf')) {
+                if ($pdfPath && Storage::disk('public')->exists($pdfPath)) {
+                    Storage::disk('public')->delete($pdfPath);
                 }
+                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
             }
+
+            $ganado->datosSanitarios()->updateOrCreate(
+                ['ganado_id' => $ganado->id],
+                [
+                    'has_sanity'    => true,
+                    'documento_pdf' => $pdfPath,
+                ]
+            );
         }
 
-        // Agregar nuevas imágenes (máximo 3 en total)
+        // Manejo de Imágenes (Max 5 según mockup)
         if ($request->hasFile('imagenes')) {
             $totalImagenesActuales = $ganado->imagenes()->count();
             $maxOrden = $ganado->imagenes()->max('orden') ?? -1;
 
-            if ($totalImagenesActuales < 3) {
-                $espaciosDisponibles = 3 - $totalImagenesActuales;
+            if ($totalImagenesActuales < 5) {
+                $espaciosDisponibles = 5 - $totalImagenesActuales;
                 $orden = $maxOrden + 1;
                 $imagenes = array_slice($request->file('imagenes'), 0, $espaciosDisponibles);
                 foreach ($imagenes as $imagen) {
-                    if ($imagen && $imagen->isValid()) {
+                    if ($imagen->isValid()) {
                         $ruta = $imagen->store('ganados', 'public');
                         GanadoImagen::create([
                             'ganado_id' => $ganado->id,
-                            'ruta' => $ruta,
-                            'orden' => $orden++,
+                            'ruta'      => $ruta,
+                            'orden'     => $orden++,
                         ]);
                     }
                 }
@@ -271,7 +277,36 @@ class GanadoController extends Controller
         }
 
         $ganado->update($data);
-        $this->sincronizarDatosNormalizados($ganado, $datosNormalizados);
+
+        $ganado->caracteristica()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'edad'        => $edadMeses,
+                'edad_valor'  => $request->edad_valor,
+                'unidad_edad' => $request->unidad_edad,
+                'sexo'        => $request->sexo,
+                'descripcion' => $request->descripcion,
+            ]
+        );
+
+        $ganado->datoProductivo()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'peso_actual' => $request->peso_actual,
+                'unidad_peso' => $request->unidad_peso,
+                'tipo_pesaje' => $request->tipo_pesaje,
+            ]
+        );
+
+        $ganado->datoComercial()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'precio'            => $request->precio,
+                'stock'             => $request->stock,
+                'forma_cobro'       => $request->forma_cobro,
+                'fecha_publicacion' => $ganado->fecha_publicacion ?? now(),
+            ]
+        );
 
         return redirect()->route('ganados.index')
             ->with('success', 'Registro actualizado correctamente.');
@@ -440,6 +475,7 @@ class GanadoController extends Controller
             'tipoAnimal',
             'tipoPeso',
             'datoSanitario',
+            'datosSanitarios',
             'imagenes',
             'ubicacionGanado.ubicacionGeografica',
             'datoProductivo.tipoPeso',

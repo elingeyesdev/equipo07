@@ -8,6 +8,40 @@ use Illuminate\Support\Facades\Http;
 
 class GeocodificacionController extends Controller
 {
+    public function search(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:3|max:120',
+        ]);
+
+        $response = Http::withHeaders([
+            'User-Agent' => 'ProyectoAgricola/1.0',
+            'Accept-Language' => 'es',
+        ])->get('https://nominatim.openstreetmap.org/search', [
+            'q' => $request->q,
+            'format' => 'json',
+            'addressdetails' => 1,
+            'limit' => 5,
+            'countrycodes' => 'bo',
+        ]);
+
+        if ($response->failed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar ubicaciones',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => collect($response->json())->map(fn ($item) => [
+                'display_name' => $item['display_name'] ?? '',
+                'lat' => $item['lat'] ?? null,
+                'lon' => $item['lon'] ?? null,
+            ])->filter(fn ($item) => $item['lat'] && $item['lon'])->values(),
+        ]);
+    }
+
     public function reverse(Request $request)
     {
         $request->validate([

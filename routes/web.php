@@ -5,9 +5,12 @@ use App\Http\Controllers\OrganicoController;
 use App\Http\Controllers\MaquinariaController;
 use App\Http\Controllers\GanadoController;
 use App\Http\Controllers\TipoAnimalController;
+use App\Http\Controllers\TipoCultivoController;
 use App\Http\Controllers\TipoPesoController;
+use App\Http\Controllers\CertificadoOrganicoController;
 use App\Http\Controllers\DatoSanitarioController;
 use App\Http\Controllers\RazaController;
+use App\Http\Controllers\PropositoController;
 use App\Http\Controllers\EstadoMaquinariaController;
 use App\Http\Controllers\SolicitudVendedorController;
 use App\Http\Controllers\Auth\LoginController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\VendedorSolicitudController;
 
 
 Route::view('/', 'public.landing')->name('landing');
@@ -50,10 +54,13 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('tipo_animals', TipoAnimalController::class);
     Route::resource('tipo-pesos', TipoPesoController::class);
     Route::resource('razas', RazaController::class);
+    Route::resource('propositos', PropositoController::class);
     Route::resource('tipo_maquinarias', App\Http\Controllers\TipoMaquinariaController::class);
     Route::resource('marcas_maquinarias', App\Http\Controllers\MarcaMaquinariaController::class);
     Route::resource('estado_maquinarias', EstadoMaquinariaController::class);
     Route::resource('unidades_organicos', App\Http\Controllers\UnidadOrganicoController::class);
+    Route::resource('tipo_cultivos', TipoCultivoController::class)->except(['show', 'create', 'edit']);
+    Route::resource('certificados_organicos', CertificadoOrganicoController::class)->except(['show', 'create', 'edit']);
     Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
         ->name('organicos.certificados.estado');
 
@@ -95,6 +102,13 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::resource('ganados', GanadoController::class)->except(['index', 'show']);
     Route::resource('maquinarias', MaquinariaController::class)->except(['index', 'show'])->names('maquinarias');
     Route::resource('organicos', OrganicoController::class)->except(['index', 'show'])->names('organicos');
+
+    Route::get('/vendedor/solicitudes', [VendedorSolicitudController::class, 'index'])->name('vendedor.solicitudes.index');
+    Route::get('/vendedor/solicitudes/{solicitud}', [VendedorSolicitudController::class, 'show'])->name('vendedor.solicitudes.show');
+    Route::post('/vendedor/solicitudes/{solicitud}/aceptar', [VendedorSolicitudController::class, 'aceptar'])->name('vendedor.solicitudes.aceptar');
+    Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
+    Route::post('/vendedor/solicitudes/{solicitud}/alquiler/avanzar', [VendedorSolicitudController::class, 'avanzarAlquiler'])->name('vendedor.solicitudes.alquiler.avanzar');
+    Route::post('/vendedor/solicitudes/{solicitud}/finalizar', [VendedorSolicitudController::class, 'finalizarPedido'])->name('vendedor.solicitudes.finalizar');
 });
 
 // TODOS LOS USUARIOS AUTENTICADOS

@@ -5,43 +5,39 @@
     $registrosCertificados = collect($organico?->certificadoRegistros ?? [])->keyBy('certificado_organico_id');
     $obligatorios = $certificados->where('es_obligatorio', true);
     $opcionales = $certificados->where('es_obligatorio', false);
+    $unidadSeleccionadaId = old('unidad_id', $organico->unidad_id ?? '');
+    $unidadSeleccionada = $unidades->first(fn($unidad) => (string) $unidad->id === (string) $unidadSeleccionadaId);
+    $precioLabel = $unidadSeleccionada ? 'Precio por ' . \Illuminate\Support\Str::lower($unidadSeleccionada->nombre) : 'Precio';
+    $wizardSteps = [
+        [
+            'icon' => 'fas fa-leaf',
+            'title' => 'Producto',
+            'description' => 'Identifica el producto orgánico, precio, unidad y stock.',
+        ],
+        [
+            'icon' => 'fas fa-route',
+            'title' => 'Trazabilidad',
+            'description' => 'Registra finca, cosecha, tratamientos y observaciones.',
+        ],
+        [
+            'icon' => 'fas fa-map-marker-alt',
+            'title' => 'Origen',
+            'description' => 'Marca la ubicación de origen y agrega una referencia.',
+        ],
+        [
+            'icon' => 'fas fa-certificate',
+            'title' => 'Certificados',
+            'description' => 'Adjunta certificados obligatorios, opcionales o adicionales.',
+        ],
+        [
+            'icon' => 'fas fa-images',
+            'title' => 'Imágenes',
+            'description' => 'Agrega o administra las fotografías de la publicación.',
+        ],
+    ];
 @endphp
 
-<input type="hidden" name="categoria_id" value="{{ $categoriaSeleccionada }}">
-
 <style>
-    .organico-wizard__progress {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: .5rem;
-        margin-bottom: 1rem;
-    }
-
-    .organico-wizard__step-indicator {
-        border: 1px solid #d7ead8;
-        border-radius: 8px;
-        background: #fff;
-        color: #55705a;
-        font-size: .85rem;
-        padding: .65rem .5rem;
-        text-align: center;
-    }
-
-    .organico-wizard__step-indicator.is-active {
-        background: #28a745;
-        border-color: #28a745;
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .organico-wizard__step {
-        display: none;
-    }
-
-    .organico-wizard__step.is-active {
-        display: block;
-    }
-
     .cert-file-panel {
         display: none;
     }
@@ -49,34 +45,67 @@
     .cert-file-panel.is-active {
         display: block;
     }
-
-    @media (max-width: 768px) {
-        .organico-wizard__progress {
-            grid-template-columns: 1fr;
-        }
-    }
 </style>
 
-<div class="organico-wizard">
-    <div class="organico-wizard__progress" aria-label="Pasos del registro organico">
-        <button type="button" class="organico-wizard__step-indicator is-active" data-step-target="0">1. Producto</button>
-        <button type="button" class="organico-wizard__step-indicator" data-step-target="1">2. Trazabilidad</button>
-        <button type="button" class="organico-wizard__step-indicator" data-step-target="2">3. Origen</button>
-        <button type="button" class="organico-wizard__step-indicator" data-step-target="3">4. Certificados</button>
-        <button type="button" class="organico-wizard__step-indicator" data-step-target="4">5. Imagenes</button>
-    </div>
+<input type="hidden" name="categoria_id" value="{{ $categoriaSeleccionada }}">
 
-    <section class="organico-wizard__step is-active" data-step="0">
+<div class="maquinaria-wizard" data-maquinaria-wizard>
+    <div class="maquinaria-wizard__shell">
+        <div class="maquinaria-wizard__hero">
+            <div>
+                <span class="maquinaria-wizard__eyebrow">Registro de producto orgánico</span>
+                <h3 class="maquinaria-wizard__title mb-1">
+                    <i class="fas fa-leaf mr-2"></i>{{ isset($organico) ? 'Editar orgánico' : 'Nuevo orgánico' }}
+                </h3>
+                <p class="maquinaria-wizard__subtitle mb-0">
+                    Completa la información paso a paso. Los datos se conservan al avanzar o retroceder.
+                </p>
+            </div>
+            <span class="badge badge-success maquinaria-wizard__badge" data-wizard-current-label>
+                Paso 1 de {{ count($wizardSteps) }}
+            </span>
+        </div>
+
+        <div class="maquinaria-wizard__progress" role="tablist" aria-label="Pasos del registro de producto orgánico">
+            @foreach ($wizardSteps as $index => $step)
+                <button type="button" class="maquinaria-wizard__step-indicator {{ $index === 0 ? 'is-active' : '' }}"
+                    data-wizard-go-to="{{ $index }}" aria-current="{{ $index === 0 ? 'step' : 'false' }}">
+                    <span class="maquinaria-wizard__step-number">{{ $index + 1 }}</span>
+                    <span class="maquinaria-wizard__step-icon">
+                        <i class="{{ $step['icon'] }}"></i>
+                    </span>
+                    <span class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">{{ $step['title'] }}</span>
+                        <span class="maquinaria-wizard__step-description">{{ $step['description'] }}</span>
+                        <span class="maquinaria-wizard__step-status" data-wizard-step-status>Pendiente</span>
+                    </span>
+                </button>
+            @endforeach
+        </div>
+
+        <div class="maquinaria-wizard__progressbar" aria-hidden="true">
+            <span data-wizard-progressbar style="width: {{ 100 / max(count($wizardSteps), 1) }}%;"></span>
+        </div>
+
+        <div class="alert alert-danger maquinaria-wizard__error-summary d-none" data-wizard-error-summary></div>
+
+        <div class="maquinaria-wizard__content">
+
+    <section class="maquinaria-wizard-step is-active" data-wizard-step="0">
         <div class="card card-outline card-success shadow-sm mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0"><i class="fas fa-leaf mr-2"></i>Datos del producto</h3>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-0"><i class="fas fa-leaf mr-2"></i>Datos del producto</h3>
+                    <small class="text-muted">Identificación, cultivo, precio y disponibilidad.</small>
+                </div>
+                <span class="badge badge-success">Paso 1 de {{ count($wizardSteps) }}</span>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Nombre *</label>
-                            <input type="text" name="nombre" class="form-control"
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" name="nombre" id="nombre" class="form-control"
                                 placeholder="Ej: Zanahoria organica fresca"
                                 value="{{ old('nombre', $organico->nombre ?? '') }}" required>
                         </div>
@@ -93,7 +122,9 @@
                                 @endforeach
                             </select>
                         </div>
+                    </div>
 
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="unidad_id">Unidad de medida</label>
                             <select name="unidad_id" id="unidad_id" class="form-control">
@@ -107,21 +138,19 @@
                             </select>
                         </div>
 
-                        <div class="form-group mb-md-0">
-                            <label>Stock *</label>
-                            <input type="number" name="stock" class="form-control" placeholder="Cantidad disponible"
+                        <div class="form-group">
+                            <label for="stock">Stock *</label>
+                            <input type="number" name="stock" id="stock" class="form-control" placeholder="Cantidad disponible"
                                 value="{{ old('stock', $organico->stock ?? 0) }}" required min="0">
                         </div>
-                    </div>
 
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Precio *</label>
+                        <div class="form-group mb-md-0">
+                            <label for="precio" id="precio-label">{{ $precioLabel }} *</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Bs</span>
                                 </div>
-                                <input type="number" step="0.01" name="precio" class="form-control"
+                                <input type="number" step="0.01" name="precio" id="precio" class="form-control"
                                     placeholder="0.00" value="{{ old('precio', $organico->precio ?? 0) }}" required min="0">
                             </div>
                         </div>
@@ -131,10 +160,14 @@
         </div>
     </section>
 
-    <section class="organico-wizard__step" data-step="1">
+    <section class="maquinaria-wizard-step" data-wizard-step="1">
         <div class="card card-outline card-success shadow-sm mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0"><i class="fas fa-route mr-2"></i>Trazabilidad del producto</h3>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-0"><i class="fas fa-route mr-2"></i>Trazabilidad del producto</h3>
+                    <small class="text-muted">Finca, fechas de siembra y cosecha, tratamientos y observaciones.</small>
+                </div>
+                <span class="badge badge-success">Paso 2 de {{ count($wizardSteps) }}</span>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -183,10 +216,14 @@
         </div>
     </section>
 
-    <section class="organico-wizard__step" data-step="2">
+    <section class="maquinaria-wizard-step" data-wizard-step="2">
         <div class="card card-outline card-success shadow-sm mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0"><i class="fas fa-map-marker-alt mr-2"></i>Descripcion y origen</h3>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-0"><i class="fas fa-map-marker-alt mr-2"></i>Descripción y origen</h3>
+                    <small class="text-muted">Describe el producto y selecciona su punto de origen.</small>
+                </div>
+                <span class="badge badge-success">Paso 3 de {{ count($wizardSteps) }}</span>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -201,7 +238,7 @@
                     <div class="col-md-7">
                         <div class="form-group mb-2">
                             <label>Ubicacion del producto</label>
-                            <div id="map-origen" style="height: 320px; border-radius: 8px; border: 1px solid #e0e0e0;"></div>
+                            <div id="map-origen" class="maquinaria-wizard__map" style="height: 320px; border-radius: 8px; border: 1px solid #e0e0e0;"></div>
                         </div>
 
                         <input type="text" id="origen" name="origen" class="form-control mb-3"
@@ -209,7 +246,7 @@
 
                         <div id="info-origen" class="mt-1"
                             style="display: {{ isset($organico) && ($organico->origen ?? false) ? 'block' : 'none' }};">
-                            <div class="card border">
+                            <div class="maquinaria-wizard__location-detail">
                                 <div class="card-body py-3">
                                     <div class="row mb-2">
                                         <div class="col-md-3"><strong>Ciudad:</strong></div>
@@ -252,10 +289,14 @@
         </div>
     </section>
 
-    <section class="organico-wizard__step" data-step="3">
+    <section class="maquinaria-wizard-step" data-wizard-step="3">
         <div class="card card-outline card-success shadow-sm mb-4">
-            <div class="card-header">
-                <h3 class="card-title mb-0"><i class="fas fa-certificate mr-2"></i>Certificados</h3>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-0"><i class="fas fa-certificate mr-2"></i>Certificados</h3>
+                    <small class="text-muted">Documentos obligatorios, opcionales y adicionales.</small>
+                </div>
+                <span class="badge badge-success">Paso 4 de {{ count($wizardSteps) }}</span>
             </div>
             <div class="card-body">
                 <h6 class="text-muted text-uppercase mb-3">Certificados obligatorios</h6>
@@ -372,11 +413,14 @@
         </div>
     </section>
 
-    <section class="organico-wizard__step" data-step="4">
+    <section class="maquinaria-wizard-step" data-wizard-step="4">
         <div class="card card-outline card-success shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0"><i class="fas fa-images mr-2"></i>Imagenes del producto</h3>
-                <small class="text-muted">Maximo 3 imagenes por publicacion</small>
+                <div>
+                    <h3 class="card-title mb-0"><i class="fas fa-images mr-2"></i>Imágenes del producto</h3>
+                    <small class="text-muted">Máximo 3 imágenes por publicación.</small>
+                </div>
+                <span class="badge badge-success">Paso 5 de {{ count($wizardSteps) }}</span>
             </div>
             <div class="card-body">
                 @if (isset($organico) && $organico->imagenes && $organico->imagenes->count() > 0)
@@ -401,29 +445,44 @@
                 @endif
 
                 <div id="preview-container" class="row mb-3"></div>
-                <input type="file" name="imagenes[]" class="form-control" accept="image/*" multiple id="imagenes-input">
-                <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF. Tamano maximo por imagen: 2MB.</small>
-                <div id="imagenes-count" class="text-muted mt-2"></div>
+
+                <label for="imagenes-input"
+                    class="maquinaria-upload-zone @error('imagenes') is-invalid @enderror @error('imagenes.*') is-invalid @enderror"
+                    data-upload-zone>
+                    <span class="maquinaria-upload-zone__icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </span>
+                    <span class="maquinaria-upload-zone__content">
+                        <strong>Haz clic para subir imágenes</strong>
+                        <small>También puedes arrastrar tus archivos aquí. JPG, PNG o GIF, máximo 2MB por imagen.</small>
+                    </span>
+                    <span class="maquinaria-upload-zone__cta">Seleccionar archivos</span>
+                </label>
+                <input type="file" name="imagenes[]" class="maquinaria-upload-input" accept="image/*" multiple id="imagenes-input">
+                <div id="imagenes-count" class="maquinaria-upload-count text-muted mt-2"></div>
             </div>
         </div>
     </section>
-</div>
 
-<div class="d-flex justify-content-between mb-2">
-    <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('organicos.index') }}"
-        class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left mr-1"></i> Volver
-    </a>
-    <div>
-        <button type="button" class="btn btn-outline-success mr-2" id="wizard-prev" disabled>
-            <i class="fas fa-chevron-left mr-1"></i> Anterior
-        </button>
-        <button type="button" class="btn btn-success" id="wizard-next">
-            Siguiente <i class="fas fa-chevron-right ml-1"></i>
-        </button>
-        <button class="btn btn-success d-none" id="wizard-submit">
-            <i class="fas fa-save mr-1"></i> Guardar
-        </button>
+        </div>
+
+        <div class="maquinaria-wizard__actions">
+            <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('organicos.index') }}"
+                class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
+            <div class="maquinaria-wizard__action-group">
+                <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
+                    <i class="fas fa-chevron-left mr-1"></i> Anterior
+                </button>
+                <button type="button" class="btn btn-success" data-wizard-next>
+                    Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+                <button type="submit" class="btn btn-success d-none" data-wizard-submit>
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -432,42 +491,243 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const steps = Array.from(document.querySelectorAll('.organico-wizard__step'));
-        const indicators = Array.from(document.querySelectorAll('[data-step-target]'));
-        const prevBtn = document.getElementById('wizard-prev');
-        const nextBtn = document.getElementById('wizard-next');
-        const submitBtn = document.getElementById('wizard-submit');
+        const wizard = document.querySelector('[data-maquinaria-wizard]');
+        if (!wizard) return;
+
+        const form = wizard.closest('form');
+        const steps = Array.from(wizard.querySelectorAll('[data-wizard-step]'));
+        const indicators = Array.from(wizard.querySelectorAll('[data-wizard-go-to]'));
+        const prevBtn = wizard.querySelector('[data-wizard-prev]');
+        const nextBtn = wizard.querySelector('[data-wizard-next]');
+        const submitBtn = wizard.querySelector('[data-wizard-submit]');
+        const errorSummary = wizard.querySelector('[data-wizard-error-summary]');
+        const progressBar = wizard.querySelector('[data-wizard-progressbar]');
+        const currentLabel = wizard.querySelector('[data-wizard-current-label]');
+        const serverErrors = @json($errors->messages());
         let currentStep = 0;
         let mapOrigen = null;
+        let markerOrigen = null;
 
-        function showStep(index) {
-            currentStep = Math.max(0, Math.min(index, steps.length - 1));
-            steps.forEach((step, stepIndex) => step.classList.toggle('is-active', stepIndex === currentStep));
-            indicators.forEach((indicator, stepIndex) => indicator.classList.toggle('is-active', stepIndex === currentStep));
-            prevBtn.disabled = currentStep === 0;
-            nextBtn.classList.toggle('d-none', currentStep === steps.length - 1);
-            submitBtn.classList.toggle('d-none', currentStep !== steps.length - 1);
+        form.setAttribute('novalidate', 'novalidate');
 
-            if (currentStep === 2) {
-                setTimeout(initMapOrigen, 80);
+        const unidadSelect = document.getElementById('unidad_id');
+        const precioLabel = document.getElementById('precio-label');
+
+        function updatePrecioLabel() {
+            if (!unidadSelect || !precioLabel) return;
+
+            const selectedOption = unidadSelect.options[unidadSelect.selectedIndex];
+            const unidad = selectedOption && selectedOption.value ? selectedOption.textContent.trim().toLowerCase() : '';
+            precioLabel.textContent = unidad ? `Precio por ${unidad} *` : 'Precio *';
+        }
+
+        if (unidadSelect) {
+            unidadSelect.addEventListener('change', updatePrecioLabel);
+            updatePrecioLabel();
+        }
+
+        const fieldStepMap = {
+            nombre: 0,
+            categoria_id: 0,
+            tipo_cultivo_id: 0,
+            unidad_id: 0,
+            stock: 0,
+            precio: 0,
+            finca: 1,
+            fecha_siembra: 1,
+            fecha_cosecha: 1,
+            tratamientos_utilizados: 1,
+            observaciones_trazabilidad: 1,
+            descripcion: 2,
+            origen: 2,
+            latitud_origen: 2,
+            longitud_origen: 2,
+            departamento_origen: 2,
+            municipio_origen: 2,
+            provincia_origen: 2,
+            ciudad_origen: 2,
+            referencia_ubicacion: 2,
+            certificados: 3,
+            certificados_adicionales: 3,
+            imagenes: 4,
+            imagenes_eliminar: 4,
+        };
+
+        function normalizeFieldName(name) {
+            return name.replace(/\[\]$/, '').replace(/\.\d+$/, '').split('.')[0].replace(/\[.*$/, '');
+        }
+
+        function findControlByErrorKey(key) {
+            const normalized = normalizeFieldName(key);
+            return form.querySelector(`[name="${normalized}"]`) ||
+                form.querySelector(`[name="${normalized}[]"]`) ||
+                form.querySelector(`[name^="${normalized}["]`);
+        }
+
+        function getStepForField(key) {
+            return fieldStepMap[normalizeFieldName(key)] ?? 0;
+        }
+
+        function fieldLabel(control) {
+            const group = control.closest('.form-group') || control.closest('.card-body');
+            const label = group ? group.querySelector('label') : null;
+            return label ? label.textContent.replace('*', '').trim() : 'este campo';
+        }
+
+        function validationMessage(control) {
+            if (control.validity.valueMissing) {
+                return `Completa ${fieldLabel(control).toLowerCase()} para continuar.`;
+            }
+
+            if (control.validity.rangeUnderflow) {
+                return `Ingresa un valor igual o mayor a ${control.min}.`;
+            }
+
+            if (control.validity.typeMismatch) {
+                return 'Ingresa un valor con el formato correcto.';
+            }
+
+            return control.validationMessage || 'Revisa este campo antes de continuar.';
+        }
+
+        function feedbackElement(control) {
+            const holder = control.closest('.input-group') || control;
+            let feedback = holder.nextElementSibling;
+
+            if (!feedback || !feedback.classList.contains('wizard-field-error')) {
+                feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback wizard-field-error';
+                holder.insertAdjacentElement('afterend', feedback);
+            }
+
+            return feedback;
+        }
+
+        function setFieldError(control, message) {
+            control.classList.add('is-invalid');
+            feedbackElement(control).textContent = message;
+        }
+
+        function clearFieldError(control) {
+            control.classList.remove('is-invalid');
+            const holder = control.closest('.input-group') || control;
+            const feedback = holder.nextElementSibling;
+            if (feedback && feedback.classList.contains('wizard-field-error')) {
+                feedback.textContent = '';
             }
         }
 
-        function validateCurrentStep() {
-            const fields = Array.from(steps[currentStep].querySelectorAll('input, select, textarea'));
-            for (const field of fields) {
-                if (!field.checkValidity()) {
-                    field.reportValidity();
+        function validateStep(index, shouldFocus = true) {
+            const controls = Array.from(steps[index].querySelectorAll('input, select, textarea'))
+                .filter(control => !control.disabled && control.type !== 'hidden');
+            const invalidControls = [];
+
+            controls.forEach(control => {
+                clearFieldError(control);
+
+                if (!control.checkValidity()) {
+                    invalidControls.push(control);
+                    setFieldError(control, validationMessage(control));
+                }
+            });
+
+            steps[index].classList.toggle('has-errors', invalidControls.length > 0);
+            indicators[index].classList.toggle('has-errors', invalidControls.length > 0);
+
+            if (invalidControls.length > 0) {
+                errorSummary.textContent = 'Revisa los campos marcados antes de continuar.';
+                errorSummary.classList.remove('d-none');
+
+                if (shouldFocus) {
+                    invalidControls[0].focus({
+                        preventScroll: true
+                    });
+                    invalidControls[0].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            } else {
+                errorSummary.classList.add('d-none');
+            }
+
+            return invalidControls.length === 0;
+        }
+
+        function validateUntil(targetStep) {
+            for (let index = 0; index < targetStep; index++) {
+                if (!validateStep(index, false)) {
+                    showStep(index);
+                    validateStep(index, true);
                     return false;
                 }
             }
+
             return true;
+        }
+
+        function showStep(index) {
+            const previousStep = currentStep;
+            currentStep = Math.max(0, Math.min(index, steps.length - 1));
+            const direction = currentStep >= previousStep ? 'forward' : 'backward';
+
+            steps.forEach((step, stepIndex) => {
+                const isActive = stepIndex === currentStep;
+                step.classList.toggle('is-active', isActive);
+                step.classList.toggle('is-forward', isActive && direction === 'forward');
+                step.classList.toggle('is-backward', isActive && direction === 'backward');
+                step.style.display = isActive ? 'block' : 'none';
+            });
+
+            indicators.forEach((indicator, stepIndex) => {
+                indicator.classList.toggle('is-active', stepIndex === currentStep);
+                indicator.classList.toggle('is-complete', stepIndex < currentStep);
+                indicator.setAttribute('aria-current', stepIndex === currentStep ? 'step' : 'false');
+
+                const status = indicator.querySelector('[data-wizard-step-status]');
+                if (status) {
+                    if (stepIndex < currentStep) {
+                        status.textContent = 'Completado';
+                    } else if (stepIndex === currentStep) {
+                        status.textContent = 'En progreso';
+                    } else {
+                        status.textContent = 'Pendiente';
+                    }
+                }
+            });
+
+            prevBtn.disabled = currentStep === 0;
+            nextBtn.classList.toggle('d-none', currentStep === steps.length - 1);
+            submitBtn.classList.toggle('d-none', currentStep !== steps.length - 1);
+            errorSummary.classList.add('d-none');
+
+            if (progressBar) {
+                progressBar.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+            }
+
+            if (currentLabel) {
+                currentLabel.textContent = `Paso ${currentStep + 1} de ${steps.length}`;
+            }
+
+            if (currentStep === 2) {
+                setTimeout(function() {
+                    initMapOrigen();
+                    if (mapOrigen) {
+                        mapOrigen.invalidateSize();
+                    }
+                }, 180);
+            }
+
+            wizard.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
 
         indicators.forEach(indicator => {
             indicator.addEventListener('click', function() {
-                const target = Number(this.dataset.stepTarget);
-                if (target <= currentStep || validateCurrentStep()) {
+                const target = Number(this.getAttribute('data-wizard-go-to'));
+                if (target <= currentStep || validateUntil(target)) {
                     showStep(target);
                 }
             });
@@ -475,12 +735,33 @@
 
         prevBtn.addEventListener('click', () => showStep(currentStep - 1));
         nextBtn.addEventListener('click', () => {
-            if (validateCurrentStep()) {
+            if (validateStep(currentStep)) {
                 showStep(currentStep + 1);
             }
         });
 
-        document.querySelectorAll('.cert-mode').forEach(input => {
+        form.addEventListener('submit', function(event) {
+            for (let index = 0; index < steps.length; index++) {
+                if (!validateStep(index, false)) {
+                    event.preventDefault();
+                    showStep(index);
+                    validateStep(index, true);
+                    return;
+                }
+            }
+        });
+
+        Object.entries(serverErrors).forEach(([key, messages]) => {
+            const control = findControlByErrorKey(key);
+            if (!control) return;
+
+            setFieldError(control, messages[0]);
+            const stepIndex = getStepForField(key);
+            steps[stepIndex].classList.add('has-errors');
+            indicators[stepIndex].classList.add('has-errors');
+        });
+
+        wizard.querySelectorAll('.cert-mode').forEach(input => {
             input.addEventListener('change', function() {
                 const panel = document.getElementById('cert_file_' + this.dataset.cert);
                 if (panel) {
@@ -495,7 +776,6 @@
             const initialLat = {{ old('latitud_origen', $organico->latitud_origen ?? -17.7833) }};
             const initialLng = {{ old('longitud_origen', $organico->longitud_origen ?? -63.1821) }};
             const initialZoom = {{ isset($organico) && $organico->latitud_origen ? 12 : 6 }};
-            let markerOrigen = null;
 
             mapOrigen = L.map('map-origen').setView([initialLat, initialLng], initialZoom);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -567,14 +847,24 @@
         }
 
         const input = document.getElementById('imagenes-input');
+        const uploadZone = wizard.querySelector('[data-upload-zone]');
         const previewContainer = document.getElementById('preview-container');
         const countDisplay = document.getElementById('imagenes-count');
         const imagenesActuales = {{ isset($organico) && $organico->imagenes ? $organico->imagenes->count() : 0 }};
-        let imagenesNuevas = 0;
         let imagenesAEliminar = [];
-        let fileMap = new Map();
+        let selectedFiles = [];
 
-        document.querySelectorAll('.eliminar-imagen').forEach(btn => {
+        function refreshInputFiles() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(item => dataTransfer.items.add(item.file));
+            input.files = dataTransfer.files;
+        }
+
+        function liveExistingImagesCount() {
+            return imagenesActuales - imagenesAEliminar.length;
+        }
+
+        wizard.querySelectorAll('.eliminar-imagen').forEach(btn => {
             btn.addEventListener('click', function() {
                 const imagenId = this.getAttribute('data-imagen-id');
                 const imagenItem = this.closest('.imagen-item');
@@ -597,61 +887,114 @@
         });
 
         function updateCount() {
-            const total = imagenesActuales - imagenesAEliminar.length + imagenesNuevas;
-            countDisplay.textContent = 'Total de imagenes: ' + total + ' / 3';
-            countDisplay.className = total > 3 ? 'text-danger mt-2' : 'text-muted mt-2';
+            const total = liveExistingImagesCount() + selectedFiles.length;
+            countDisplay.textContent = 'Total de imágenes: ' + total + ' / 3';
+            uploadZone.classList.toggle('has-files', total > 0);
+
+            if (total > 3) {
+                countDisplay.className = 'maquinaria-upload-count text-danger mt-2';
+                countDisplay.textContent += ' (Excede el límite de 3 imágenes)';
+                input.setCustomValidity('Puedes publicar máximo 3 imágenes.');
+            } else {
+                countDisplay.className = 'maquinaria-upload-count text-muted mt-2';
+                input.setCustomValidity('');
+            }
+        }
+
+        function renderSelectedFiles() {
+            previewContainer.innerHTML = '';
+
+            selectedFiles.forEach((item, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-3';
+                col.setAttribute('data-file-id', item.id);
+                col.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${item.url}" alt="Preview ${index + 1}" class="img-thumbnail"
+                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 eliminar-preview"
+                            data-file-id="${item.id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                previewContainer.appendChild(col);
+            });
+
+            refreshInputFiles();
+            updateCount();
+        }
+
+        if (uploadZone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    uploadZone.classList.add('is-dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    uploadZone.classList.remove('is-dragover');
+                });
+            });
+
+            uploadZone.addEventListener('drop', function(event) {
+                const files = Array.from(event.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                const dataTransfer = new DataTransfer();
+                files.forEach(file => dataTransfer.items.add(file));
+                input.files = dataTransfer.files;
+                input.dispatchEvent(new Event('change', {
+                    bubbles: true
+                }));
+            });
         }
 
         input.addEventListener('change', function(e) {
-            previewContainer.innerHTML = '';
-            imagenesNuevas = 0;
-            fileMap.clear();
-
             const files = Array.from(e.target.files);
-            const maxFiles = 3 - (imagenesActuales - imagenesAEliminar.length);
+            const slots = Math.max(0, 3 - liveExistingImagesCount() - selectedFiles.length);
 
-            files.slice(0, maxFiles).forEach((file, index) => {
+            files.slice(0, slots).forEach((file, index) => {
                 if (!file.type.startsWith('image/')) return;
 
-                const fileId = Date.now() + '-' + index;
-                fileMap.set(fileId, file);
-
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const col = document.createElement('div');
-                    col.className = 'col-md-3 mb-3';
-                    col.setAttribute('data-file-id', fileId);
-                    col.innerHTML = `
-                        <div class="position-relative">
-                            <img src="${event.target.result}" alt="Preview ${index + 1}" class="img-thumbnail"
-                                style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 eliminar-preview"
-                                data-file-id="${fileId}">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `;
-                    previewContainer.appendChild(col);
-                    imagenesNuevas++;
-                    updateCount();
-
-                    col.querySelector('.eliminar-preview').addEventListener('click', function() {
-                        fileMap.delete(this.getAttribute('data-file-id'));
-                        const dataTransfer = new DataTransfer();
-                        fileMap.forEach(file => dataTransfer.items.add(file));
-                        input.files = dataTransfer.files;
-                        col.remove();
-                        imagenesNuevas--;
-                        updateCount();
-                    });
-                };
-                reader.readAsDataURL(file);
+                selectedFiles.push({
+                    id: Date.now() + '-' + index + '-' + file.name,
+                    file: file,
+                    url: URL.createObjectURL(file),
+                });
             });
 
-            updateCount();
+            renderSelectedFiles();
         });
 
-        updateCount();
-        showStep(0);
+        previewContainer.addEventListener('click', function(event) {
+            const button = event.target.closest('.eliminar-preview');
+            if (!button) return;
+
+            const fileId = button.getAttribute('data-file-id');
+            const removed = selectedFiles.find(item => item.id === fileId);
+            if (removed) {
+                URL.revokeObjectURL(removed.url);
+            }
+
+            selectedFiles = selectedFiles.filter(item => item.id !== fileId);
+            renderSelectedFiles();
+        });
+
+        const firstServerError = Object.keys(serverErrors)[0];
+        if (firstServerError) {
+            showStep(getStepForField(firstServerError));
+            errorSummary.textContent = 'Hay datos por corregir antes de guardar el producto orgánico.';
+            errorSummary.classList.remove('d-none');
+        } else {
+            showStep(0);
+        }
+
+        if (currentStep === 2) {
+            initMapOrigen();
+        }
+
+            updateCount();
     });
 </script>

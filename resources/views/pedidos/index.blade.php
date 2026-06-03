@@ -33,6 +33,8 @@
                                 proceso</option>
                             <option value="entregado" {{ request('estado') == 'entregado' ? 'selected' : '' }}>
                                 Entregado</option>
+                            <option value="finalizado" {{ request('estado') == 'finalizado' ? 'selected' : '' }}>
+                                Finalizado</option>
                             <option value="cancelado" {{ request('estado') == 'cancelado' ? 'selected' : '' }}>Cancelado
                             </option>
                         </select>
@@ -83,7 +85,7 @@
                                         $color = match ($estado) {
                                             'pendiente' => 'warning',
                                             'en_proceso' => 'info',
-                                            'entregado' => 'success',
+                                            'entregado', 'finalizado' => 'success',
                                             'cancelado' => 'danger',
                                             default => 'secondary',
                                         };

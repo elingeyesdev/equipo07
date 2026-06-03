@@ -1,0 +1,510 @@
+/* ==========================================================================
+   AGRO WIZARD - ESTILOS GLOBALES PARA FORMULARIOS PASO A PASO
+   ========================================================================== */
+:root {
+  --wizard-border: rgba(44, 91, 31, 0.14);
+  --wizard-panel: #ffffff;
+  --wizard-muted: #69766b;
+  --wizard-soft: #f6faf4;
+  --wizard-danger: #dc3545;
+  --wizard-text: #24311f;
+}
+
+.agro-wizard-page {
+  width: 100%;
+  padding: 1.25rem 0 2.5rem;
+}
+
+.agro-wizard-page__errors {
+  max-width: 1280px;
+  margin: 0 auto 1rem;
+  border: 0;
+  border-left: 4px solid var(--wizard-danger);
+  border-radius: .85rem;
+  box-shadow: 0 12px 26px rgba(220, 53, 69, 0.08);
+}
+
+.agro-wizard {
+  width: min(1280px, calc(100vw - 3rem));
+  max-width: 1280px;
+  margin-inline: auto;
+  color: var(--wizard-text);
+}
+
+.agro-wizard__shell {
+  padding: 1.65rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 253, 248, 0.98)), #fff;
+  border: 1px solid var(--wizard-border);
+  border-radius: 1rem;
+  box-shadow: 0 18px 45px rgba(31, 42, 27, 0.08);
+}
+
+.agro-wizard__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0 0 1rem;
+  margin-bottom: 1rem;
+  background: transparent;
+}
+
+.agro-wizard__eyebrow {
+  display: block;
+  color: var(--agro);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.agro-wizard__title {
+  display: flex;
+  align-items: center;
+  color: #172114;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.agro-wizard__title i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-right: .7rem !important;
+  color: #fff;
+  background: linear-gradient(135deg, var(--agro), var(--agro-700));
+  border-radius: .8rem;
+  box-shadow: 0 12px 24px rgba(63, 126, 42, 0.22);
+}
+
+.agro-wizard__subtitle {
+  color: var(--wizard-muted);
+  font-size: .95rem;
+}
+
+.agro-wizard__badge {
+  flex: 0 0 auto;
+  padding: .55rem .8rem;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(63, 126, 42, 0.14);
+}
+
+.agro-wizard__progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+  margin-bottom: .8rem;
+}
+
+.agro-wizard__step-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  min-height: 96px;
+  padding: .85rem;
+  text-align: left;
+  border: 1px solid rgba(44, 91, 31, 0.12);
+  border-radius: .85rem;
+  background: #fbfdf9;
+  color: #49574d;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.agro-wizard__step-indicator::after {
+  content: "";
+  position: absolute;
+  inset: auto .85rem 0;
+  height: 3px;
+  background: transparent;
+  border-radius: 999px 999px 0 0;
+  transition: background .2s ease;
+}
+
+.agro-wizard__step-indicator:hover {
+  transform: translateY(-1px);
+  background: #fff;
+  box-shadow: 0 12px 26px rgba(31, 42, 27, 0.07);
+}
+
+.agro-wizard__step-indicator.is-active {
+  background: #fff;
+  border-color: rgba(63, 126, 42, 0.34);
+  box-shadow: 0 16px 32px rgba(63, 126, 42, 0.12);
+}
+
+.agro-wizard__step-indicator.is-active::after {
+  background: linear-gradient(90deg, var(--agro), #79b65f);
+}
+
+.agro-wizard__step-indicator.is-complete {
+  background: #f5fbf2;
+  border-color: rgba(63, 126, 42, 0.22);
+}
+
+.agro-wizard__step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #e8f3e5;
+  color: var(--agro);
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.agro-wizard__step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--agro);
+  background: rgba(63, 126, 42, 0.09);
+  border-radius: .75rem;
+}
+
+.agro-wizard__step-indicator.is-active .agro-wizard__step-icon,
+.agro-wizard__step-indicator.is-complete .agro-wizard__step-icon {
+  color: #fff;
+  background: linear-gradient(135deg, var(--agro), var(--agro-700));
+}
+
+.agro-wizard__step-copy {
+  min-width: 0;
+}
+
+.agro-wizard__step-title {
+  display: block;
+  color: #1f2a1b;
+  font-size: .94rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.agro-wizard__step-description {
+  display: block;
+  color: var(--wizard-muted);
+  font-size: .78rem;
+  line-height: 1.25;
+  margin-top: .2rem;
+}
+
+.agro-wizard__step-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: .45rem;
+  padding: .18rem .48rem;
+  color: #667466;
+  background: #eef3ec;
+  border-radius: 999px;
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.agro-wizard__step-indicator.is-active .agro-wizard__step-status {
+  color: var(--agro-700);
+  background: rgba(63, 126, 42, 0.12);
+}
+
+.agro-wizard__step-indicator.is-complete .agro-wizard__step-status {
+  color: #fff;
+  background: var(--agro);
+}
+
+.agro-wizard__progressbar {
+  height: .55rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  background: #edf3ea;
+  border-radius: 999px;
+}
+
+.agro-wizard__progressbar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--agro), #82bd5f);
+  border-radius: inherit;
+  box-shadow: 0 8px 18px rgba(63, 126, 42, 0.22);
+  transition: width .32s ease;
+}
+
+.agro-wizard__error-summary {
+  margin-bottom: 1rem;
+  border: 0;
+  border-left: 4px solid var(--wizard-danger);
+  border-radius: .75rem;
+  box-shadow: 0 10px 24px rgba(220, 53, 69, 0.08);
+}
+
+.agro-wizard__content {
+  position: relative;
+  overflow: hidden;
+  background: var(--wizard-panel);
+  border: 1px solid rgba(44, 91, 31, 0.1);
+  border-radius: 1rem;
+}
+
+.agro-wizard-step {
+  display: none;
+  margin-bottom: 0 !important;
+  border: 0 !important;
+  border-radius: 1rem !important;
+  box-shadow: none !important;
+  animation-duration: .34s;
+  animation-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+.agro-wizard-step.is-active {
+  display: block;
+}
+
+.agro-wizard-step.is-forward { animation-name: agroWizardSlideForward; }
+.agro-wizard-step.is-backward { animation-name: agroWizardSlideBackward; }
+
+.agro-wizard-step > .card-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(180deg, #f9fcf7, #eef7ef) !important;
+  border-bottom: 1px solid rgba(44, 91, 31, 0.12);
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+.agro-wizard-step > .card-header > div {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: .28rem;
+}
+
+.agro-wizard-step > .card-header .card-title {
+  float: none !important;
+  display: block;
+  width: 100%;
+  margin: 0 !important;
+  color: #172114;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.agro-wizard-step > .card-header small {
+  display: block;
+  width: 100%;
+  margin: 0;
+  color: var(--wizard-muted) !important;
+  font-size: .82rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.agro-wizard-step > .card-header .badge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.agro-wizard-step > .card-body {
+  padding: 1.35rem;
+}
+
+.agro-wizard .form-group {
+  margin-bottom: 1.05rem;
+}
+
+.agro-wizard label {
+  color: #263522;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.agro-wizard .form-control {
+  min-height: 2.55rem;
+  border-color: rgba(44, 91, 31, 0.16);
+  border-radius: .65rem;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.agro-wizard textarea.form-control {
+  min-height: 132px;
+  max-height: 260px;
+  resize: vertical;
+  overflow-y: auto;
+}
+
+.agro-wizard .form-control:focus {
+  border-color: rgba(63, 126, 42, 0.55);
+  box-shadow: 0 0 0 .2rem rgba(63, 126, 42, 0.12);
+}
+
+.agro-wizard .input-group-text {
+  border-color: rgba(44, 91, 31, 0.16);
+  border-radius: .65rem 0 0 .65rem;
+  background: #f2f7ef;
+  color: var(--agro-700);
+  font-weight: 700;
+}
+
+.agro-wizard__map {
+  min-height: 400px;
+  border-color: rgba(44, 91, 31, 0.14) !important;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.agro-wizard__location-detail {
+  padding: 1rem;
+  background: #fafff8;
+  border: 1px solid rgba(44, 91, 31, 0.12);
+  border-radius: .75rem;
+  box-shadow: 0 8px 18px rgba(31, 42, 27, 0.05);
+}
+
+.agro-wizard__actions {
+  position: sticky;
+  bottom: .75rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 0;
+  margin-bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 26%);
+  border: 0;
+}
+
+.agro-wizard__action-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .65rem;
+  flex-wrap: wrap;
+}
+
+.agro-wizard__actions .btn {
+  min-height: 2.6rem;
+  padding-inline: 1rem;
+  border-radius: .65rem;
+  font-weight: 700;
+}
+
+.agro-wizard__actions .btn-success {
+  box-shadow: 0 12px 22px rgba(63, 126, 42, 0.2);
+}
+
+.agro-wizard__actions .btn-outline-secondary {
+  background: #fff;
+  border-color: rgba(108, 117, 125, 0.28);
+}
+
+.wizard-field-error {
+  display: block;
+  margin-top: .35rem;
+  color: var(--wizard-danger);
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.agro-wizard .is-invalid {
+  border-color: var(--wizard-danger) !important;
+}
+
+/* === ZONA UPLOAD (DRAG & DROP) === */
+.agro-upload-input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+
+.agro-upload-zone {
+  display: flex; align-items: center; gap: 1rem; width: 100%; min-height: 128px;
+  padding: 1.25rem; margin: 0; color: #263522;
+  background: linear-gradient(180deg, #fbfdf9 0%, #f5fbf2 100%);
+  border: 2px dashed rgba(63, 126, 42, 0.28); border-radius: 1rem;
+  cursor: pointer; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.agro-upload-zone:hover, .agro-upload-zone.is-dragover {
+  background: #fff; border-color: rgba(63, 126, 42, 0.62);
+  box-shadow: 0 16px 32px rgba(63, 126, 42, 0.12); transform: translateY(-1px);
+}
+
+.agro-upload-zone.has-files { border-style: solid; background: #f7fcf4; }
+.agro-upload-zone.is-invalid { border-color: #dc3545; }
+
+.agro-upload-zone__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 3.25rem; width: 3.25rem; height: 3.25rem; color: #fff;
+  background: linear-gradient(135deg, var(--agro), var(--agro-700));
+  border-radius: 1rem; box-shadow: 0 14px 28px rgba(63, 126, 42, 0.2); font-size: 1.35rem;
+}
+
+.agro-upload-zone__content { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; }
+.agro-upload-zone__content strong { color: #172114; font-size: 1rem; line-height: 1.25; }
+.agro-upload-zone__content small { margin-top: .28rem; color: #6b776b; font-size: .86rem; line-height: 1.35; }
+
+.agro-upload-zone__cta {
+  flex: 0 0 auto; padding: .62rem .85rem; color: var(--agro-700); background: #fff;
+  border: 1px solid rgba(63, 126, 42, 0.2); border-radius: .7rem; font-size: .84rem; font-weight: 800;
+  box-shadow: 0 8px 18px rgba(31, 42, 27, 0.06);
+}
+
+.agro-upload-count {
+  display: inline-flex; align-items: center; width: fit-content; min-height: 2rem;
+  padding: .42rem .7rem; color: #5f6d60; background: #f1f6ef; border-radius: 999px; font-weight: 700;
+}
+
+.agro-wizard #preview-container .img-thumbnail,
+.agro-wizard #imagenes-actuales .img-thumbnail {
+  border: 1px solid rgba(63, 126, 42, 0.14); box-shadow: 0 10px 20px rgba(31, 42, 27, 0.08);
+}
+.agro-wizard #preview-container > [class*="col-"],
+.agro-wizard #imagenes-actuales > [class*="col-"] { position: relative; padding-right: .75rem; padding-left: .75rem; }
+.agro-wizard #preview-container .position-relative,
+.agro-wizard #imagenes-actuales .position-relative { overflow: hidden; border-radius: .65rem; }
+
+.agro-wizard .eliminar-preview, .agro-wizard .eliminar-imagen {
+  top: .45rem !important; right: .45rem !important; z-index: 3; display: inline-flex;
+  align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0;
+  border: 2px solid #fff; border-radius: .6rem; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes agroWizardSlideForward { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes agroWizardSlideBackward { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (min-width: 1400px) { .agro-wizard { width: min(1320px, calc(100vw - 4rem)); max-width: 1320px; } }
+@media (max-width: 1199.98px) { .agro-wizard { max-width: 100%; } }
+@media (max-width: 991.98px) { .agro-wizard__progress { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 767.98px) {
+  .agro-wizard-page { padding: .75rem 0 1.5rem; }
+  .agro-wizard { width: min(100%, calc(100vw - 1.5rem)); }
+  .agro-wizard__shell { padding: .9rem; border-radius: .85rem;}
+  .agro-wizard__hero { align-items: stretch; flex-direction: column; }
+  .agro-wizard__title { font-size: 1.25rem; }
+  .agro-wizard__progress { grid-template-columns: 1fr; }
+  .agro-wizard__step-indicator { min-height: auto; }
+  .agro-wizard__step-description { display: none; }
+  .agro-wizard-step > .card-header { flex-direction: column; gap: .65rem; padding: 1rem; }
+  .agro-wizard-step > .card-header .badge { align-self: flex-start; }
+  .agro-wizard-step > .card-body { padding: 1rem; }
+  .agro-wizard__map { min-height: 320px; }
+  .agro-wizard__actions { position: static; flex-direction: column; align-items: stretch;}
+  .agro-wizard__action-group, .agro-wizard__actions .btn { width: 100%; }
+  .agro-wizard__action-group .btn { flex: 1 1 100%; }
+  .agro-upload-zone { align-items: flex-start; flex-direction: column; min-height: 0; padding: 1rem; }
+  .agro-upload-zone__cta { width: 100%; text-align: center; }
+}

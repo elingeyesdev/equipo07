@@ -347,6 +347,7 @@ class HomeController extends Controller
             'tipoAnimal',
             'raza',
             'datoSanitario',
+            'datosSanitarios',
             'imagenes',
             'ubicacionGanado.ubicacionGeografica',
             'datoProductivo.tipoPeso',

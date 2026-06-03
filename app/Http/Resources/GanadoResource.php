@@ -55,6 +55,7 @@ class GanadoResource extends JsonResource
                 'nombre' => $this->raza?->nombre,
             ]),
             'dato_sanitario' => $this->whenLoaded('datoSanitario', fn () => $this->datoSanitario),
+            'datos_sanitarios' => $this->whenLoaded('datosSanitarios', fn () => $this->datosSanitarios),
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user?->id,
                 'name' => $this->user?->name,
@@ -67,4 +68,3 @@ class GanadoResource extends JsonResource
         ];
     }
 }
-

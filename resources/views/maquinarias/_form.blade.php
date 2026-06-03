@@ -74,7 +74,7 @@
                 <h3 class="card-title mb-0">
                     <i class="fas fa-tractor mr-2"></i> Datos de la maquinaria
                 </h3>
-                <small class="text-muted">Identificación, categoría, tipo, marca y modelo.</small>
+                <small class="text-muted">Identificación, tipo, marca y modelo.</small>
             </div>
             <span class="badge badge-success">Paso 1 de {{ count($wizardSteps) }}</span>
         </div>
@@ -93,19 +93,8 @@
                             value="{{ old('nombre', $maquinaria->nombre ?? '') }}" required>
                     </div>
 
-                    <div class="form-group">
-                        <label class="mb-1">Categoría *</label>
-                        <select name="categoria_id" class="form-control @error('categoria_id') is-invalid @enderror"
-                            required>
-                            <option value="">Seleccione una categoría</option>
-                            @foreach ($categorias as $categoria)
-                                <option value="{{ $categoria->id }}"
-                                    {{ old('categoria_id', $maquinaria->categoria_id ?? '') == $categoria->id ? 'selected' : '' }}>
-                                    {{ $categoria->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <input type="hidden" name="categoria_id"
+                        value="{{ old('categoria_id', $maquinaria->categoria_id ?? ($categoriaMaquinaria->id ?? '')) }}">
 
                     <div class="form-group mb-md-0">
                         <label class="mb-1">Tipo de Maquinaria *</label>
@@ -171,39 +160,69 @@
                     </div>
 
                     <div class="form-group mb-md-0">
-                        <label class="mb-1">Precio por día *</label>
-                        <div class="input-group">
+                        <label class="mb-1">Tarifa por hora *</label>
+                        <input type="hidden" name="tarifa_unidad" value="hora">
+                        <div class="input-group maquinaria-hourly-rate">
                             <div class="input-group-prepend">
-                                <span class="input-group-text">Bs/día</span>
+                                <span class="input-group-text">Bs/hora</span>
                             </div>
                             <input type="number" step="0.01" name="precio_dia"
                                 class="form-control @error('precio_dia') is-invalid @enderror" placeholder="0.00"
-                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required>
+                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required
+                                data-hourly-price>
                         </div>
                         <small class="form-text text-muted">
-                            Monto a cobrar por cada día de alquiler.
+                            Ingresa el costo de una hora de alquiler. El estimado diario se calcula abajo.
                         </small>
+
+                        <div class="maquinaria-price-info mt-3" data-price-day-info>
+                            <div class="maquinaria-price-info__icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div class="maquinaria-price-info__body">
+                                <div class="maquinaria-price-info__header">
+                                    <span>Estimación por día</span>
+                                    <strong data-day-price-result>Bs 0.00</strong>
+                                </div>
+                                <div class="maquinaria-price-info__controls">
+                                    <label for="horas-dia-estimadas" class="mb-0">Horas de trabajo al día</label>
+                                    <input type="number" id="horas-dia-estimadas" class="form-control"
+                                        min="1" max="24" step="1" value="8" data-hours-per-day>
+                                </div>
+                                <small data-day-price-detail>
+                                    Calculado con Bs 0.00 por hora durante 8 horas.
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="mb-1">Estado *</label>
-                        <select name="estado_maquinaria_id"
-                            class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
-                            <option value="">Seleccione un estado</option>
-                            @foreach ($estado_maquinarias as $estado)
-                                <option value="{{ $estado->id }}"
-                                    {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
-                                    {{ $estado->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @if (isset($maquinaria))
+                            <select name="estado_maquinaria_id"
+                                class="form-control @error('estado_maquinaria_id') is-invalid @enderror" required>
+                                <option value="">Seleccione un estado</option>
+                                @foreach ($estado_maquinarias as $estado)
+                                    <option value="{{ $estado->id }}"
+                                        {{ old('estado_maquinaria_id', $maquinaria->estado_maquinaria_id ?? '') == $estado->id ? 'selected' : '' }}>
+                                        {{ $estado->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="hidden" name="estado_maquinaria_id"
+                                value="{{ old('estado_maquinaria_id', $estadoDisponible->id ?? '') }}">
+                            <select class="form-control @error('estado_maquinaria_id') is-invalid @enderror" disabled>
+                                <option selected>{{ $estadoDisponible ? ucfirst(str_replace('_', ' ', $estadoDisponible->nombre)) : 'Disponible' }}</option>
+                            </select>
+                        @endif
                     </div>
 
                     <div class="form-group mb-0">
                         <label class="mb-1">Descripción</label>
-                        <textarea name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" rows="4"
+                        <textarea name="descripcion" class="form-control maquinaria-rental-description @error('descripcion') is-invalid @enderror" rows="6" style="resize: none;"
                             placeholder="Condiciones de uso, características técnicas, recomendaciones, etc.">{{ old('descripcion', $maquinaria->descripcion ?? '') }}</textarea>
                     </div>
                 </div>
@@ -226,8 +245,29 @@
         <div class="card-body">
             <div class="form-group mb-3">
                 <label class="mb-1">Ubicación (seleccione en el mapa)</label>
-                <div id="map" class="maquinaria-wizard__map"
-                    style="height: 400px; margin-top: 10px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                <div class="maquinaria-location-search mb-2">
+                    <div class="maquinaria-location-search__bar">
+                        <span class="maquinaria-location-search__icon">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="search" id="buscar-ubicacion" class="form-control"
+                            placeholder="Buscar dirección, zona o ciudad">
+                        <button type="button" class="maquinaria-location-search__submit" id="btn-buscar-ubicacion">
+                            Buscar
+                        </button>
+                    </div>
+                    <button type="button" class="maquinaria-location-search__current" id="btn-ubicacion-actual">
+                        <i class="fas fa-location-arrow mr-1"></i> Usar mi ubicación actual
+                    </button>
+                    <div id="sugerencias-ubicacion" class="maquinaria-location-suggestions" style="display: none;"></div>
+                </div>
+                <div class="maquinaria-map-shell">
+                    <button type="button" class="maquinaria-map-expand" id="btn-expandir-mapa">
+                        <i class="fas fa-expand-alt mr-1"></i> Ver mapa grande
+                    </button>
+                    <div id="map" class="maquinaria-wizard__map"
+                        style="height: 400px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    </div>
                 </div>
 
                 <input type="hidden" name="latitud" id="latitud"
@@ -246,6 +286,12 @@
                 <input type="text" id="ubicacion" name="ubicacion"
                     class="form-control mt-2 @error('ubicacion') is-invalid @enderror"
                     value="{{ old('ubicacion', $maquinaria->ubicacion ?? '') }}" readonly>
+                <button type="button" class="btn btn-success btn-sm mt-2" id="btn-confirmar-ubicacion">
+                    <i class="fas fa-check mr-1"></i> Confirmar ubicación
+                </button>
+                <small id="ubicacion-confirmada" class="form-text text-success" style="display: none;">
+                    Ubicación confirmada.
+                </small>
             </div>
 
             <div id="info-ubicacion" class="maquinaria-wizard__location-detail mt-2"
@@ -313,15 +359,21 @@
                         <div class="row" id="imagenes-actuales">
                             @foreach ($maquinaria->imagenes as $imagen)
                                 <div class="col-md-3 mb-3 imagen-item" data-imagen-id="{{ $imagen->id }}">
-                                    <div class="position-relative">
+                                    <div class="mb-2">
                                         <img src="{{ asset('storage/' . $imagen->ruta) }}"
                                             alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
                                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                        <button type="button"
-                                            class="btn btn-sm btn-danger position-absolute eliminar-imagen"
+                                    </div>
+                                    <div class="btn-group btn-group-sm d-flex" role="group">
+                                        <button type="button" class="btn btn-outline-danger eliminar-imagen"
                                             data-imagen-id="{{ $imagen->id }}">
-                                            <i class="fas fa-times"></i>
+                                            <i class="fas fa-trash mr-1"></i> Eliminar
                                         </button>
+                                        <label class="btn btn-outline-success mb-0">
+                                            <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
+                                                {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
+                                            Portada
+                                        </label>
                                     </div>
                                     <input type="hidden" name="imagenes_eliminar[]" value=""
                                         class="imagen-eliminar-input">
@@ -376,6 +428,131 @@
     </div>
 </div>
 
+<div class="modal fade maquinaria-map-modal" id="maquinariaMapModal" tabindex="-1" role="dialog"
+    aria-labelledby="maquinariaMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="maquinariaMapModalLabel">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Seleccionar ubicación
+                    </h5>
+                    <small>Haz clic sobre el mapa para marcar el punto exacto de la maquinaria.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="map-maquinaria-modal" class="maquinaria-map-modal__map"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal">
+                    <i class="fas fa-check mr-1"></i> Usar esta ubicación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade maquinaria-publication-preview" id="maquinariaPublicationPreviewModal" tabindex="-1"
+    role="dialog" aria-labelledby="maquinariaPublicationPreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="maquinaria-publication-preview__eyebrow">Vista previa de publicación</span>
+                    <h5 class="modal-title" id="maquinariaPublicationPreviewLabel">
+                        Revisa cómo se verá tu maquinaria
+                    </h5>
+                    <small>Confirma si los datos están correctos o vuelve para editarlos antes de publicar.</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="maquinaria-publication-preview__layout">
+                    <div class="maquinaria-publication-preview__media" data-publication-preview-media>
+                        <img src="" alt="Vista previa de maquinaria" data-publication-preview-image>
+                        <div class="maquinaria-publication-preview__empty" data-publication-preview-empty>
+                            <i class="fas fa-image"></i>
+                            <span>Sin imagen seleccionada</span>
+                        </div>
+                    </div>
+                    <div class="maquinaria-publication-preview__info">
+                        <h3 data-publication-preview-name>Nombre de la maquinaria</h3>
+                        <div class="maquinaria-publication-preview__badges">
+                            <span data-publication-preview-type>Tipo</span>
+                            <span data-publication-preview-brand>Marca</span>
+                            <span data-publication-preview-status>Estado</span>
+                        </div>
+                        <div class="maquinaria-publication-preview__price">
+                            <small>Tarifa</small>
+                            <strong data-publication-preview-price>Bs 0.00/hora</strong>
+                        </div>
+                        <dl class="maquinaria-publication-preview__details">
+                            <div>
+                                <dt>Modelo</dt>
+                                <dd data-publication-preview-model>-</dd>
+                            </div>
+                            <div>
+                                <dt>Categoría</dt>
+                                <dd data-publication-preview-category>-</dd>
+                            </div>
+                            <div>
+                                <dt>Teléfono</dt>
+                                <dd data-publication-preview-phone>-</dd>
+                            </div>
+                            <div>
+                                <dt>Estimado diario</dt>
+                                <dd data-publication-preview-day-price>-</dd>
+                            </div>
+                            <div>
+                                <dt>Ubicación</dt>
+                                <dd data-publication-preview-location>-</dd>
+                            </div>
+                            <div>
+                                <dt>Ciudad / Municipio</dt>
+                                <dd data-publication-preview-city>-</dd>
+                            </div>
+                            <div>
+                                <dt>Provincia</dt>
+                                <dd data-publication-preview-province>-</dd>
+                            </div>
+                            <div>
+                                <dt>Departamento</dt>
+                                <dd data-publication-preview-department>-</dd>
+                            </div>
+                            <div>
+                                <dt>Coordenadas</dt>
+                                <dd data-publication-preview-coordinates>-</dd>
+                            </div>
+                            <div>
+                                <dt>Imágenes</dt>
+                                <dd data-publication-preview-images-count>-</dd>
+                            </div>
+                        </dl>
+                        <div class="maquinaria-publication-preview__description">
+                            <span>Descripción</span>
+                            <p data-publication-preview-description>Sin descripción.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-edit mr-1"></i> Editar datos
+                </button>
+                <button type="button" class="btn btn-success" data-publication-preview-confirm>
+                    <i class="fas fa-check mr-1"></i> Confirmar publicación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ========== LEAFLET ========== --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -395,17 +572,29 @@
     }).addTo(map);
 
     var marker;
+    var modalMap;
+    var modalMarker;
+    var locationSearchTimer = null;
+    var lastLocationQuery = '';
+    var locationSearchAbort = null;
+    var locationSearchCache = {};
 
     // Si hay coordenadas existentes, mostrar el marcador
     @if (isset($maquinaria) && $maquinaria->latitud && $maquinaria->longitud)
         marker = L.marker([initialLat, initialLng]).addTo(map);
     @endif
 
-    // Evento click en mapa
-    map.on('click', function(e) {
-        var lat = e.latlng.lat.toFixed(7);
-        var lng = e.latlng.lng.toFixed(7);
+    function syncModalMarker(lat, lng) {
+        if (!modalMap) return;
 
+        if (modalMarker) {
+            modalMarker.setLatLng([lat, lng]);
+        } else {
+            modalMarker = L.marker([lat, lng]).addTo(modalMap);
+        }
+    }
+
+    function setMapLocation(lat, lng, label, zoom) {
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
@@ -414,10 +603,201 @@
 
         document.getElementById('latitud').value = lat;
         document.getElementById('longitud').value = lng;
-        document.getElementById('ubicacion').value = "Lat: " + lat + " - Lng: " + lng;
+        document.getElementById('ubicacion').value = label || ("Lat: " + lat + " - Lng: " + lng);
+        document.getElementById('ubicacion-confirmada').style.display = 'none';
 
-        // Obtener información geográfica
+        if (zoom) {
+            map.setView([lat, lng], zoom);
+        }
+
+        syncModalMarker(lat, lng);
         obtenerInformacionGeografica(lat, lng);
+    }
+
+    // Evento click en mapa
+    map.on('click', function(e) {
+        var lat = e.latlng.lat.toFixed(7);
+        var lng = e.latlng.lng.toFixed(7);
+
+        setMapLocation(lat, lng, null);
+    });
+
+    function renderLocationSuggestions(results) {
+        var container = document.getElementById('sugerencias-ubicacion');
+        container.innerHTML = '';
+
+        if (!results.length) {
+            container.style.display = 'none';
+            return;
+        }
+
+        results.forEach(function(result) {
+            var option = document.createElement('button');
+            var pin = document.createElement('span');
+            var copy = document.createElement('span');
+            var title = document.createElement('strong');
+            var detail = document.createElement('small');
+
+            option.type = 'button';
+            option.className = 'maquinaria-location-suggestions__item';
+            pin.className = 'maquinaria-location-suggestions__pin';
+            pin.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+            copy.className = 'maquinaria-location-suggestions__copy';
+            title.textContent = result.display_name.split(',')[0] || 'Ubicación encontrada';
+            detail.textContent = result.display_name;
+            copy.appendChild(title);
+            copy.appendChild(detail);
+            option.appendChild(pin);
+            option.appendChild(copy);
+            option.addEventListener('click', function() {
+                var lat = Number(result.lat).toFixed(7);
+                var lng = Number(result.lon).toFixed(7);
+                container.style.display = 'none';
+                document.getElementById('buscar-ubicacion').value = result.display_name;
+                setMapLocation(lat, lng, result.display_name, 14);
+            });
+            container.appendChild(option);
+        });
+
+        container.style.display = 'block';
+    }
+
+    function buscarUbicacion(force) {
+        var input = document.getElementById('buscar-ubicacion');
+        var query = input.value.trim();
+        var suggestions = document.getElementById('sugerencias-ubicacion');
+
+        if (query.length < 3) {
+            suggestions.style.display = 'none';
+            return;
+        }
+
+        if (!force && query === lastLocationQuery) {
+            return;
+        }
+
+        lastLocationQuery = query;
+
+        if (locationSearchCache[query]) {
+            renderLocationSuggestions(locationSearchCache[query]);
+            return;
+        }
+
+        if (locationSearchAbort) {
+            locationSearchAbort.abort();
+        }
+
+        locationSearchAbort = new AbortController();
+
+        fetch('/api/geocodificacion/buscar?q=' + encodeURIComponent(query), {
+                signal: locationSearchAbort.signal
+            })
+            .then(response => response.json())
+            .then(data => {
+                var results = data.success ? data.data : [];
+                locationSearchCache[query] = results;
+                renderLocationSuggestions(results);
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    console.error('Error al buscar ubicación:', error);
+                }
+            });
+    }
+
+    document.getElementById('buscar-ubicacion').addEventListener('input', function() {
+        clearTimeout(locationSearchTimer);
+        locationSearchTimer = setTimeout(function() {
+            buscarUbicacion(false);
+        }, 700);
+    });
+
+    document.getElementById('buscar-ubicacion').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            clearTimeout(locationSearchTimer);
+            buscarUbicacion(true);
+        }
+    });
+
+    document.getElementById('btn-buscar-ubicacion').addEventListener('click', function() {
+        clearTimeout(locationSearchTimer);
+        buscarUbicacion(true);
+    });
+
+    document.getElementById('btn-ubicacion-actual').addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('Tu navegador no permite obtener la ubicación actual.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude.toFixed(7);
+            var lng = position.coords.longitude.toFixed(7);
+            setMapLocation(lat, lng, null, 14);
+        }, function() {
+            alert('No se pudo obtener tu ubicación actual.');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000
+        });
+    });
+
+    var expandMapButton = document.getElementById('btn-expandir-mapa');
+
+    function ensureModalMap() {
+        var selectedLat = parseFloat(document.getElementById('latitud').value) || map.getCenter().lat;
+        var selectedLng = parseFloat(document.getElementById('longitud').value) || map.getCenter().lng;
+        var selectedZoom = map.getZoom() || 14;
+
+        if (!modalMap) {
+            modalMap = L.map('map-maquinaria-modal').setView([selectedLat, selectedLng], selectedZoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'OpenStreetMap'
+            }).addTo(modalMap);
+
+            modalMap.on('click', function(e) {
+                var lat = e.latlng.lat.toFixed(7);
+                var lng = e.latlng.lng.toFixed(7);
+                setMapLocation(lat, lng, null, 14);
+                modalMap.setView([lat, lng], 14);
+            });
+        } else {
+            modalMap.setView([selectedLat, selectedLng], selectedZoom);
+        }
+
+        if (document.getElementById('latitud').value && document.getElementById('longitud').value) {
+            syncModalMarker(selectedLat, selectedLng);
+        }
+
+        setTimeout(function() {
+            modalMap.invalidateSize();
+        }, 220);
+    }
+
+    if (expandMapButton) {
+        expandMapButton.addEventListener('click', function() {
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#maquinariaMapModal').modal('show');
+                setTimeout(ensureModalMap, 350);
+            } else {
+                document.getElementById('maquinariaMapModal').style.display = 'block';
+                ensureModalMap();
+            }
+        });
+    }
+
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        $('#maquinariaMapModal').on('shown.bs.modal', ensureModalMap);
+    }
+
+    document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function() {
+        if (!document.getElementById('latitud').value || !document.getElementById('longitud').value) {
+            alert('Primero selecciona una ubicación en el mapa.');
+            return;
+        }
+
+        document.getElementById('ubicacion-confirmada').style.display = 'block';
     });
 
     // Función para obtener información geográfica
@@ -485,8 +865,13 @@
         const errorSummary = wizard.querySelector('[data-wizard-error-summary]');
         const progressBar = wizard.querySelector('[data-wizard-progressbar]');
         const currentLabel = wizard.querySelector('[data-wizard-current-label]');
+        const hourlyPriceInput = wizard.querySelector('[data-hourly-price]');
+        const hoursPerDayInput = wizard.querySelector('[data-hours-per-day]');
+        const dayPriceResult = wizard.querySelector('[data-day-price-result]');
+        const dayPriceDetail = wizard.querySelector('[data-day-price-detail]');
         const serverErrors = @json($errors->messages());
         let currentStep = 0;
+        let allowSubmit = false;
 
         form.setAttribute('novalidate', 'novalidate');
 
@@ -498,6 +883,7 @@
             modelo: 0,
             telefono: 1,
             precio_dia: 1,
+            tarifa_unidad: 1,
             estado_maquinaria_id: 1,
             descripcion: 1,
             ubicacion: 2,
@@ -509,6 +895,7 @@
             ciudad: 2,
             imagenes: 3,
             imagenes_eliminar: 3,
+            imagen_portada: 3,
         };
 
         function normalizeFieldName(name) {
@@ -577,6 +964,29 @@
             if (feedback && feedback.classList.contains('wizard-field-error')) {
                 feedback.textContent = '';
             }
+        }
+
+        function bolivianoAmount(value) {
+            return `Bs ${value.toLocaleString('es-BO', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+
+        function updateDayPriceEstimate() {
+            if (!hourlyPriceInput || !hoursPerDayInput || !dayPriceResult || !dayPriceDetail) return;
+
+            const hourlyPrice = Math.max(parseFloat(hourlyPriceInput.value) || 0, 0);
+            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput.value, 10) || 1, 1), 24);
+            const dayPrice = hourlyPrice * hoursPerDay;
+
+            if (String(hoursPerDayInput.value) !== String(hoursPerDay)) {
+                hoursPerDayInput.value = hoursPerDay;
+            }
+
+            dayPriceResult.textContent = bolivianoAmount(dayPrice);
+            dayPriceDetail.textContent =
+                `Calculado con ${bolivianoAmount(hourlyPrice)} por hora durante ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}.`;
         }
 
         function validateStep(index, shouldFocus = true) {
@@ -709,16 +1119,39 @@
             }
         });
 
+        if (hourlyPriceInput && hoursPerDayInput) {
+            hourlyPriceInput.addEventListener('input', updateDayPriceEstimate);
+            hoursPerDayInput.addEventListener('input', updateDayPriceEstimate);
+            updateDayPriceEstimate();
+        }
+
         form.addEventListener('submit', function(event) {
+            if (allowSubmit) {
+                return;
+            }
+
+            event.preventDefault();
+
             for (let index = 0; index < steps.length; index++) {
                 if (!validateStep(index, false)) {
-                    event.preventDefault();
                     showStep(index);
                     validateStep(index, true);
                     return;
                 }
             }
+
+            openPublicationPreview();
         });
+
+        const publicationConfirmButton = document.querySelector('[data-publication-preview-confirm]');
+        if (publicationConfirmButton) {
+            publicationConfirmButton.addEventListener('click', function() {
+                allowSubmit = true;
+                publicationConfirmButton.disabled = true;
+                publicationConfirmButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+                form.submit();
+            });
+        }
 
         Object.entries(serverErrors).forEach(([key, messages]) => {
             const control = findControlByErrorKey(key);
@@ -745,9 +1178,174 @@
         const countDisplay = document.getElementById('imagenes-count');
         const imagenesActuales =
             {{ isset($maquinaria) && $maquinaria->imagenes ? $maquinaria->imagenes->count() : 0 }};
-        let imagenesNuevas = 0;
         let imagenesAEliminar = [];
-        let fileMap = new Map();
+        let selectedFiles = [];
+
+        function fieldValue(name) {
+            const control = form.querySelector(`[name="${name}"]`);
+            return control ? control.value.trim() : '';
+        }
+
+        function selectedText(name, fallbackSelector = null) {
+            const control = form.querySelector(`select[name="${name}"]`) ||
+                (fallbackSelector ? form.querySelector(fallbackSelector) : null);
+
+            if (!control) return '-';
+            const option = control.options[control.selectedIndex];
+            return option ? option.textContent.trim() : '-';
+        }
+
+        function setPreviewText(selector, value, fallback = '-') {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.textContent = value && String(value).trim() ? value : fallback;
+            }
+        }
+
+        function coverImageUrl() {
+            const checkedCover = form.querySelector('input[name="imagen_portada"]:checked');
+
+            if (checkedCover && checkedCover.value.startsWith('new:')) {
+                const index = Number(checkedCover.value.replace('new:', ''));
+                return selectedFiles[index] ? selectedFiles[index].url : '';
+            }
+
+            if (checkedCover && checkedCover.value.startsWith('existing:')) {
+                const imageId = checkedCover.value.replace('existing:', '');
+                const item = form.querySelector(`.imagen-item[data-imagen-id="${imageId}"]`);
+                if (item && !imagenesAEliminar.includes(imageId)) {
+                    const image = item.querySelector('img');
+                    return image ? image.src : '';
+                }
+            }
+
+            if (selectedFiles.length > 0) {
+                return selectedFiles[0].url;
+            }
+
+            const existingImage = Array.from(form.querySelectorAll('.imagen-item'))
+                .find(item => !imagenesAEliminar.includes(item.getAttribute('data-imagen-id')));
+
+            return existingImage ? existingImage.querySelector('img')?.src || '' : '';
+        }
+
+        function buildPublicationPreview() {
+            const price = Math.max(parseFloat(fieldValue('precio_dia')) || 0, 0);
+            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput?.value, 10) || 1, 1), 24);
+            const dayPrice = price * hoursPerDay;
+            const imageUrl = coverImageUrl();
+            const previewImage = document.querySelector('[data-publication-preview-image]');
+            const previewEmpty = document.querySelector('[data-publication-preview-empty]');
+            const visibleImagesCount = liveExistingImagesCount() + selectedFiles.length;
+            const lat = fieldValue('latitud');
+            const lng = fieldValue('longitud');
+
+            setPreviewText('[data-publication-preview-name]', fieldValue('nombre'), 'Nombre de la maquinaria');
+            setPreviewText('[data-publication-preview-type]', selectedText('tipo_maquinaria_id'), 'Tipo');
+            setPreviewText('[data-publication-preview-brand]', selectedText('marca_maquinaria_id'), 'Marca');
+            setPreviewText(
+                '[data-publication-preview-status]',
+                selectedText('estado_maquinaria_id', '[data-wizard-step="1"] select[disabled]'),
+                'Disponible'
+            );
+            setPreviewText('[data-publication-preview-price]', `${bolivianoAmount(price)}/hora`, 'Bs 0.00/hora');
+            setPreviewText('[data-publication-preview-model]', fieldValue('modelo'), 'Sin modelo');
+            setPreviewText('[data-publication-preview-category]', 'Maquinaria agrícola', 'Maquinaria agrícola');
+            setPreviewText('[data-publication-preview-phone]', fieldValue('telefono'), 'Sin teléfono');
+            setPreviewText(
+                '[data-publication-preview-day-price]',
+                `${bolivianoAmount(dayPrice)} por ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}`,
+                '-'
+            );
+            setPreviewText('[data-publication-preview-location]', fieldValue('ubicacion'), 'Sin ubicación seleccionada');
+            setPreviewText('[data-publication-preview-city]', fieldValue('ciudad') || fieldValue('municipio'), 'Sin ciudad o municipio');
+            setPreviewText('[data-publication-preview-province]', fieldValue('provincia'), 'Sin provincia');
+            setPreviewText('[data-publication-preview-department]', fieldValue('departamento'), 'Sin departamento');
+            setPreviewText('[data-publication-preview-coordinates]', lat && lng ? `${lat}, ${lng}` : '', 'Sin coordenadas');
+            setPreviewText(
+                '[data-publication-preview-images-count]',
+                `${visibleImagesCount} ${visibleImagesCount === 1 ? 'imagen' : 'imágenes'} cargadas`,
+                'Sin imágenes'
+            );
+            setPreviewText('[data-publication-preview-description]', fieldValue('descripcion'), 'Sin descripción.');
+
+            if (previewImage && previewEmpty) {
+                previewImage.classList.toggle('d-none', !imageUrl);
+                previewEmpty.classList.toggle('d-none', Boolean(imageUrl));
+                if (imageUrl) {
+                    previewImage.src = imageUrl;
+                }
+            }
+        }
+
+        function openPublicationPreview() {
+            buildPublicationPreview();
+
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#maquinariaPublicationPreviewModal').modal('show');
+            }
+        }
+
+        function refreshInputFiles() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(item => dataTransfer.items.add(item.file));
+            input.files = dataTransfer.files;
+        }
+
+        function liveExistingImagesCount() {
+            return imagenesActuales - imagenesAEliminar.length;
+        }
+
+        function ensureCoverSelection() {
+            const checked = form.querySelector('input[name="imagen_portada"]:checked');
+            if (checked && !(checked.value.startsWith('existing:') && imagenesAEliminar.includes(checked.value.replace('existing:', '')))) {
+                return;
+            }
+
+            const firstExisting = Array.from(form.querySelectorAll('input[name="imagen_portada"][value^="existing:"]'))
+                .find(radio => !imagenesAEliminar.includes(radio.value.replace('existing:', '')));
+            const firstNew = form.querySelector('input[name="imagen_portada"][value^="new:"]');
+
+            if (firstExisting) {
+                firstExisting.checked = true;
+            } else if (firstNew) {
+                firstNew.checked = true;
+            }
+        }
+
+        function renderSelectedFiles() {
+            previewContainer.innerHTML = '';
+
+            selectedFiles.forEach((item, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-3';
+                col.setAttribute('data-file-id', item.id);
+                col.innerHTML = `
+                    <div class="mb-2">
+                        <img src="${item.url}"
+                             alt="Preview ${index + 1}"
+                             class="img-thumbnail"
+                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+                    </div>
+                    <div class="btn-group btn-group-sm d-flex" role="group">
+                        <button type="button"
+                                class="btn btn-outline-danger eliminar-preview"
+                                data-file-id="${item.id}">
+                            <i class="fas fa-trash mr-1"></i> Eliminar
+                        </button>
+                        <label class="btn btn-outline-success mb-0">
+                            <input type="radio" name="imagen_portada" value="new:${index}">
+                            Portada
+                        </label>
+                    </div>
+                `;
+                previewContainer.appendChild(col);
+            });
+
+            refreshInputFiles();
+            ensureCoverSelection();
+            updateCount();
+        }
 
         // Manejar eliminación de imágenes existentes
         document.querySelectorAll('.eliminar-imagen').forEach(btn => {
@@ -759,21 +1357,22 @@
                 if (inputEliminar.value === '') {
                     inputEliminar.value = imagenId;
                     imagenItem.style.opacity = '0.5';
-                    this.innerHTML = '<i class="fas fa-undo"></i>';
+                    this.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurar';
                     imagenesAEliminar.push(imagenId);
                 } else {
                     inputEliminar.value = '';
                     imagenItem.style.opacity = '1';
-                    this.innerHTML = '<i class="fas fa-times"></i>';
+                    this.innerHTML = '<i class="fas fa-trash mr-1"></i> Eliminar';
                     imagenesAEliminar = imagenesAEliminar.filter(id => id !== imagenId);
                 }
 
+                ensureCoverSelection();
                 updateCount();
             });
         });
 
         function updateCount() {
-            const total = imagenesActuales - imagenesAEliminar.length + imagenesNuevas;
+            const total = liveExistingImagesCount() + selectedFiles.length;
             countDisplay.textContent = `Total de imágenes: ${total} / 3`;
             uploadZone.classList.toggle('has-files', total > 0);
 
@@ -814,63 +1413,34 @@
         }
 
         input.addEventListener('change', function(e) {
-            previewContainer.innerHTML = '';
-            imagenesNuevas = 0;
-            fileMap.clear();
-
             const files = Array.from(e.target.files);
-            const maxFiles = Math.max(0, 3 - (imagenesActuales - imagenesAEliminar.length));
-            const dataTransfer = new DataTransfer();
+            const slots = Math.max(0, 3 - liveExistingImagesCount() - selectedFiles.length);
 
-            files.slice(0, maxFiles).forEach((file, index) => {
+            files.slice(0, slots).forEach((file, index) => {
                 if (file.type.startsWith('image/')) {
-                    const fileId = Date.now() + '-' + index;
-                    fileMap.set(fileId, file);
-                    dataTransfer.items.add(file);
-
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const col = document.createElement('div');
-                        col.className = 'col-md-3 mb-3';
-                        col.setAttribute('data-file-id', fileId);
-                        col.innerHTML = `
-                            <div class="position-relative">
-                                <img src="${event.target.result}"
-                                     alt="Preview ${index + 1}"
-                                     class="img-thumbnail"
-                                     style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                <button type="button"
-                                        class="btn btn-sm btn-danger position-absolute eliminar-preview"
-                                        data-file-id="${fileId}">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `;
-                        previewContainer.appendChild(col);
-                        imagenesNuevas++;
-                        updateCount();
-
-                        // Agregar evento para eliminar preview
-                        col.querySelector('.eliminar-preview').addEventListener('click',
-                            function() {
-                                const fileIdToRemove = this.getAttribute('data-file-id');
-                                fileMap.delete(fileIdToRemove);
-
-                                const updatedTransfer = new DataTransfer();
-                                fileMap.forEach(file => updatedTransfer.items.add(file));
-                                input.files = updatedTransfer.files;
-
-                                col.remove();
-                                imagenesNuevas--;
-                                updateCount();
-                            });
-                    };
-                    reader.readAsDataURL(file);
+                    selectedFiles.push({
+                        id: Date.now() + '-' + index + '-' + file.name,
+                        file: file,
+                        url: URL.createObjectURL(file),
+                    });
                 }
             });
 
-            input.files = dataTransfer.files;
-            updateCount();
+            renderSelectedFiles();
+        });
+
+        previewContainer.addEventListener('click', function(event) {
+            const button = event.target.closest('.eliminar-preview');
+            if (!button) return;
+
+            const fileId = button.getAttribute('data-file-id');
+            const removed = selectedFiles.find(item => item.id === fileId);
+            if (removed) {
+                URL.revokeObjectURL(removed.url);
+            }
+
+            selectedFiles = selectedFiles.filter(item => item.id !== fileId);
+            renderSelectedFiles();
         });
 
         updateCount();

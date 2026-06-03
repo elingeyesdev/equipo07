@@ -11,7 +11,7 @@ class DatoSanitarioController extends Controller
 {
     public function index()
     {
-        // Si es admin, mostrar todos. Si es vendedor, solo los de sus ganados o los que creó
+        // Si es admin, mostrar todos. Si es vendedor, solo los datos de sus ganados.
         // Cargar relaciones para mostrar información completa
         if (auth()->user()->isAdmin()) {
             $items = DatoSanitario::with($this->relacionesDatoSanitario())
@@ -20,10 +20,7 @@ class DatoSanitarioController extends Controller
         } else {
             $ganadoIds = Ganado::where('user_id', auth()->id())->pluck('id');
             $items = DatoSanitario::with($this->relacionesDatoSanitario())
-                ->where(function ($query) use ($ganadoIds) {
-                    $query->whereIn('ganado_id', $ganadoIds)
-                        ->orWhere('user_id', auth()->id());
-                })
+                ->whereIn('ganado_id', $ganadoIds)
                 ->orderBy('id', 'desc')
                 ->get();
         }
@@ -107,7 +104,6 @@ class DatoSanitarioController extends Controller
         ]);
 
         $data = $request->only(['ganado_id']);
-        $data['user_id'] = auth()->id();
 
         // Convertir checkboxes a boolean (si vienen como null, serán false)
         $datosNormalizados['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa') ? true : false;
@@ -143,12 +139,6 @@ class DatoSanitarioController extends Controller
         // Crear el dato sanitario
         $datoSanitario = DatoSanitario::create($data);
         $this->sincronizarDatosNormalizados($datoSanitario, $datosNormalizados);
-
-        // Actualizar el ganado con el dato_sanitario_id (solo si hay ganado_id)
-        if ($request->ganado_id) {
-            $ganado = Ganado::findOrFail($request->ganado_id);
-            $ganado->update(['dato_sanitario_id' => $datoSanitario->id]);
-        }
 
         return redirect()->route('admin.datos-sanitarios.index')
             ->with('success', 'Registro sanitario guardado correctamente.');
@@ -228,23 +218,6 @@ class DatoSanitarioController extends Controller
             if ($ganado->user_id !== auth()->id()) {
                 return redirect()->route('admin.datos-sanitarios.edit', $datos_sanitario)
                     ->with('error', 'No tienes permisos para editar datos sanitarios de este animal.');
-            }
-        }
-
-        // Si cambió el ganado, actualizar el ganado anterior y el nuevo
-        if ($datos_sanitario->ganado_id != $request->ganado_id) {
-            // Limpiar el dato_sanitario_id del ganado anterior
-            if ($datos_sanitario->ganado_id) {
-                $ganadoAnterior = Ganado::find($datos_sanitario->ganado_id);
-                if ($ganadoAnterior) {
-                    $ganadoAnterior->update(['dato_sanitario_id' => null]);
-                }
-            }
-
-            // Asignar el dato_sanitario_id al nuevo ganado (solo si hay ganado_id)
-            if ($request->ganado_id) {
-                $ganadoNuevo = Ganado::findOrFail($request->ganado_id);
-                $ganadoNuevo->update(['dato_sanitario_id' => $datos_sanitario->id]);
             }
         }
 
@@ -345,12 +318,6 @@ class DatoSanitarioController extends Controller
                 return redirect()->route('admin.datos-sanitarios.index')
                     ->with('error', 'No tienes permisos para eliminar este registro sanitario.');
             }
-        }
-
-        // Limpiar el dato_sanitario_id del ganado antes de eliminar
-        $ganado = $datos_sanitario->ganado;
-        if ($ganado) {
-            $ganado->update(['dato_sanitario_id' => null]);
         }
 
         // Eliminar las imágenes si existen

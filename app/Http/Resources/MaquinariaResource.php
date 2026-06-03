@@ -21,6 +21,7 @@ class MaquinariaResource extends JsonResource
             'modelo' => $this->modelo,
             'telefono' => $this->telefono,
             'precio_dia' => $this->precio_dia,
+            'tarifa_unidad' => $this->tarifa_unidad,
 
             'descripcion' => $this->descripcion,
             'ubicacion' => $this->ubicacion,
@@ -61,4 +62,3 @@ class MaquinariaResource extends JsonResource
         ];
     }
 }
-

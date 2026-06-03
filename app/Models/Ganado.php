@@ -9,16 +9,10 @@ class Ganado extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'nombre',
-        'user_id',
-        'tipo_animal_id',
-        'raza_id',
-        'categoria_id',
-        'dato_sanitario_id',
-        'ubicacion_ganado_id',
-        'es_campeon',
-    ];
+protected $fillable = [
+    'nombre', 'user_id', 'tipo_animal_id', 'raza_id', 'categoria_id', 'ubicacion_ganado_id', 'es_campeon',
+    'modalidad', 'proposito', 'tipo_genetica' // <-- NUEVOS
+];
 
     protected $appends = [
         'ubicacion',
@@ -78,10 +72,15 @@ class Ganado extends Model
         return $this->belongsTo(Raza::class);
     }
 
-    // ✅ RELACIÓN CORRECTA (uno a uno)
+    // Relacion real: un ganado puede tener varios registros sanitarios.
+    public function datosSanitarios()
+    {
+        return $this->hasMany(DatoSanitario::class);
+    }
+
     public function datoSanitario()
     {
-        return $this->belongsTo(DatoSanitario::class, 'dato_sanitario_id');
+        return $this->hasOne(DatoSanitario::class)->latestOfMany();
     }
 
     /**

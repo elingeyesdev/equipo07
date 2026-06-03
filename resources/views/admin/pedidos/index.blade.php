@@ -68,7 +68,7 @@
                                     $color = match ($estadoNorm) {
                                         'pendiente' => 'warning',
                                         'en_proceso' => 'info',
-                                        'entregado', 'completado' => 'success',
+                                        'entregado', 'completado', 'finalizado' => 'success',
                                         'cancelado' => 'danger',
                                         default => 'secondary',
                                     };
