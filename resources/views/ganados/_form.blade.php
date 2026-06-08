@@ -521,16 +521,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Crear el elemento visual para la imagen
                         const col = document.createElement('div');
                         col.className = 'col-md-4 col-sm-6 mb-3'; // Diseño de cuadrícula
-                        col.innerHTML = `
-                            
-                                ![Preview](${event.target.result})
-                                
-                                    ${file.name}
-                                
 
-                            
+                        const card = document.createElement('div');
+                        card.className = 'ganado-image-preview';
 
-                        `;
+                        const image = document.createElement('img');
+                        image.src = event.target.result;
+                        image.alt = `Vista previa de ${file.name}`;
+                        image.className = 'ganado-image-preview__img';
+
+                        const caption = document.createElement('span');
+                        caption.className = 'ganado-image-preview__name';
+                        caption.textContent = file.name;
+
+                        card.appendChild(image);
+                        card.appendChild(caption);
+                        col.appendChild(card);
                         previewContainer.appendChild(col);
                     };
                     

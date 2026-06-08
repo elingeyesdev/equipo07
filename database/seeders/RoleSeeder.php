@@ -26,6 +26,10 @@ class RoleSeeder extends Seeder
                 'nombre' => 'cliente',
                 'descripcion' => 'Cliente que puede ver productos y solicitar ser vendedor',
             ],
+            [
+                'nombre' => 'transportista',
+                'descripcion' => 'Transportista que gestiona envíos asignados',
+            ],
         ];
 
         foreach ($roles as $role) {

@@ -139,6 +139,11 @@ class User extends Authenticatable
         return $this->role_name === Role::VENDEDOR;
     }
 
+    public function isTransportista(): bool
+    {
+        return $this->role_name === Role::TRANSPORTISTA;
+    }
+
     /**
      * Verificar si el usuario es cliente
      */

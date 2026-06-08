@@ -129,4 +129,46 @@ class PedidoController extends Controller
             return redirect()->route('cart.index')->with('error', 'Ocurrió un error al crear el pedido.');
         }
     }
+
+    public function confirmarRecepcion(PedidoDetalle $detalle)
+    {
+        $detalle->load('pedido');
+
+        if ((int) $detalle->pedido->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        if ($detalle->estado_solicitud !== 'aceptada') {
+            return back()->with('error', 'Solo puedes confirmar productos aceptados por el vendedor.');
+        }
+
+        if ($detalle->estado_transporte_actual !== 'esperando_confirmacion') {
+            return back()->with('error', 'El transportista aun no marco la llegada al destino.');
+        }
+
+        $detalle->update([
+            'estado_transporte' => 'entregado',
+            'recepcion_confirmada_at' => now(),
+            'estado_alquiler' => $detalle->es_alquiler_maquinaria ? 'en_uso' : $detalle->estado_alquiler,
+        ]);
+
+        if ($detalle->es_alquiler_maquinaria) {
+            $detalle->pedido()->update(['estado' => 'en_uso']);
+            return back()->with('success', 'Recepcion confirmada. La maquinaria queda en uso hasta la devolucion.');
+        }
+
+        $aceptadosPendientes = $detalle->pedido->detalles()
+            ->where('estado_solicitud', 'aceptada')
+            ->where(function ($query) {
+                $query->whereNull('estado_transporte')
+                    ->orWhere('estado_transporte', '!=', 'entregado');
+            })
+            ->exists();
+
+        $detalle->pedido()->update([
+            'estado' => $aceptadosPendientes ? 'entregado' : 'finalizado',
+        ]);
+
+        return back()->with('success', 'Recepcion confirmada. La venta fue finalizada correctamente.');
+    }
 }

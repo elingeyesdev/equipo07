@@ -16,12 +16,33 @@ class PedidoDetalle extends Model
         'finalizado' => 'Finalizado',
     ];
 
+    public const TRANSPORTE_ESTADOS = [
+        'asignado' => 'Transportista asignado',
+        'en_camino_recogida' => 'En camino a recoger',
+        'llego_recogida' => 'Llego al punto de recogida',
+        'producto_recogido' => 'Producto recogido',
+        'en_camino_entrega' => 'En camino al comprador',
+        'llego_destino' => 'Llego al destino',
+        'esperando_confirmacion' => 'Esperando confirmacion del comprador',
+        'entregado' => 'Entregado al comprador',
+        'devolucion_solicitada' => 'Devolucion solicitada',
+        'en_camino_recoger_devolucion' => 'En camino a recoger devolucion',
+        'llego_recoger_devolucion' => 'Llego a recoger devolucion',
+        'maquinaria_recogida_retorno' => 'Maquinaria recogida para retorno',
+        'en_camino_retorno' => 'En camino al punto de retorno',
+        'llego_retorno' => 'Llego al punto de retorno',
+        'devuelto_vendedor' => 'Devuelto al vendedor',
+    ];
+
     protected $fillable = [
         'pedido_id',
         'vendedor_id',
+        'transportista_id',
         'estado_solicitud',
         'estado_alquiler',
+        'estado_transporte',
         'respondido_at',
+        'recepcion_confirmada_at',
         'product_id',
         'product_type',
         'nombre_producto',
@@ -36,6 +57,7 @@ class PedidoDetalle extends Model
         'precio_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'respondido_at' => 'datetime',
+        'recepcion_confirmada_at' => 'datetime',
     ];
 
     public static function alquilerEstados(): array
@@ -43,14 +65,34 @@ class PedidoDetalle extends Model
         return self::ALQUILER_ESTADOS;
     }
 
+    public static function transporteEstados(): array
+    {
+        return self::TRANSPORTE_ESTADOS;
+    }
+
     public function pedido()
     {
         return $this->belongsTo(Pedido::class);
     }
 
+    public function ubicaciones()
+    {
+        return $this->hasMany(PedidoUbicacion::class);
+    }
+
+    public function ultimaUbicacion()
+    {
+        return $this->hasOne(PedidoUbicacion::class)->latestOfMany();
+    }
+
     public function vendedor()
     {
         return $this->belongsTo(User::class, 'vendedor_id');
+    }
+
+    public function transportista()
+    {
+        return $this->belongsTo(User::class, 'transportista_id');
     }
 
     public function ganado()
@@ -181,10 +223,70 @@ class PedidoDetalle extends Model
         }
 
         if (!$this->es_alquiler_maquinaria) {
-            return true;
+            return $this->estado_transporte_actual === 'entregado';
         }
 
         return $this->estado_alquiler_actual === 'devuelto';
+    }
+
+    public function getEstadoTransporteActualAttribute(): ?string
+    {
+        if ($this->estado_solicitud !== 'aceptada') {
+            return null;
+        }
+
+        return $this->estado_transporte ?: 'asignado';
+    }
+
+    public function getEstadoTransporteLabelAttribute(): ?string
+    {
+        $estado = $this->estado_transporte_actual;
+
+        return $estado ? (self::TRANSPORTE_ESTADOS[$estado] ?? ucfirst(str_replace('_', ' ', $estado))) : null;
+    }
+
+    public function getSiguienteEstadoTransporteAttribute(): ?string
+    {
+        if ($this->estado_transporte_actual === 'esperando_confirmacion') {
+            return null;
+        }
+
+        if (!$this->es_alquiler_maquinaria && in_array($this->estado_transporte_actual, [
+            'entregado',
+            'devolucion_solicitada',
+            'en_camino_recoger_devolucion',
+            'llego_recoger_devolucion',
+            'maquinaria_recogida_retorno',
+            'en_camino_retorno',
+            'llego_retorno',
+            'devuelto_vendedor',
+        ], true)) {
+            return null;
+        }
+
+        return match ($this->estado_transporte_actual) {
+            'asignado' => 'en_camino_recogida',
+            'en_camino_recogida' => 'llego_recogida',
+            'llego_recogida' => 'producto_recogido',
+            'producto_recogido' => 'en_camino_entrega',
+            'en_camino_entrega' => 'llego_destino',
+            'llego_destino' => 'esperando_confirmacion',
+            'entregado' => $this->es_alquiler_maquinaria ? 'devolucion_solicitada' : null,
+            'devolucion_solicitada' => 'en_camino_recoger_devolucion',
+            'en_camino_recoger_devolucion' => 'llego_recoger_devolucion',
+            'llego_recoger_devolucion' => 'maquinaria_recogida_retorno',
+            'maquinaria_recogida_retorno' => 'en_camino_retorno',
+            'en_camino_retorno' => 'llego_retorno',
+            'llego_retorno' => 'devuelto_vendedor',
+            default => null,
+        };
+    }
+
+    public function getSiguienteEstadoTransporteLabelAttribute(): ?string
+    {
+        $estado = $this->siguiente_estado_transporte;
+
+        return $estado ? self::TRANSPORTE_ESTADOS[$estado] : null;
     }
 
     public function getProductLatitudAttribute()

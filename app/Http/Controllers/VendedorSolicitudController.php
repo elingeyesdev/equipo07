@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +14,7 @@ class VendedorSolicitudController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PedidoDetalle::with(['pedido.user'])
+        $query = PedidoDetalle::with(['pedido.user', 'transportista'])
             ->where('vendedor_id', Auth::id())
             ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
             ->orderByDesc('created_at');
@@ -41,10 +43,15 @@ class VendedorSolicitudController extends Controller
     {
         $this->authorizeSeller($solicitud);
 
-        $solicitud->load(['pedido.user']);
+        $solicitud->load(['pedido.user', 'transportista', 'ultimaUbicacion']);
         $estados = $this->estados();
+        $transportistas = User::whereHas('role', function ($query) {
+                $query->where('nombre', Role::TRANSPORTISTA);
+            })
+            ->orderBy('name')
+            ->get();
 
-        return view('vendedor.solicitudes.show', compact('solicitud', 'estados'));
+        return view('vendedor.solicitudes.show', compact('solicitud', 'estados', 'transportistas'));
     }
 
     public function aceptar(PedidoDetalle $solicitud)
@@ -62,6 +69,7 @@ class VendedorSolicitudController extends Controller
                 $solicitud->update([
                     'estado_solicitud' => 'aceptada',
                     'estado_alquiler' => $solicitud->product_type === 'maquinaria' ? 'aceptado' : null,
+                    'estado_transporte' => 'asignado',
                     'respondido_at' => now(),
                 ]);
 
@@ -111,8 +119,12 @@ class VendedorSolicitudController extends Controller
             return back()->with('error', 'Solo puedes finalizar pedidos con una solicitud aceptada.');
         }
 
-        if ($solicitud->product_type === 'maquinaria' && $solicitud->estado_alquiler_actual !== 'devuelto') {
-            return back()->with('error', 'Primero debes marcar la maquinaria como devuelta antes de finalizar el alquiler.');
+        if (!$solicitud->puede_finalizar_desde_vendedor) {
+            if ($solicitud->product_type === 'maquinaria') {
+                return back()->with('error', 'Primero el transportista debe devolver la maquinaria antes de finalizar el alquiler.');
+            }
+
+            return back()->with('error', 'Primero el comprador debe confirmar la recepcion del producto.');
         }
 
         if ($solicitud->product_type === 'maquinaria') {
@@ -132,29 +144,40 @@ class VendedorSolicitudController extends Controller
     {
         $this->authorizeSeller($solicitud);
 
-        if ($solicitud->product_type !== 'maquinaria') {
-            return back()->with('error', 'Este seguimiento solo aplica a alquileres de maquinaria.');
-        }
+        return back()->with('error', 'El seguimiento del alquiler lo maneja el transportista asignado.');
+    }
+
+    public function asignarTransportista(Request $request, PedidoDetalle $solicitud)
+    {
+        $this->authorizeSeller($solicitud);
 
         if ($solicitud->estado_solicitud !== 'aceptada') {
-            return back()->with('error', 'Primero debes aceptar la solicitud para iniciar el seguimiento.');
+            return back()->with('error', 'Primero debes aceptar la solicitud para asignar transportista.');
         }
 
-        $siguienteEstado = $solicitud->siguiente_estado_alquiler;
+        if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado') {
+            return back()->with('error', 'No puedes cambiar el transportista cuando el recorrido ya inicio.');
+        }
 
-        if (!$siguienteEstado) {
-            return back()->with('error', 'No hay un siguiente estado disponible para este alquiler.');
+        $data = $request->validate([
+            'transportista_id' => 'required|exists:users,id',
+        ]);
+
+        $transportista = User::findOrFail($data['transportista_id']);
+
+        if (!$transportista->isTransportista()) {
+            return back()->with('error', 'El usuario seleccionado no tiene rol transportista.');
         }
 
         $solicitud->update([
-            'estado_alquiler' => $siguienteEstado,
+            'transportista_id' => $transportista->id,
+            'estado_transporte' => $solicitud->estado_transporte ?: 'asignado',
+            'estado_alquiler' => $solicitud->es_alquiler_maquinaria
+                ? ($solicitud->estado_alquiler ?: 'aceptado')
+                : $solicitud->estado_alquiler,
         ]);
 
-        $solicitud->pedido()->update([
-            'estado' => $siguienteEstado === 'devuelto' ? 'en_proceso' : $siguienteEstado,
-        ]);
-
-        return back()->with('success', 'Estado del alquiler actualizado a: ' . PedidoDetalle::alquilerEstados()[$siguienteEstado] . '.');
+        return back()->with('success', 'Transportista asignado correctamente: ' . $transportista->name . '.');
     }
 
     private function authorizeSeller(PedidoDetalle $solicitud): void

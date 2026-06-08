@@ -28,6 +28,7 @@ class Role extends Model
     const ADMIN = 'admin';
     const VENDEDOR = 'vendedor';
     const CLIENTE = 'cliente';
+    const TRANSPORTISTA = 'transportista';
 
     /**
      * Scope para obtener rol por nombre

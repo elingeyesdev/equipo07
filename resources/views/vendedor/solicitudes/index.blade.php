@@ -44,6 +44,7 @@
                                 <th>Total</th>
                                 <th>Destino</th>
                                 <th>Estado</th>
+                                <th>Transportista</th>
                                 <th class="text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -82,6 +83,17 @@
                                             {{ $estados[$solicitud->estado_solicitud] ?? ucfirst($solicitud->estado_solicitud) }}
                                         </span>
                                     </td>
+                                    <td>
+                                        @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->transportista)
+                                            <small>
+                                                <i class="fas fa-truck mr-1"></i>{{ $solicitud->transportista->name }}
+                                            </small>
+                                        @elseif ($solicitud->estado_solicitud === 'aceptada')
+                                            <span class="badge badge-warning">Sin asignar</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td class="text-right">
                                         <a href="{{ route('vendedor.solicitudes.show', $solicitud) }}"
                                             class="btn btn-sm btn-outline-primary">
@@ -91,7 +103,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
+                                    <td colspan="8" class="text-center text-muted py-4">
                                         <i class="fas fa-info-circle mr-1"></i>No tienes solicitudes para tus productos.
                                     </td>
                                 </tr>

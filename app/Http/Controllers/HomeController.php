@@ -22,6 +22,10 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
+        if ($request->user()?->isTransportista()) {
+            return redirect()->route('transportista.envios.index');
+        }
+
         $categorias = Categoria::orderBy('nombre')->get();
         $tiposAnimales = TipoAnimal::orderBy('nombre')->get();
         $razas = Raza::orderBy('nombre')->get();
@@ -154,6 +158,10 @@ class HomeController extends Controller
      */
     public function anuncios(Request $request)
     {
+        if ($request->user()?->isTransportista()) {
+            return redirect()->route('transportista.envios.index');
+        }
+
         $categorias   = Categoria::orderBy('nombre')->get();
 
         // Parámetros de búsqueda

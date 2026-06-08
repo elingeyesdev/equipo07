@@ -131,8 +131,8 @@
                                 </li>
                             @endif
 
-                            {{-- ===== CARRITO DE COMPRAS (TODOS LOS USUARIOS) ===== --}}
-                            @if (auth()->check())
+                            {{-- ===== CARRITO Y PEDIDOS (CLIENTE/VENDEDOR/ADMIN) ===== --}}
+                            @if (!auth()->user()->isTransportista())
                                 <li class="nav-item">
                                     <a href="{{ route('cart.index') }}"
                                         class="nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}">
@@ -160,6 +160,18 @@
                                         <p>
                                             Mis Pedidos
                                         </p>
+                                    </a>
+                                </li>
+                            @endif
+
+                            {{-- ===== OPCIONES SOLO PARA TRANSPORTISTA ===== --}}
+                            @if (auth()->user()->isTransportista())
+                                <li class="nav-header">TRANSPORTE</li>
+                                <li class="nav-item">
+                                    <a href="{{ route('transportista.envios.index') }}"
+                                        class="nav-link {{ request()->routeIs('transportista.envios.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-route"></i>
+                                        <p>Mis envíos</p>
                                     </a>
                                 </li>
                             @endif
@@ -333,6 +345,14 @@
                                     <a href="{{ route('admin.pedidos.index') }}" class="nav-link">
                                         <i class="nav-icon fas fa-receipt"></i>
                                         <p>Pedidos</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.transportistas.index') }}"
+                                        class="nav-link {{ request()->routeIs('admin.transportistas.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-truck"></i>
+                                        <p>Transportistas</p>
                                     </a>
                                 </li>
 

@@ -79,6 +79,80 @@
             color: #fff;
             background: #2f7d24;
         }
+
+        .solicitud-map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+
+        .solicitud-map-legend__item {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .35rem .55rem;
+            border: 1px solid #dfe8dc;
+            border-radius: 999px;
+            background: #fff;
+            color: #1f2a1b;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .solicitud-map-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 999px;
+            color: #fff;
+            font-size: .72rem;
+        }
+
+        .solicitud-map-dot--driver,
+        .solicitud-map-pin--driver .solicitud-map-pin__icon {
+            background: #0d6efd;
+        }
+
+        .solicitud-map-dot--product,
+        .solicitud-map-pin--product .solicitud-map-pin__icon {
+            background: #fd7e14;
+        }
+
+        .solicitud-map-dot--customer,
+        .solicitud-map-pin--customer .solicitud-map-pin__icon {
+            background: #198754;
+        }
+
+        .solicitud-map-pin {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .22rem .48rem .22rem .22rem;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .95);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .22);
+            white-space: nowrap;
+        }
+
+        .solicitud-map-pin__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 999px;
+            color: #fff;
+        }
+
+        .solicitud-map-pin__label {
+            color: #1f2a1b;
+            font-size: .72rem;
+            font-weight: 800;
+        }
     </style>
 
     <div class="container-fluid">
@@ -146,8 +220,64 @@
                                 <dt class="col-sm-5">Notas</dt>
                                 <dd class="col-sm-7">{{ $solicitud->notas }}</dd>
                             @endif
+
+                            @if ($solicitud->estado_solicitud === 'aceptada')
+                                <dt class="col-sm-5">Transportista</dt>
+                                <dd class="col-sm-7">
+                                    @if ($solicitud->transportista)
+                                        {{ $solicitud->transportista->name }}<br>
+                                        <small class="text-muted">{{ $solicitud->transportista->email }}</small>
+                                    @else
+                                        <span class="text-warning">Sin asignar</span>
+                                    @endif
+                                </dd>
+                            @endif
                         </dl>
                     </div>
+
+                    @if ($solicitud->estado_solicitud === 'aceptada')
+                        <div class="card-body border-top">
+                            @if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado')
+                                <div class="alert alert-light border mb-0">
+                                    <i class="fas fa-truck mr-1"></i>
+                                    El transportista ya inicio el recorrido. No se puede cambiar la asignacion.
+                                </div>
+                            @else
+                                <form action="{{ route('vendedor.solicitudes.transportista.asignar', $solicitud) }}"
+                                    method="POST" class="mb-0">
+                                    @csrf
+                                    <label for="transportista_id" class="font-weight-bold">
+                                        <i class="fas fa-truck mr-1"></i>Asignar transportista
+                                    </label>
+                                    <div class="input-group">
+                                        <select name="transportista_id" id="transportista_id" class="form-control" required>
+                                            <option value="">Selecciona un transportista</option>
+                                            @foreach ($transportistas as $transportista)
+                                                <option value="{{ $transportista->id }}"
+                                                    {{ (int) $solicitud->transportista_id === (int) $transportista->id ? 'selected' : '' }}>
+                                                    {{ $transportista->name }} - {{ $transportista->email }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="input-group-append">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save mr-1"></i>Asignar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    @if ($transportistas->isEmpty())
+                                        <small class="text-danger d-block mt-2">
+                                            No hay usuarios con rol transportista registrados.
+                                        </small>
+                                    @else
+                                        <small class="text-muted d-block mt-2">
+                                            El transportista asignado vera este envío en su panel.
+                                        </small>
+                                    @endif
+                                </form>
+                            @endif
+                        </div>
+                    @endif
 
                     @if ($isMaquinaria && $solicitud->estado_solicitud === 'aceptada')
                         <div class="card-body border-top">
@@ -157,7 +287,9 @@
                                         <h5 class="mb-1 font-weight-bold">
                                             <i class="fas fa-route mr-1"></i>Seguimiento del alquiler
                                         </h5>
-                                        <small class="text-muted">Avanza el estado conforme se mueve la maquinaria.</small>
+                                        <small class="text-muted">
+                                            El transportista asignado maneja el recorrido y los cambios de estado.
+                                        </small>
                                     </div>
                                     <span class="badge badge-success mt-2 mt-md-0">
                                         {{ $solicitud->estado_alquiler_label }}
@@ -188,16 +320,7 @@
                                     @endforeach
                                 </div>
 
-                                @if ($solicitud->siguiente_estado_alquiler)
-                                    <form action="{{ route('vendedor.solicitudes.alquiler.avanzar', $solicitud) }}"
-                                        method="POST" class="mb-0">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-arrow-right mr-1"></i>
-                                            Marcar como {{ strtolower($solicitud->siguiente_estado_alquiler_label) }}
-                                        </button>
-                                    </form>
-                                @elseif ($solicitud->estado_alquiler_actual === 'devuelto')
+                                @if ($solicitud->estado_alquiler_actual === 'devuelto')
                                     <div class="alert alert-success mb-0">
                                         <i class="fas fa-check-circle mr-1"></i>
                                         La maquinaria fue devuelta. Ya puedes finalizar el alquiler.
@@ -205,7 +328,7 @@
                                 @else
                                     <div class="alert alert-light border mb-0">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        El seguimiento de este alquiler ya no tiene pasos pendientes.
+                                        Estado actual: {{ $solicitud->estado_alquiler_label }}.
                                     </div>
                                 @endif
                             </div>
@@ -241,9 +364,17 @@
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
-                                @if (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
+                                @if (!$solicitud->transportista_id)
                                     <small class="text-muted d-block mt-2">
-                                        Para finalizar, primero marca el alquiler como devuelto.
+                                        Para continuar, primero asigna un transportista.
+                                    </small>
+                                @elseif (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
+                                    <small class="text-muted d-block mt-2">
+                                        Para finalizar, primero el transportista debe devolver la maquinaria.
+                                    </small>
+                                @elseif (!$solicitud->puede_finalizar_desde_vendedor)
+                                    <small class="text-muted d-block mt-2">
+                                        Para finalizar, primero el comprador debe confirmar la recepcion.
                                     </small>
                                 @endif
                             </form>
@@ -275,6 +406,26 @@
                         @endif
 
                         @if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud)
+                            <div class="solicitud-map-legend">
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--driver">
+                                        <i class="fas fa-truck"></i>
+                                    </span>
+                                    Transportista
+                                </span>
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--product">
+                                        <i class="fas fa-box"></i>
+                                    </span>
+                                    Producto / vendedor
+                                </span>
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--customer">
+                                        <i class="fas fa-home"></i>
+                                    </span>
+                                    Destino comprador
+                                </span>
+                            </div>
                             <div id="solicitud-destino-map"
                                 style="height: 460px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
                             <a class="btn btn-sm btn-outline-success mt-3" target="_blank"
@@ -305,21 +456,52 @@
                 var destinoLng = {{ $solicitud->pedido->destino_longitud }};
                 var productoLat = @json($solicitud->product_latitud);
                 var productoLng = @json($solicitud->product_longitud);
+                var transportistaLat = @json($solicitud->ultimaUbicacion?->latitud ? (float) $solicitud->ultimaUbicacion->latitud : null);
+                var transportistaLng = @json($solicitud->ultimaUbicacion?->longitud ? (float) $solicitud->ultimaUbicacion->longitud : null);
                 var googleMapsUrl = @json($mapsUrl);
                 var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
+
+                function mapIcon(type, icon, label) {
+                    return L.divIcon({
+                        className: '',
+                        html: '<div class="solicitud-map-pin solicitud-map-pin--' + type + '">' +
+                            '<span class="solicitud-map-pin__icon"><i class="fas ' + icon + '"></i></span>' +
+                            '<span class="solicitud-map-pin__label">' + label + '</span>' +
+                        '</div>',
+                        iconSize: [150, 36],
+                        iconAnchor: [18, 18],
+                        popupAnchor: [0, -18]
+                    });
+                }
+
+                var destinoIcon = mapIcon('customer', 'fa-home', 'Comprador');
+                var productoIcon = mapIcon('product', 'fa-box', 'Producto');
+                var transportistaIcon = mapIcon('driver', 'fa-truck', 'Transportista');
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                var destinoMarker = L.marker([destinoLat, destinoLng])
+                var destinoMarker = L.marker([destinoLat, destinoLng], {
+                        icon: destinoIcon
+                    })
                     .addTo(map)
                     .bindPopup('<strong>Destino del comprador</strong><br>' + @json($solicitud->pedido->destino_entrega));
 
-                if (productoLat && productoLng) {
-                    var productoMarker = L.marker([productoLat, productoLng])
+                if (transportistaLat && transportistaLng) {
+                    L.marker([transportistaLat, transportistaLng], {
+                            icon: transportistaIcon
+                        })
                         .addTo(map)
-                        .bindPopup('<strong>Tu producto</strong><br>' + @json($solicitud->nombre_producto));
+                        .bindPopup('<strong>Ultima ubicacion del transportista</strong><br>{{ $solicitud->ultimaUbicacion?->created_at?->format('d/m/Y H:i:s') }}');
+                }
+
+                if (productoLat && productoLng) {
+                    var productoMarker = L.marker([productoLat, productoLng], {
+                            icon: productoIcon
+                        })
+                        .addTo(map)
+                        .bindPopup('<strong>Producto / punto del vendedor</strong><br>' + @json($solicitud->nombre_producto));
 
                     function drawFallbackLine() {
                         var fallbackLine = L.polyline([
@@ -334,7 +516,13 @@
 
                         fallbackLine.bindPopup('Distancia aproximada: {{ number_format($solicitud->distancia_destino_km ?? 0, 1) }} km');
 
-                        map.fitBounds(fallbackLine.getBounds(), {
+                        var fallbackBounds = fallbackLine.getBounds();
+
+                        if (transportistaLat && transportistaLng) {
+                            fallbackBounds.extend([transportistaLat, transportistaLng]);
+                        }
+
+                        map.fitBounds(fallbackBounds, {
                             padding: [40, 40],
                             maxZoom: 14
                         });
@@ -388,7 +576,13 @@
 
                             routeLine.bindPopup(popup);
 
-                            map.fitBounds(routeLine.getBounds(), {
+                            var routeBounds = routeLine.getBounds();
+
+                            if (transportistaLat && transportistaLng) {
+                                routeBounds.extend([transportistaLat, transportistaLng]);
+                            }
+
+                            map.fitBounds(routeBounds, {
                                 padding: [40, 40],
                                 maxZoom: 14
                             });
@@ -400,6 +594,16 @@
                             destinoMarker.openPopup();
                         });
                 } else {
+                    if (transportistaLat && transportistaLng) {
+                        map.fitBounds(L.latLngBounds([
+                            [destinoLat, destinoLng],
+                            [transportistaLat, transportistaLng]
+                        ]), {
+                            padding: [40, 40],
+                            maxZoom: 14
+                        });
+                    }
+
                     destinoMarker.openPopup();
                 }
             });

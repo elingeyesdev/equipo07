@@ -18,7 +18,10 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
+use App\Http\Controllers\AdminTransportistaController;
+use App\Http\Controllers\PedidoUbicacionController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TransportistaEnvioController;
 use App\Http\Controllers\VendedorSolicitudController;
 
 
@@ -34,7 +37,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/anuncios', [App\Http\Controllers\HomeController::class, 'anuncios'])->name('ads.index');
-Route::view('/publicar', 'public.ads.create')->name('ads.create');
+Route::view('/publicar', 'public.ads.create')->middleware('not.transportista')->name('ads.create');
 
 // RUTAS POR ROLES
 
@@ -68,6 +71,10 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/pedidos', [AdminPedidoController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/{pedido}', [AdminPedidoController::class, 'show'])->name('pedidos.show');
     Route::put('/pedidos/{pedido}/estado', [AdminPedidoController::class, 'updateEstado'])->name('pedidos.updateEstado');
+
+    Route::get('/transportistas', [AdminTransportistaController::class, 'index'])->name('transportistas.index');
+    Route::post('/transportistas/{usuario}/hacer-transportista', [AdminTransportistaController::class, 'hacerTransportista'])->name('transportistas.hacer');
+    Route::post('/transportistas/{usuario}/quitar-transportista', [AdminTransportistaController::class, 'quitarTransportista'])->name('transportistas.quitar');
 
     // REPORTES
     // Ventas
@@ -109,10 +116,19 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
     Route::post('/vendedor/solicitudes/{solicitud}/alquiler/avanzar', [VendedorSolicitudController::class, 'avanzarAlquiler'])->name('vendedor.solicitudes.alquiler.avanzar');
     Route::post('/vendedor/solicitudes/{solicitud}/finalizar', [VendedorSolicitudController::class, 'finalizarPedido'])->name('vendedor.solicitudes.finalizar');
+    Route::post('/vendedor/solicitudes/{solicitud}/transportista', [VendedorSolicitudController::class, 'asignarTransportista'])->name('vendedor.solicitudes.transportista.asignar');
+});
+
+Route::middleware(['auth', 'role.transportista'])->group(function () {
+    Route::get('/transportista/envios', [TransportistaEnvioController::class, 'index'])->name('transportista.envios.index');
+    Route::get('/transportista/envios/{envio}', [TransportistaEnvioController::class, 'show'])->name('transportista.envios.show');
+    Route::get('/transportista/envios/{envio}/tracking', [TransportistaEnvioController::class, 'tracking'])->name('transportista.envios.tracking');
+    Route::post('/transportista/envios/{solicitud}/tracking', [PedidoUbicacionController::class, 'store'])->name('transportista.envios.tracking.store');
+    Route::post('/transportista/envios/{solicitud}/tracking/estado', [PedidoUbicacionController::class, 'avanzarEstado'])->name('transportista.envios.tracking.estado');
 });
 
 // TODOS LOS USUARIOS AUTENTICADOS
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'not.transportista'])->group(function () {
     Route::get('ganados', [GanadoController::class, 'index'])->name('ganados.index');
     Route::get('ganados/{ganado}', [GanadoController::class, 'show'])->name('ganados.show');
     Route::get('maquinarias', [MaquinariaController::class, 'index'])->name('maquinarias.index');
@@ -132,6 +148,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/mis-pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::get('/mis-pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
+    Route::get('/mis-pedidos/{pedido}/ubicacion-actual', [PedidoUbicacionController::class, 'latest'])->name('pedidos.tracking.latest');
+    Route::post('/mis-pedidos/detalles/{detalle}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion'])->name('pedidos.detalles.confirmarRecepcion');
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
 });
 

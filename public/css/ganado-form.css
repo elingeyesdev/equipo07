@@ -69,6 +69,9 @@
 .agro-upload-zone:hover { background: #fff; border-color: rgba(63, 126, 42, 0.62); box-shadow: 0 16px 32px rgba(63, 126, 42, 0.12); transform: translateY(-1px); }
 .agro-upload-zone__icon { display: flex; align-items: center; justify-content: center; width: 3.25rem; height: 3.25rem; color: #fff; background: linear-gradient(135deg, var(--agro), var(--agro-700)); border-radius: 1rem; font-size: 1.35rem; }
 .agro-upload-zone__cta { padding: .62rem .85rem; color: var(--agro-700); background: #fff; border: 1px solid rgba(63, 126, 42, 0.2); border-radius: .7rem; font-size: .84rem; font-weight: 800; box-shadow: 0 8px 18px rgba(31, 42, 27, 0.06); }
+.ganado-image-preview { overflow: hidden; background: #fff; border: 1px solid rgba(44, 91, 31, 0.14); border-radius: .8rem; box-shadow: 0 10px 22px rgba(31, 42, 27, 0.08); }
+.ganado-image-preview__img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #f3f7ef; }
+.ganado-image-preview__name { display: block; padding: .55rem .7rem; color: #334155; font-size: .8rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Actions */
 .agro-wizard__actions { display: flex; justify-content: space-between; padding-top: 1.5rem; margin-top: 1.5rem; }

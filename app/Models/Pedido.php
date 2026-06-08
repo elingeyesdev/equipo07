@@ -33,4 +33,14 @@ class Pedido extends Model
     {
         return $this->hasMany(PedidoDetalle::class);
     }
+
+    public function ubicaciones()
+    {
+        return $this->hasMany(PedidoUbicacion::class);
+    }
+
+    public function ultimaUbicacion()
+    {
+        return $this->hasOne(PedidoUbicacion::class)->latestOfMany();
+    }
 }

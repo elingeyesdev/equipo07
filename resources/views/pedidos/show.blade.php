@@ -79,6 +79,30 @@
                     grid-template-columns: repeat(2, minmax(0, 1fr));
                 }
             }
+
+            .tracking-pin {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+                border: 3px solid #fff;
+                border-radius: 999px;
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+            }
+
+            .tracking-pin--current {
+                background: #0d6efd;
+            }
+
+            .tracking-pin--target {
+                background: #198754;
+            }
+
+            .tracking-pin--origin {
+                background: #fd7e14;
+            }
         </style>
         <div class="orders-card orders-detail-card">
             <div class="orders-detail-header">
@@ -134,6 +158,10 @@
                     @if ($pedido->destino_latitud && $pedido->destino_longitud)
                         <div id="pedido-destino-map" class="mt-3"
                             style="height: 320px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
+                        <div id="pedido-live-tracking" class="alert alert-light border mt-3 mb-0">
+                            <strong><i class="fas fa-location-arrow mr-1"></i>Seguimiento en vivo:</strong>
+                            <span id="pedido-live-status">Esperando ubicacion del transportista.</span>
+                        </div>
                         @if ($detalleConUbicacion && !is_null($detalleConUbicacion->distancia_destino_km))
                             <div class="small text-muted mt-2">
                                 <i class="fas fa-route mr-1"></i>
@@ -202,6 +230,28 @@
                                                 <i class="fas fa-phone-alt mr-1"></i>Vendedor: No especificado
                                             </small>
                                         @endif
+                                        @if ($detalle->estado_solicitud === 'aceptada' && $detalle->estado_transporte_label)
+                                            <br>
+                                            <small class="text-primary">
+                                                <i class="fas fa-truck mr-1"></i>Transporte:
+                                                {{ $detalle->estado_transporte_label }}
+                                            </small>
+                                        @endif
+                                        @if ($detalle->estado_transporte_actual === 'esperando_confirmacion')
+                                            <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
+                                                method="POST" class="mt-2"
+                                                onsubmit="return confirm('¿Confirmas que recibiste este producto?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
+                                                </button>
+                                            </form>
+                                        @elseif ($detalle->recepcion_confirmada_at)
+                                            <div class="small text-success mt-2">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Recepcion confirmada el {{ $detalle->recepcion_confirmada_at->format('d/m/Y H:i') }}
+                                            </div>
+                                        @endif
                                         @if ($isMaquinaria && $detalle->estado_solicitud === 'aceptada')
                                             <div class="order-rental-tracking">
                                                 <div class="order-rental-tracking__title">
@@ -267,19 +317,50 @@
                 var productoLat = @json($detalleConUbicacion?->product_latitud);
                 var productoLng = @json($detalleConUbicacion?->product_longitud);
                 var googleMapsUrl = @json($mapsUrl);
+                var trackingUrl = @json(route('pedidos.tracking.latest', $pedido, false));
+                var liveStatus = document.getElementById('pedido-live-status');
+                var liveMarker = null;
+                var liveLine = null;
+                var livePoints = [];
+                var lastLiveKey = null;
                 var map = L.map('pedido-destino-map').setView([destinoLat, destinoLng], 16);
+                var currentIcon = L.divIcon({
+                    className: '',
+                    html: '<span class="tracking-pin tracking-pin--current"><i class="fas fa-location-arrow"></i></span>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    popupAnchor: [0, -16]
+                });
+                var targetIcon = L.divIcon({
+                    className: '',
+                    html: '<span class="tracking-pin tracking-pin--target"><i class="fas fa-home"></i></span>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    popupAnchor: [0, -16]
+                });
+                var originIcon = L.divIcon({
+                    className: '',
+                    html: '<span class="tracking-pin tracking-pin--origin"><i class="fas fa-box"></i></span>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    popupAnchor: [0, -16]
+                });
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                L.marker([destinoLat, destinoLng])
+                L.marker([destinoLat, destinoLng], {
+                    icon: targetIcon
+                })
                     .addTo(map)
                     .bindPopup('<strong>Destino del comprador</strong><br>' + @json($pedido->destino_entrega))
                     .openPopup();
 
                 if (productoLat && productoLng) {
-                    L.marker([productoLat, productoLng])
+                    L.marker([productoLat, productoLng], {
+                        icon: originIcon
+                    })
                         .addTo(map)
                         .bindPopup('<strong>Producto</strong><br>' + @json($detalleConUbicacion?->nombre_producto));
 
@@ -357,6 +438,87 @@
                         })
                         .catch(drawFallbackLine);
                 }
+
+                function setLiveStatus(text) {
+                    if (liveStatus) {
+                        liveStatus.textContent = text;
+                    }
+                }
+
+                function updateLiveLocation(ubicacion) {
+                    if (!ubicacion) {
+                        setLiveStatus('Esperando ubicacion del transportista.');
+                        return;
+                    }
+
+                    var latLng = [ubicacion.latitud, ubicacion.longitud];
+                    var liveKey = ubicacion.latitud + ',' + ubicacion.longitud + ',' + ubicacion.fecha;
+
+                    if (liveKey !== lastLiveKey) {
+                        livePoints.push(latLng);
+                        lastLiveKey = liveKey;
+                    }
+
+                    if (!liveMarker) {
+                        liveMarker = L.marker(latLng, {
+                            icon: currentIcon
+                        }).addTo(map);
+                    } else {
+                        liveMarker.setLatLng(latLng);
+                    }
+
+                    var popup = '<strong>Transportista</strong>';
+                    if (ubicacion.producto) {
+                        popup += '<br>' + ubicacion.producto;
+                    }
+                    if (ubicacion.fecha_humana) {
+                        popup += '<br>Actualizado: ' + ubicacion.fecha_humana;
+                    }
+                    if (ubicacion.estado_transporte_label) {
+                        popup += '<br>Estado: ' + ubicacion.estado_transporte_label;
+                    }
+                    if (ubicacion.precision_metros) {
+                        popup += '<br>Precision: ' + Math.round(ubicacion.precision_metros) + ' m';
+                    }
+                    liveMarker.bindPopup(popup);
+
+                    if (!liveLine) {
+                        liveLine = L.polyline(livePoints, {
+                            color: '#007bff',
+                            weight: 5,
+                            opacity: .85
+                        }).addTo(map);
+                    } else {
+                        liveLine.setLatLngs(livePoints);
+                    }
+
+                    var estadoTexto = ubicacion.estado_transporte_label || (ubicacion.tipo_recorrido === 'devolucion' ? 'En devolucion' : 'En entrega');
+                    setLiveStatus(estadoTexto + (ubicacion.fecha_humana ? '. Ultima actualizacion: ' + ubicacion.fecha_humana : '.'));
+                }
+
+                function refreshLiveLocation() {
+                    fetch(trackingUrl, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('No se pudo consultar la ubicacion');
+                            }
+
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            updateLiveLocation(data.ubicacion);
+                        })
+                        .catch(function() {
+                            setLiveStatus('No se pudo actualizar la ubicacion en este momento.');
+                        });
+                }
+
+                refreshLiveLocation();
+                setInterval(refreshLiveLocation, 5000);
             });
         </script>
     @endif
