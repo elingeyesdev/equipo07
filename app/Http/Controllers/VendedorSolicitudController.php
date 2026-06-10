@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\TransporteAccesoService;
 
 class VendedorSolicitudController extends Controller
 {
@@ -43,7 +44,15 @@ class VendedorSolicitudController extends Controller
     {
         $this->authorizeSeller($solicitud);
 
-        $solicitud->load(['pedido.user', 'transportista', 'ultimaUbicacion']);
+        $solicitud->load([
+            'pedido.user',
+            'transportista',
+            'ultimaUbicacion',
+            'transporteAcceso',
+            'transporteEventos' => fn ($query) => $query->latest('created_at')->limit(10),
+            'resenaOrganico.comprador',
+            'reclamos.creador',
+        ]);
         $estados = $this->estados();
         $transportistas = User::whereHas('role', function ($query) {
                 $query->where('nombre', Role::TRANSPORTISTA);
@@ -54,7 +63,7 @@ class VendedorSolicitudController extends Controller
         return view('vendedor.solicitudes.show', compact('solicitud', 'estados', 'transportistas'));
     }
 
-    public function aceptar(PedidoDetalle $solicitud)
+    public function aceptar(PedidoDetalle $solicitud, TransporteAccesoService $transporteService)
     {
         $this->authorizeSeller($solicitud);
 
@@ -63,15 +72,19 @@ class VendedorSolicitudController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($solicitud) {
+            DB::transaction(function () use ($solicitud, $transporteService) {
                 $this->descontarStockDisponible($solicitud);
 
                 $solicitud->update([
                     'estado_solicitud' => 'aceptada',
                     'estado_alquiler' => $solicitud->product_type === 'maquinaria' ? 'aceptado' : null,
-                    'estado_transporte' => 'asignado',
+                    'estado_transporte' => $solicitud->product_type === 'organico' ? 'aceptado' : 'asignado',
                     'respondido_at' => now(),
                 ]);
+
+                if ($solicitud->product_type === 'organico') {
+                    $transporteService->generar($solicitud->fresh(), Auth::id());
+                }
 
                 PedidoDetalle::where('product_type', $solicitud->product_type)
                     ->where('product_id', $solicitud->product_id)
@@ -92,7 +105,12 @@ class VendedorSolicitudController extends Controller
 
         return redirect()
             ->route('vendedor.solicitudes.show', $solicitud)
-            ->with('success', 'Solicitud aceptada. Las demas solicitudes pendientes de este producto fueron canceladas.');
+            ->with(
+                'success',
+                $solicitud->product_type === 'organico'
+                    ? 'Solicitud aceptada. Se genero el codigo para el transportista externo.'
+                    : 'Solicitud aceptada. Las demas solicitudes pendientes de este producto fueron canceladas.'
+            );
     }
 
     public function cancelar(PedidoDetalle $solicitud)
@@ -178,6 +196,37 @@ class VendedorSolicitudController extends Controller
         ]);
 
         return back()->with('success', 'Transportista asignado correctamente: ' . $transportista->name . '.');
+    }
+
+    public function regenerarCodigo(
+        PedidoDetalle $solicitud,
+        TransporteAccesoService $transporteService
+    ) {
+        $this->authorizeSeller($solicitud);
+        $transporteService->generar($solicitud, Auth::id(), true);
+
+        return back()->with('success', 'Se genero un nuevo codigo. El codigo anterior dejo de funcionar.');
+    }
+
+    public function revocarCodigo(PedidoDetalle $solicitud, TransporteAccesoService $transporteService)
+    {
+        $this->authorizeSeller($solicitud);
+
+        if ($solicitud->transporteAcceso) {
+            $transporteService->revocar($solicitud->transporteAcceso);
+        }
+
+        return back()->with('success', 'El acceso externo de transporte fue revocado.');
+    }
+
+    public function marcarPreparado(
+        PedidoDetalle $solicitud,
+        TransporteAccesoService $transporteService
+    ) {
+        $this->authorizeSeller($solicitud);
+        $transporteService->prepararPorVendedor($solicitud, Auth::id());
+
+        return back()->with('success', 'Producto preparado. El transportista ya puede iniciar la entrega y compartir su GPS.');
     }
 
     private function authorizeSeller(PedidoDetalle $solicitud): void

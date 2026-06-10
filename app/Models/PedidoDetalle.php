@@ -43,6 +43,8 @@ class PedidoDetalle extends Model
         'estado_transporte',
         'respondido_at',
         'recepcion_confirmada_at',
+        'cancelacion_motivo',
+        'cancelado_at',
         'product_id',
         'product_type',
         'nombre_producto',
@@ -58,6 +60,7 @@ class PedidoDetalle extends Model
         'subtotal' => 'decimal:2',
         'respondido_at' => 'datetime',
         'recepcion_confirmada_at' => 'datetime',
+        'cancelado_at' => 'datetime',
     ];
 
     public static function alquilerEstados(): array
@@ -78,6 +81,26 @@ class PedidoDetalle extends Model
     public function ubicaciones()
     {
         return $this->hasMany(PedidoUbicacion::class);
+    }
+
+    public function transporteAcceso()
+    {
+        return $this->hasOne(TransporteAcceso::class, 'pedido_detalle_id');
+    }
+
+    public function transporteEventos()
+    {
+        return $this->hasMany(TransporteEvento::class, 'pedido_detalle_id');
+    }
+
+    public function resenaOrganico()
+    {
+        return $this->hasOne(ResenaOrganico::class, 'pedido_detalle_id');
+    }
+
+    public function reclamos()
+    {
+        return $this->hasMany(Reclamo::class, 'pedido_detalle_id');
     }
 
     public function ultimaUbicacion()
@@ -242,7 +265,14 @@ class PedidoDetalle extends Model
     {
         $estado = $this->estado_transporte_actual;
 
-        return $estado ? (self::TRANSPORTE_ESTADOS[$estado] ?? ucfirst(str_replace('_', ' ', $estado))) : null;
+        $estados = [
+            ...self::TRANSPORTE_ESTADOS,
+            'aceptado' => 'Aceptado',
+            'preparando' => 'Preparando',
+            'cancelado' => 'Cancelado',
+        ];
+
+        return $estado ? ($estados[$estado] ?? ucfirst(str_replace('_', ' ', $estado))) : null;
     }
 
     public function getSiguienteEstadoTransporteAttribute(): ?string

@@ -169,6 +169,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <a href="{{ route('transporte.index') }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2f621f]/15 bg-[#edf7e9] px-4 text-sm font-black text-[#183b18] no-underline transition hover:-translate-y-0.5 hover:shadow-lg">
+                        <i class="fas fa-truck"></i>
+                        Transporte
+                    </a>
                     <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                         Iniciar sesión
                     </a>

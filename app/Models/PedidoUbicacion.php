@@ -12,6 +12,7 @@ class PedidoUbicacion extends Model
         'pedido_id',
         'pedido_detalle_id',
         'user_id',
+        'transporte_acceso_id',
         'latitud',
         'longitud',
         'precision_metros',
@@ -41,5 +42,10 @@ class PedidoUbicacion extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function transporteAcceso()
+    {
+        return $this->belongsTo(TransporteAcceso::class, 'transporte_acceso_id');
     }
 }

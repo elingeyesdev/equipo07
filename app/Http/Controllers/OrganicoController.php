@@ -65,7 +65,7 @@ class OrganicoController extends Controller
 
     public function show(Organico $organico)
     {
-        $organico->load($this->relacionesOrganico());
+        $organico->load(array_merge($this->relacionesOrganico(), ['resenas.comprador']));
 
         return view('organicos.show', compact('organico'));
     }
@@ -174,7 +174,7 @@ class OrganicoController extends Controller
 
     private function puedeModificarProducto(Organico $organico): bool
     {
-        return $organico->user_id === auth()->id();
+        return auth()->user()?->isAdmin() || $organico->user_id === auth()->id();
     }
 
     private function extraerDatosComerciales(array &$data): array

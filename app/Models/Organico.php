@@ -114,6 +114,11 @@ class Organico extends Model
         return $this->hasOne(DatoComercialOrganico::class);
     }
 
+    public function resenas()
+    {
+        return $this->hasMany(ResenaOrganico::class);
+    }
+
     public function getPrecioAttribute($value)
     {
         return $this->datoComercial?->precio ?? $value;

@@ -11,6 +11,52 @@
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
+    <style>
+        .agrovida-process-loading {
+            position: relative;
+            width: min(280px, 100%);
+            height: 82px;
+            margin: 8px auto 0;
+            overflow: hidden;
+        }
+
+        .agrovida-process-loading::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: 17px;
+            left: 0;
+            height: 3px;
+            border-radius: 999px;
+            background: #dce8d8;
+        }
+
+        .agrovida-process-loading img {
+            position: absolute;
+            z-index: 1;
+            bottom: 22px;
+            left: 0;
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            animation: agrovida-process-run 1.8s ease-in-out infinite;
+        }
+
+        @keyframes agrovida-process-run {
+            0% { left: 0; transform: translateY(0) rotate(-3deg); }
+            25% { transform: translateY(-5px) rotate(3deg); }
+            50% { left: calc(100% - 52px); transform: translateY(0) rotate(-3deg); }
+            75% { transform: translateY(-5px) rotate(3deg); }
+            100% { left: 0; transform: translateY(0) rotate(-3deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .agrovida-process-loading img {
+                left: calc(50% - 26px);
+                animation: none;
+            }
+        }
+    </style>
 </head>
 
 @yield('js')
@@ -349,6 +395,22 @@
                                 </li>
 
                                 <li class="nav-item">
+                                    <a href="{{ route('productos-venta.index') }}"
+                                        class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-store"></i>
+                                        <p>Productos en venta</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('reclamos.index') }}"
+                                        class="nav-link {{ request()->routeIs('reclamos.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-flag"></i>
+                                        <p>Reclamos</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
                                     <a href="{{ route('admin.transportistas.index') }}"
                                         class="nav-link {{ request()->routeIs('admin.transportistas.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-truck"></i>
@@ -370,10 +432,24 @@
                             @if (auth()->user()->isVendedor())
                                 <li class="nav-header">VENTAS</li>
                                 <li class="nav-item">
+                                    <a href="{{ route('productos-venta.index') }}"
+                                        class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-store"></i>
+                                        <p>Mis productos</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('vendedor.solicitudes.index') }}"
                                         class="nav-link {{ request()->routeIs('vendedor.solicitudes.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-clipboard-list"></i>
                                         <p>Solicitudes de productos</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('reclamos.index') }}"
+                                        class="nav-link {{ request()->routeIs('reclamos.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-flag"></i>
+                                        <p>Reclamos</p>
                                     </a>
                                 </li>
                             @endif
@@ -755,6 +831,52 @@
                 var $form = $(this);
                 var message = $form.data('message') || '¿Está seguro de eliminar este registro?';
                 showConfirmModal($form, message);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form.question-confirm-form').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    if (form.dataset.submitting === 'true') {
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: form.dataset.confirmTitle || '¿Deseas continuar?',
+                        text: form.dataset.confirmText || 'Confirma para continuar con el proceso.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: form.dataset.confirmButton || 'Sí, continuar',
+                        cancelButtonText: form.dataset.cancelButton || 'Aún no',
+                        confirmButtonColor: '#2f7d24',
+                        cancelButtonColor: '#6c757d',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        allowOutsideClick: false
+                    }).then(function(result) {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        form.dataset.submitting = 'true';
+
+                        Swal.fire({
+                            title: form.dataset.loadingText || 'Procesando...',
+                            html: '<div class="agrovida-process-loading">' +
+                                '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                                '</div>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false
+                        });
+
+                        HTMLFormElement.prototype.submit.call(form);
+                    });
+                });
             });
         });
     </script>

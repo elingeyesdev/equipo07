@@ -65,6 +65,10 @@ class PedidoUbicacionController extends Controller
     public function latest(Pedido $pedido)
     {
         if ((int) $pedido->user_id !== (int) Auth::id()) {
+            if (Auth::user()?->isAdmin()) {
+                return $this->latestResponse($pedido);
+            }
+
             $isSeller = $pedido->detalles()
                 ->where('vendedor_id', Auth::id())
                 ->exists();
@@ -77,6 +81,61 @@ class PedidoUbicacionController extends Controller
             }
         }
 
+        return $this->latestResponse($pedido);
+    }
+
+    public function detalleLatest(PedidoDetalle $detalle)
+    {
+        $user = Auth::user();
+        $compradorId = Pedido::whereKey($detalle->pedido_id)->value('user_id');
+        $autorizado = (int) $compradorId === (int) Auth::id()
+            || (int) $detalle->vendedor_id === (int) Auth::id()
+            || (int) $detalle->transportista_id === (int) Auth::id()
+            || $user?->isAdmin();
+
+        if (!$autorizado) {
+            abort(403);
+        }
+
+        $ubicacion = PedidoUbicacion::where('pedido_detalle_id', $detalle->id)
+            ->latest('id')
+            ->first();
+
+        return response()->json([
+            'ok' => true,
+            'detalle_id' => $detalle->id,
+            'estado' => $detalle->estado_transporte_actual,
+            'estado_label' => $detalle->estado_transporte_label,
+            'ubicacion' => $ubicacion ? $this->formatUbicacion($ubicacion) : null,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    public function estadosPedido(Pedido $pedido)
+    {
+        if ((int) $pedido->user_id !== (int) Auth::id() && !Auth::user()?->isAdmin()) {
+            abort(403);
+        }
+
+        $detalles = $pedido->detalles()
+            ->where('product_type', 'organico')
+            ->get()
+            ->map(fn (PedidoDetalle $detalle) => [
+                'detalle_id' => $detalle->id,
+                'estado_solicitud' => $detalle->estado_solicitud,
+                'estado' => $detalle->estado_transporte_actual,
+                'estado_label' => $detalle->estado_transporte_label,
+                'recepcion_confirmada' => (bool) $detalle->recepcion_confirmada_at,
+                'motivo_cancelacion' => $detalle->cancelacion_motivo,
+            ]);
+
+        return response()->json([
+            'ok' => true,
+            'detalles' => $detalles,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    private function latestResponse(Pedido $pedido)
+    {
         $ubicacion = $pedido->ubicaciones()
             ->with('detalle')
             ->latest()

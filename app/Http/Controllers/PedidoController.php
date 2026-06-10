@@ -8,6 +8,8 @@ use App\Models\CartItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\TransporteAcceso;
+use App\Models\TransporteEvento;
 
 class PedidoController extends Controller
 {
@@ -45,7 +47,16 @@ class PedidoController extends Controller
             abort(403);
         }
 
-        $pedido->load('detalles');
+        $pedido->load([
+            'detalles.organico',
+            'detalles.ganado',
+            'detalles.maquinaria',
+            'detalles.vendedor',
+            'detalles.transporteAcceso',
+            'detalles.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(8),
+            'detalles.resenaOrganico.comprador',
+            'detalles.reclamos.creador',
+        ]);
 
         return view('pedidos.show', compact('pedido'));
     }
@@ -151,6 +162,21 @@ class PedidoController extends Controller
             'recepcion_confirmada_at' => now(),
             'estado_alquiler' => $detalle->es_alquiler_maquinaria ? 'en_uso' : $detalle->estado_alquiler,
         ]);
+
+        if ($detalle->product_type === 'organico') {
+            TransporteEvento::create([
+                'pedido_detalle_id' => $detalle->id,
+                'transporte_acceso_id' => $detalle->transporteAcceso?->id,
+                'user_id' => Auth::id(),
+                'actor' => 'comprador',
+                'estado_anterior' => 'esperando_confirmacion',
+                'estado_nuevo' => 'entregado',
+            ]);
+
+            $detalle->transporteAcceso?->update([
+                'estado' => TransporteAcceso::ESTADO_REVOCADO,
+            ]);
+        }
 
         if ($detalle->es_alquiler_maquinaria) {
             $detalle->pedido()->update(['estado' => 'en_uso']);

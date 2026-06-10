@@ -48,6 +48,18 @@
                             @auth
                                 @if (auth()->user()->isVendedor() || auth()->user()->isAdmin())
                                     <li class="nav-item">
+                                        <a class="nav-link text-white {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}"
+                                            href="{{ route('productos-venta.index') }}">
+                                            <i class="fas fa-store"></i> {{ auth()->user()->isAdmin() ? 'Productos' : 'Mis productos' }}
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-white"
+                                            href="{{ auth()->user()->isAdmin() ? route('admin.pedidos.index') : route('vendedor.solicitudes.index') }}">
+                                            <i class="fas fa-clipboard-list"></i> Solicitudes
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
                                         <a class="nav-link text-white {{ request()->routeIs('admin.datos-sanitarios.*') ? 'active' : '' }}"
                                             href="{{ route('admin.datos-sanitarios.index') }}">
                                             <i class="fas fa-syringe"></i> Datos Sanitarios
@@ -111,6 +123,9 @@
                                                 <i class="fas fa-clipboard-list mr-2"></i> Panel Admin
                                             </a>
                                         @endif
+                                        <a href="{{ route('reclamos.index') }}" class="dropdown-item">
+                                            <i class="fas fa-flag mr-2"></i> Reclamos
+                                        </a>
                                         <div class="dropdown-divider"></div>
                                         <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                             @csrf

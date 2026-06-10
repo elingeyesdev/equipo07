@@ -13,7 +13,12 @@
             'cancelado' => 'danger',
             default => 'secondary',
         };
-        $detalleConUbicacion = $pedido->detalles->first(fn($detalle) => $detalle->product_latitud && $detalle->product_longitud);
+        $detalleConUbicacion = $pedido->detalles->first(
+            fn($detalle) => $detalle->product_type === 'organico'
+                && $detalle->estado_solicitud === 'aceptada'
+                && $detalle->product_latitud
+                && $detalle->product_longitud
+        ) ?: $pedido->detalles->first(fn($detalle) => $detalle->product_latitud && $detalle->product_longitud);
         $mapsUrl = null;
 
         if ($pedido->destino_latitud && $pedido->destino_longitud) {
@@ -21,6 +26,10 @@
                 ? 'https://www.google.com/maps/dir/?api=1&origin=' . $detalleConUbicacion->product_latitud . ',' . $detalleConUbicacion->product_longitud . '&destination=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud . '&travelmode=driving'
                 : 'https://www.google.com/maps/search/?api=1&query=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud;
         }
+
+        $trackingUrl = $detalleConUbicacion
+            ? route('pedidos.detalles.tracking.latest', $detalleConUbicacion, false)
+            : route('pedidos.tracking.latest', $pedido, false);
     @endphp
 
     <div class="container-fluid orders-page">
@@ -213,7 +222,11 @@
                                     $estadoKeys = array_keys($alquilerEstados);
                                     $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
                                 @endphp
-                                <tr>
+                                <tr @if($detalle->product_type === 'organico')
+                                    data-buyer-organic-detail="{{ $detalle->id }}"
+                                    data-request-state="{{ $detalle->estado_solicitud }}"
+                                    data-transport-state="{{ $detalle->estado_transporte_actual }}"
+                                    @endif>
                                     <td>
                                         <span class="orders-table__id">{{ $detalle->nombre_producto }}</span>
                                         @if ($detalle->vendedor_telefono)
@@ -237,20 +250,83 @@
                                                 {{ $detalle->estado_transporte_label }}
                                             </small>
                                         @endif
-                                        @if ($detalle->estado_transporte_actual === 'esperando_confirmacion')
+                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
+                                            @php
+                                                $deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+                                                $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado'
+                                                    ? 'aceptado'
+                                                    : $detalle->estado_transporte_actual;
+                                                $deliveryIndex = array_search($deliveryCurrent, $deliveryFlow, true);
+                                            @endphp
+                                            <div class="order-rental-tracking">
+                                                <div class="order-rental-tracking__title">
+                                                    <span><i class="fas fa-truck mr-1"></i>Seguimiento de entrega</span>
+                                                    <span class="text-success"
+                                                        id="buyer-delivery-status-{{ $detalle->id }}">{{ $detalle->estado_transporte_label }}</span>
+                                                </div>
+                                                <div class="order-rental-tracking__steps"
+                                                    style="grid-template-columns: repeat(5, minmax(86px, 1fr));">
+                                                    @foreach ($deliveryFlow as $deliveryStepIndex => $deliveryState)
+                                                        @php
+                                                            $deliveryClass = '';
+                                                            if ($deliveryIndex !== false && $deliveryStepIndex < $deliveryIndex) {
+                                                                $deliveryClass = 'is-done';
+                                                            } elseif ($deliveryState === $deliveryCurrent) {
+                                                                $deliveryClass = 'is-current';
+                                                            }
+                                                        @endphp
+                                                        <div class="order-rental-tracking__step {{ $deliveryClass }}"
+                                                            data-delivery-detail="{{ $detalle->id }}"
+                                                            data-state="{{ $deliveryState }}">
+                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$deliveryState] }}
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
                                             <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
-                                                method="POST" class="mt-2"
-                                                onsubmit="return confirm('¿Confirmas que recibiste este producto?')">
+                                                method="POST" class="mt-2 question-confirm-form"
+                                                id="buyer-receive-form-{{ $detalle->id }}"
+                                                style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display:none' }}"
+                                                data-confirm-title="¿Recibiste tu pedido?"
+                                                data-confirm-text="Confirma únicamente cuando el producto ya esté contigo. Al continuar, la entrega quedará registrada como recibida."
+                                                data-confirm-button="Sí, recibí mi pedido"
+                                                data-cancel-button="Aún no"
+                                                data-loading-text="Confirmando la recepción...">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-success">
                                                     <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
                                                 </button>
                                             </form>
-                                        @elseif ($detalle->recepcion_confirmada_at)
-                                            <div class="small text-success mt-2">
+                                            <div class="small text-success mt-2"
+                                                id="buyer-received-{{ $detalle->id }}"
+                                                style="{{ $detalle->estado_transporte_actual === 'entregado' ? '' : 'display:none' }}">
                                                 <i class="fas fa-check-circle mr-1"></i>
-                                                Recepcion confirmada el {{ $detalle->recepcion_confirmada_at->format('d/m/Y H:i') }}
+                                                @if ($detalle->recepcion_confirmada_at)
+                                                    Recepcion confirmada el {{ $detalle->recepcion_confirmada_at->format('d/m/Y H:i') }}
+                                                @else
+                                                    Recepcion confirmada.
+                                                @endif
                                             </div>
+                                        @elseif ($detalle->estado_transporte_actual === 'esperando_confirmacion')
+                                            <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
+                                                method="POST" class="mt-2 question-confirm-form"
+                                                data-confirm-title="¿Recibiste tu pedido?"
+                                                data-confirm-text="Confirma únicamente cuando el producto ya esté contigo."
+                                                data-confirm-button="Sí, recibí mi pedido"
+                                                data-cancel-button="Aún no"
+                                                data-loading-text="Confirmando la recepción...">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
+                                                </button>
+                                            </form>
+                                        @endif
+                                        @if($detalle->product_type === 'organico'
+                                            && $detalle->estado_solicitud === 'aceptada'
+                                            && in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true))
+                                            @include('organicos.partials.postventa', ['detalle' => $detalle, 'modo' => 'comprador'])
                                         @endif
                                         @if ($isMaquinaria && $detalle->estado_solicitud === 'aceptada')
                                             <div class="order-rental-tracking">
@@ -307,6 +383,101 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var statesUrl = @json(route('pedidos.tracking.estados', $pedido, false));
+            var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+            var statusBusy = false;
+            var statusTimer = null;
+
+            function updateDeliveryDetail(detail) {
+                var row = document.querySelector('[data-buyer-organic-detail="' + detail.detalle_id + '"]');
+
+                if (row && row.dataset.requestState !== detail.estado_solicitud) {
+                    window.location.reload();
+                    return;
+                }
+
+                if (row
+                    && ['entregado', 'cancelado'].includes(detail.estado)
+                    && row.dataset.transportState !== detail.estado) {
+                    window.location.reload();
+                    return;
+                }
+
+                var status = document.getElementById('buyer-delivery-status-' + detail.detalle_id);
+                if (status && detail.estado_label) {
+                    status.textContent = detail.estado_label;
+                }
+
+                var currentIndex = deliveryFlow.indexOf(detail.estado);
+                document.querySelectorAll('[data-delivery-detail="' + detail.detalle_id + '"]').forEach(function(step) {
+                    var index = deliveryFlow.indexOf(step.dataset.state);
+                    step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
+                    step.classList.toggle('is-current', step.dataset.state === detail.estado);
+                });
+
+                var receiveForm = document.getElementById('buyer-receive-form-' + detail.detalle_id);
+                var receivedMessage = document.getElementById('buyer-received-' + detail.detalle_id);
+
+                if (receiveForm) {
+                    receiveForm.style.display = detail.estado === 'esperando_confirmacion' ? '' : 'none';
+                }
+
+                if (receivedMessage) {
+                    receivedMessage.style.display = detail.estado === 'entregado' ? '' : 'none';
+                }
+            }
+
+            function scheduleStatusRefresh() {
+                clearTimeout(statusTimer);
+                statusTimer = setTimeout(refreshStatuses, 7000);
+            }
+
+            function refreshStatuses() {
+                if (statusBusy || document.hidden) {
+                    scheduleStatusRefresh();
+                    return;
+                }
+
+                statusBusy = true;
+                fetch(statesUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    cache: 'no-store'
+                })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('No se pudieron consultar los estados');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        (data.detalles || []).forEach(updateDeliveryDetail);
+                    })
+                    .catch(function() {
+                        // Se vuelve a intentar en el siguiente intervalo sin interrumpir la vista.
+                    })
+                    .finally(function() {
+                        statusBusy = false;
+                        scheduleStatusRefresh();
+                    });
+            }
+
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    clearTimeout(statusTimer);
+                    refreshStatuses();
+                }
+            });
+
+            refreshStatuses();
+        });
+    </script>
+
     @if ($pedido->destino_latitud && $pedido->destino_longitud)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -317,12 +488,17 @@
                 var productoLat = @json($detalleConUbicacion?->product_latitud);
                 var productoLng = @json($detalleConUbicacion?->product_longitud);
                 var googleMapsUrl = @json($mapsUrl);
-                var trackingUrl = @json(route('pedidos.tracking.latest', $pedido, false));
+                var trackingUrl = @json($trackingUrl);
+                var trackingDetailId = @json($detalleConUbicacion?->id);
+                var currentTrackingState = @json($detalleConUbicacion?->estado_transporte_actual);
+                var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
                 var liveStatus = document.getElementById('pedido-live-status');
                 var liveMarker = null;
                 var liveLine = null;
                 var livePoints = [];
                 var lastLiveKey = null;
+                var trackingBusy = false;
+                var trackingTimer = null;
                 var map = L.map('pedido-destino-map').setView([destinoLat, destinoLng], 16);
                 var currentIcon = L.divIcon({
                     className: '',
@@ -497,6 +673,12 @@
                 }
 
                 function refreshLiveLocation() {
+                    if (trackingBusy || document.hidden) {
+                        scheduleTracking();
+                        return;
+                    }
+
+                    trackingBusy = true;
                     fetch(trackingUrl, {
                         headers: {
                             'Accept': 'application/json'
@@ -514,11 +696,26 @@
                         })
                         .catch(function() {
                             setLiveStatus('No se pudo actualizar la ubicacion en este momento.');
+                        })
+                        .finally(function() {
+                            trackingBusy = false;
+                            scheduleTracking();
                         });
                 }
 
+                function scheduleTracking() {
+                    clearTimeout(trackingTimer);
+                    trackingTimer = setTimeout(refreshLiveLocation, 12000);
+                }
+
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        clearTimeout(trackingTimer);
+                        refreshLiveLocation();
+                    }
+                });
+
                 refreshLiveLocation();
-                setInterval(refreshLiveLocation, 5000);
             });
         </script>
     @endif

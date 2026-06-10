@@ -25,6 +25,11 @@
         $estadoAlquilerActual = $solicitud->estado_alquiler_actual;
         $estadoKeys = array_keys($alquilerEstados);
         $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
+        $deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado'
+            ? 'aceptado'
+            : $solicitud->estado_transporte_actual;
+        $deliveryIndex = array_search($deliveryCurrent, $deliveryFlow, true);
     @endphp
 
     <style>
@@ -235,7 +240,133 @@
                         </dl>
                     </div>
 
-                    @if ($solicitud->estado_solicitud === 'aceptada')
+                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type === 'organico')
+                        <div class="card-body border-top">
+                            <div class="rental-tracking-card p-3 mb-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                                    <h5 class="mb-1 font-weight-bold">
+                                        <i class="fas fa-route mr-1"></i>Seguimiento de entrega
+                                    </h5>
+                                    <span class="badge badge-success" id="seller-delivery-status">
+                                        {{ $solicitud->estado_transporte_label }}
+                                    </span>
+                                </div>
+                                <div class="rental-tracking-steps" id="seller-delivery-steps">
+                                    @foreach ($deliveryFlow as $index => $state)
+                                        @php
+                                            $stepClass = $deliveryIndex !== false && $index < $deliveryIndex
+                                                ? 'is-done'
+                                                : ($state === $deliveryCurrent ? 'is-current' : '');
+                                        @endphp
+                                        <div class="rental-tracking-step {{ $stepClass }}" data-state="{{ $state }}">
+                                            <span>
+                                                @if ($stepClass === 'is-done')
+                                                    <i class="fas fa-check"></i>
+                                                @else
+                                                    {{ $index + 1 }}
+                                                @endif
+                                            </span>
+                                            <div>{{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$state] }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            @if (in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
+                                <form method="POST"
+                                    action="{{ route('vendedor.solicitudes.transporte.preparado', $solicitud) }}"
+                                    class="mb-3 question-confirm-form"
+                                    data-confirm-title="¿Marcar el producto como preparado?"
+                                    data-confirm-text="El transportista podrá activar el GPS e iniciar la entrega. Después de continuar, el pedido ya no volverá al estado Aceptado."
+                                    data-confirm-button="Sí, marcar preparado"
+                                    data-cancel-button="Todavía no"
+                                    data-loading-text="Actualizando el estado...">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-box-open mr-1"></i>Producto preparado
+                                    </button>
+                                    <small class="text-muted d-block mt-2">
+                                        Al marcarlo, el transportista podra activar el GPS e iniciar la entrega.
+                                    </small>
+                                </form>
+                            @endif
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="mb-1 font-weight-bold">
+                                        <i class="fas fa-key mr-1"></i>Acceso de transporte externo
+                                    </h5>
+                                    <small class="text-muted">
+                                        Comparte este codigo con la persona que realizara la entrega.
+                                    </small>
+                                </div>
+                                @if ($solicitud->transporteAcceso?->estaActivo())
+                                    <span class="badge badge-success">Activo</span>
+                                @else
+                                    <span class="badge badge-secondary">Sin acceso activo</span>
+                                @endif
+                            </div>
+
+                            @if ($solicitud->transporteAcceso?->estaActivo())
+                                <div class="row align-items-center">
+                                    <div class="col-md-7">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control font-weight-bold"
+                                                id="transport-code" value="{{ $solicitud->transporteAcceso->codigo }}" readonly>
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-success"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('transport-code').value)">
+                                                    <i class="fas fa-copy mr-1"></i>Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mb-3">
+                                            Vigente hasta:
+                                            {{ $solicitud->transporteAcceso->expires_at?->format('d/m/Y H:i') ?? 'sin limite' }}.
+                                            El transportista puede escribir el codigo o escanear este QR.
+                                        </small>
+                                    </div>
+                                    <div class="col-md-5 text-center mb-3">
+                                        <div class="border rounded bg-white p-2 d-inline-block">
+                                            <canvas id="transport-qr-canvas" width="220" height="220"
+                                                aria-label="Codigo QR de transporte"></canvas>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-success d-block mx-auto mt-2"
+                                            id="transport-qr-download">
+                                            <i class="fas fa-download mr-1"></i>Descargar QR
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="d-flex flex-wrap">
+                                <form method="POST"
+                                    action="{{ route('vendedor.solicitudes.transporte.codigo', $solicitud) }}"
+                                    class="mr-2 mb-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-sync-alt mr-1"></i>
+                                        {{ $solicitud->transporteAcceso?->estaActivo() ? 'Regenerar codigo' : 'Generar codigo' }}
+                                    </button>
+                                </form>
+
+                                @if ($solicitud->transporteAcceso?->estaActivo())
+                                    <form method="POST"
+                                        action="{{ route('vendedor.solicitudes.transporte.revocar', $solicitud) }}"
+                                        class="mb-2"
+                                        onsubmit="return confirm('¿Revocar el acceso externo de transporte?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-ban mr-1"></i>Revocar acceso
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type !== 'organico')
                         <div class="card-body border-top">
                             @if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado')
                                 <div class="alert alert-light border mb-0">
@@ -335,11 +466,23 @@
                         </div>
                     @endif
 
+                    @if($solicitud->product_type === 'organico'
+                        && $solicitud->estado_solicitud === 'aceptada'
+                        && in_array($solicitud->estado_transporte_actual, ['entregado', 'cancelado'], true))
+                        <div class="card-body border-top">
+                            @include('organicos.partials.postventa', ['detalle' => $solicitud, 'modo' => 'vendedor'])
+                        </div>
+                    @endif
+
                     @if ($solicitud->estado_solicitud === 'pendiente')
                         <div class="card-footer d-flex flex-wrap">
                             <form action="{{ route('vendedor.solicitudes.aceptar', $solicitud) }}" method="POST"
-                                class="mr-2 mb-2"
-                                onsubmit="return confirm('Aceptar esta solicitud cancelara las demas solicitudes pendientes de este producto. ¿Continuar?')">
+                                class="mr-2 mb-2 question-confirm-form"
+                                data-confirm-title="¿Aceptar esta solicitud?"
+                                data-confirm-text="Venderás este producto al comprador seleccionado y las demás solicitudes pendientes del mismo producto serán canceladas."
+                                data-confirm-button="Sí, aceptar solicitud"
+                                data-cancel-button="Revisar nuevamente"
+                                data-loading-text="Aceptando la solicitud...">
                                 @csrf
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-check mr-1"></i>Vender a este comprador
@@ -355,7 +498,9 @@
                                 </button>
                             </form>
                         </div>
-                    @elseif ($solicitud->estado_solicitud === 'aceptada' && $solicitud->pedido->estado !== 'finalizado')
+                    @elseif ($solicitud->estado_solicitud === 'aceptada'
+                        && $solicitud->pedido->estado !== 'finalizado'
+                        && $solicitud->estado_transporte_actual !== 'cancelado')
                         <div class="card-footer">
                             <form action="{{ route('vendedor.solicitudes.finalizar', $solicitud) }}" method="POST"
                                 onsubmit="return confirm('¿Finalizar este pedido?')">
@@ -364,7 +509,7 @@
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
-                                @if (!$solicitud->transportista_id)
+                                @if ($solicitud->product_type !== 'organico' && !$solicitud->transportista_id)
                                     <small class="text-muted d-block mt-2">
                                         Para continuar, primero asigna un transportista.
                                     </small>
@@ -459,7 +604,12 @@
                 var transportistaLat = @json($solicitud->ultimaUbicacion?->latitud ? (float) $solicitud->ultimaUbicacion->latitud : null);
                 var transportistaLng = @json($solicitud->ultimaUbicacion?->longitud ? (float) $solicitud->ultimaUbicacion->longitud : null);
                 var googleMapsUrl = @json($mapsUrl);
+                var trackingUrl = @json(route('pedidos.detalles.tracking.latest', $solicitud, false));
                 var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
+                var transportistaMarker = null;
+                var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+                var trackingBusy = false;
+                var trackingTimer = null;
 
                 function mapIcon(type, icon, label) {
                     return L.divIcon({
@@ -489,7 +639,7 @@
                     .bindPopup('<strong>Destino del comprador</strong><br>' + @json($solicitud->pedido->destino_entrega));
 
                 if (transportistaLat && transportistaLng) {
-                    L.marker([transportistaLat, transportistaLng], {
+                    transportistaMarker = L.marker([transportistaLat, transportistaLng], {
                             icon: transportistaIcon
                         })
                         .addTo(map)
@@ -606,7 +756,68 @@
 
                     destinoMarker.openPopup();
                 }
+
+                function refreshTracking() {
+                    if (trackingBusy || document.hidden) {
+                        scheduleTracking();
+                        return;
+                    }
+
+                    trackingBusy = true;
+                    fetch(trackingUrl, { headers: { 'Accept': 'application/json' } })
+                        .then(function(response) {
+                            if (!response.ok) throw new Error('Tracking no disponible');
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            var status = document.getElementById('seller-delivery-status');
+                            if (status) status.textContent = data.estado_label;
+
+                            var currentIndex = deliveryFlow.indexOf(data.estado);
+                            document.querySelectorAll('#seller-delivery-steps [data-state]').forEach(function(step) {
+                                var index = deliveryFlow.indexOf(step.dataset.state);
+                                step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
+                                step.classList.toggle('is-current', step.dataset.state === data.estado);
+                            });
+
+                            if (!data.ubicacion) return;
+                            var position = [data.ubicacion.latitud, data.ubicacion.longitud];
+
+                            if (!transportistaMarker) {
+                                transportistaMarker = L.marker(position, { icon: transportistaIcon }).addTo(map);
+                            } else {
+                                transportistaMarker.setLatLng(position);
+                            }
+
+                            transportistaMarker.bindPopup(
+                                '<strong>Ubicacion actual del transportista</strong><br>' +
+                                (data.ubicacion.fecha_humana || '')
+                            );
+                        })
+                        .catch(function() {})
+                        .finally(function() {
+                            trackingBusy = false;
+                            scheduleTracking();
+                        });
+                }
+
+                function scheduleTracking() {
+                    clearTimeout(trackingTimer);
+                    trackingTimer = setTimeout(refreshTracking, 12000);
+                }
+
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        clearTimeout(trackingTimer);
+                        refreshTracking();
+                    }
+                });
+
+                refreshTracking();
             });
         </script>
+    @endif
+    @if ($solicitud->product_type === 'organico' && $solicitud->transporteAcceso?->estaActivo())
+        @vite('resources/js/transport-qr-seller.js')
     @endif
 @endsection

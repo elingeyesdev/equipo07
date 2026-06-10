@@ -42,6 +42,36 @@ Abrir en el navegador:
 http://localhost:8081
 ```
 
+## Probar transporte y GPS desde un celular con ngrok
+
+El proyecto incluye un perfil Docker opcional para publicar temporalmente la
+aplicacion mediante HTTPS. El GPS del navegador movil requiere una URL segura.
+
+1. Crear una cuenta en ngrok y copiar el `authtoken`.
+2. Con Docker Desktop abierto, ejecutar desde la raiz:
+
+```powershell
+.\scripts\start-ngrok.ps1 -Token "TU_TOKEN_DE_NGROK"
+```
+
+El script mostrara la URL real asignada a esta computadora, por ejemplo:
+
+```text
+URL publica: https://abc123.ngrok-free.app
+Acceso transporte: https://abc123.ngrok-free.app/transporte
+```
+
+Copia exactamente la URL que imprima el script. `abc123` es solo un ejemplo y
+no funcionara como enlace. La URL real puede abrirse desde el celular mientras
+la computadora, Docker y ngrok permanezcan encendidos. El token no debe
+guardarse en Git ni compartirse.
+
+Para detener tambien el tunel:
+
+```powershell
+docker compose --profile tunnel down
+```
+
 ### Si ya habias levantado el proyecto antes
 
 Normalmente basta con:
