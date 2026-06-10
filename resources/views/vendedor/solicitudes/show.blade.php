@@ -237,6 +237,14 @@
                                     @endif
                                 </dd>
                             @endif
+                            @if ($solicitud->estado_solicitud === 'aceptada')
+                                <dt class="col-sm-5">Transporte</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge badge-primary" data-vendor-transport-label>
+                                        {{ $solicitud->estado_transporte_label }}
+                                    </span>
+                                </dd>
+                            @endif
                         </dl>
                     </div>
 
@@ -398,11 +406,12 @@
                                     </div>
                                     @if ($transportistas->isEmpty())
                                         <small class="text-danger d-block mt-2">
-                                            No hay usuarios con rol transportista registrados.
+                                            Todavia no creaste transportistas.
+                                            <a href="{{ route('vendedor.transportistas.index') }}">Crear transportista</a>
                                         </small>
                                     @else
                                         <small class="text-muted d-block mt-2">
-                                            El transportista asignado vera este envío en su panel.
+                                            Solo aparecen los transportistas creados por ti.
                                         </small>
                                     @endif
                                 </form>
@@ -423,7 +432,7 @@
                                         </small>
                                     </div>
                                     <span class="badge badge-success mt-2 mt-md-0">
-                                        {{ $solicitud->estado_alquiler_label }}
+                                        <span data-vendor-rental-label>{{ $solicitud->estado_alquiler_label }}</span>
                                     </span>
                                 </div>
 
@@ -438,7 +447,9 @@
                                                 $stepClass = 'is-current';
                                             }
                                         @endphp
-                                        <div class="rental-tracking-step {{ $stepClass }}">
+                                        <div class="rental-tracking-step {{ $stepClass }}"
+                                            data-vendor-rental-step
+                                            data-rental-state="{{ $estadoKey }}">
                                             <span>
                                                 @if ($stepClass === 'is-done')
                                                     <i class="fas fa-check"></i>
@@ -459,7 +470,7 @@
                                 @else
                                     <div class="alert alert-light border mb-0">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        Estado actual: {{ $solicitud->estado_alquiler_label }}.
+                                        Estado actual: <span data-vendor-rental-current>{{ $solicitud->estado_alquiler_label }}</span>.
                                     </div>
                                 @endif
                             </div>
@@ -505,7 +516,7 @@
                             <form action="{{ route('vendedor.solicitudes.finalizar', $solicitud) }}" method="POST"
                                 onsubmit="return confirm('¿Finalizar este pedido?')">
                                 @csrf
-                                <button type="submit" class="btn btn-success"
+                                <button type="submit" class="btn btn-success" data-vendor-finalize-button
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
@@ -820,4 +831,90 @@
     @if ($solicitud->product_type === 'organico' && $solicitud->transporteAcceso?->estaActivo())
         @vite('resources/js/transport-qr-seller.js')
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var estadoUrl = @json(route('pedidos.detalles.estadoTransporte', $solicitud, false));
+            var rentalStates = @json($estadoKeys);
+
+            function updateRentalSteps(currentState) {
+                if (!currentState) {
+                    return;
+                }
+
+                var currentIndex = rentalStates.indexOf(currentState);
+
+                document.querySelectorAll('[data-vendor-rental-step]').forEach(function(step) {
+                    var state = step.getAttribute('data-rental-state');
+                    var index = rentalStates.indexOf(state);
+                    var marker = step.querySelector('span');
+
+                    step.classList.remove('is-done', 'is-current');
+
+                    if (currentIndex !== -1 && index < currentIndex) {
+                        step.classList.add('is-done');
+                        if (marker) {
+                            marker.innerHTML = '<i class="fas fa-check"></i>';
+                        }
+                    } else if (state === currentState) {
+                        step.classList.add('is-current');
+                        if (marker) {
+                            marker.textContent = index + 1;
+                        }
+                    } else if (marker) {
+                        marker.textContent = index + 1;
+                    }
+                });
+            }
+
+            function applyState(data) {
+                var transportLabel = document.querySelector('[data-vendor-transport-label]');
+                var rentalLabel = document.querySelector('[data-vendor-rental-label]');
+                var rentalCurrent = document.querySelector('[data-vendor-rental-current]');
+                var finalizeButton = document.querySelector('[data-vendor-finalize-button]');
+
+                if (transportLabel && data.estado_transporte_label) {
+                    transportLabel.textContent = data.estado_transporte_label;
+                }
+
+                if (rentalLabel && data.estado_alquiler_label) {
+                    rentalLabel.textContent = data.estado_alquiler_label;
+                }
+
+                if (rentalCurrent && data.estado_alquiler_label) {
+                    rentalCurrent.textContent = data.estado_alquiler_label;
+                }
+
+                if (finalizeButton) {
+                    finalizeButton.disabled = !data.puede_finalizar_desde_vendedor;
+                }
+
+                updateRentalSteps(data.estado_alquiler);
+            }
+
+            function refreshState() {
+                fetch(estadoUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('No se pudo consultar estado');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.ok) {
+                            applyState(data);
+                        }
+                    })
+                    .catch(function() {});
+            }
+
+            refreshState();
+            setInterval(refreshState, 5000);
+        });
+    </script>
 @endsection

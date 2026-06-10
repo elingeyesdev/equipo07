@@ -452,6 +452,13 @@
                                         <p>Reclamos</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('vendedor.transportistas.index') }}"
+                                        class="nav-link {{ request()->routeIs('vendedor.transportistas.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-truck"></i>
+                                        <p>Mis transportistas</p>
+                                    </a>
+                                </li>
                             @endif
 
                             {{-- ===== OPCIONES SOLO PARA CLIENTE ===== --}}

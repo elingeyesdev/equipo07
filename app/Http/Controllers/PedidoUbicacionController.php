@@ -147,6 +147,37 @@ class PedidoUbicacionController extends Controller
         ]);
     }
 
+    public function estadoDetalle(PedidoDetalle $detalle)
+    {
+        $detalle->load(['pedido', 'transportista']);
+        $user = Auth::user();
+        $isBuyer = (int) $detalle->pedido->user_id === (int) Auth::id();
+        $isSeller = (int) $detalle->vendedor_id === (int) Auth::id();
+        $isTransportista = (int) $detalle->transportista_id === (int) Auth::id();
+
+        if (!$isBuyer && !$isSeller && !$isTransportista && !$user?->isAdmin()) {
+            abort(403);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'detalle_id' => $detalle->id,
+            'pedido_estado' => $detalle->pedido->estado,
+            'estado_solicitud' => $detalle->estado_solicitud,
+            'estado_transporte' => $detalle->estado_transporte_actual,
+            'estado_transporte_label' => $detalle->estado_transporte_label,
+            'siguiente_estado' => $detalle->siguiente_estado_transporte,
+            'siguiente_estado_label' => $detalle->siguiente_estado_transporte_label,
+            'estado_alquiler' => $detalle->estado_alquiler_actual,
+            'estado_alquiler_label' => $detalle->estado_alquiler_label,
+            'recepcion_confirmada_at' => $detalle->recepcion_confirmada_at?->format('d/m/Y H:i'),
+            'puede_confirmar_recepcion' => $isBuyer
+                && $detalle->estado_solicitud === 'aceptada'
+                && $detalle->estado_transporte_actual === 'esperando_confirmacion',
+            'puede_finalizar_desde_vendedor' => $isSeller && $detalle->puede_finalizar_desde_vendedor,
+        ]);
+    }
+
     public function avanzarEstado(PedidoDetalle $solicitud)
     {
         $this->authorizeTransportista($solicitud);

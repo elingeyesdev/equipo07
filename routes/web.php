@@ -27,6 +27,7 @@ use App\Http\Controllers\TransportePublicoController;
 use App\Http\Controllers\ProductoVentaController;
 use App\Http\Controllers\InteraccionOrganicoController;
 use App\Http\Controllers\ReclamoController;
+use App\Http\Controllers\VendedorTransportistaController;
 
 
 Route::view('/', 'public.landing')->name('landing');
@@ -60,6 +61,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::middleware('auth')->get('/pedidos/detalles/{detalle}/estado-transporte', [PedidoUbicacionController::class, 'estadoDetalle'])->name('pedidos.detalles.estadoTransporte');
 Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/anuncios', [App\Http\Controllers\HomeController::class, 'anuncios'])->name('ads.index');
 Route::view('/publicar', 'public.ads.create')->middleware('not.transportista')->name('ads.create');
@@ -99,8 +101,6 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/pedidos/{pedido}/estado', [AdminPedidoController::class, 'updateEstado'])->name('pedidos.updateEstado');
 
     Route::get('/transportistas', [AdminTransportistaController::class, 'index'])->name('transportistas.index');
-    Route::post('/transportistas/{usuario}/hacer-transportista', [AdminTransportistaController::class, 'hacerTransportista'])->name('transportistas.hacer');
-    Route::post('/transportistas/{usuario}/quitar-transportista', [AdminTransportistaController::class, 'quitarTransportista'])->name('transportistas.quitar');
 
     // REPORTES
     // Ventas
@@ -151,6 +151,9 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
         ->name('vendedor.solicitudes.transporte.revocar');
     Route::post('/vendedor/solicitudes/{solicitud}/transporte/preparado', [VendedorSolicitudController::class, 'marcarPreparado'])
         ->name('vendedor.solicitudes.transporte.preparado');
+
+    Route::get('/vendedor/transportistas', [VendedorTransportistaController::class, 'index'])->name('vendedor.transportistas.index');
+    Route::post('/vendedor/transportistas', [VendedorTransportistaController::class, 'store'])->name('vendedor.transportistas.store');
 });
 
 Route::middleware('auth')->get(
@@ -165,6 +168,7 @@ Route::middleware('auth')->get(
 
 Route::middleware(['auth', 'role.transportista'])->group(function () {
     Route::get('/transportista/envios', [TransportistaEnvioController::class, 'index'])->name('transportista.envios.index');
+    Route::get('/transportista/envios/historial', [TransportistaEnvioController::class, 'historial'])->name('transportista.envios.historial');
     Route::get('/transportista/envios/{envio}', [TransportistaEnvioController::class, 'show'])->name('transportista.envios.show');
     Route::get('/transportista/envios/{envio}/tracking', [TransportistaEnvioController::class, 'tracking'])->name('transportista.envios.tracking');
     Route::post('/transportista/envios/{solicitud}/tracking', [PedidoUbicacionController::class, 'store'])->name('transportista.envios.tracking.store');
@@ -191,6 +195,7 @@ Route::middleware(['auth', 'not.transportista'])->group(function () {
     Route::get('/api/geocodificacion', [GanadoController::class, 'obtenerGeocodificacion'])->name('api.geocodificacion');
 
     Route::get('/mis-pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
+    Route::get('/mis-pedidos/historial', [PedidoController::class, 'historial'])->name('pedidos.historial');
     Route::get('/mis-pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
     Route::get('/mis-pedidos/{pedido}/ubicacion-actual', [PedidoUbicacionController::class, 'latest'])->name('pedidos.tracking.latest');
     Route::post('/mis-pedidos/detalles/{detalle}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion'])->name('pedidos.detalles.confirmarRecepcion');

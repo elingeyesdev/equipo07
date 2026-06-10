@@ -5,167 +5,76 @@
 
 @section('content')
     <style>
-        html {
-            scroll-behavior: smooth;
-            scroll-padding-top: 5rem;
+        .landing-page{
+            --ink:#1b2a16; --muted:#5d6b54; --green:#2f621f; --green-d:#1f3d16;
+            --cream:#f7f5ef; --line:#e4e1d4; --wheat:#a8782a;
+            --serif: Georgia, "Times New Roman", serif;
+            background:var(--cream);
+            color:var(--ink);
+            -webkit-font-smoothing:antialiased;
         }
+        .landing-page .serif{ font-family:var(--serif); font-weight:600; letter-spacing:-.012em; }
+        .landing-page .eyebrow{ font-size:.72rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
 
-        .landing-page section[id] {
-            scroll-margin-top: 5rem;
-        }
+        html{ scroll-behavior:smooth; scroll-padding-top:5.5rem; }
+        .landing-page section[id]{ scroll-margin-top:5.5rem; }
 
-        .landing-nav-shell,
-        .landing-hero-shell {
-            max-width: 1216px;
-        }
+        /* Nav */
+        .landing-nav{ transition: background-color .3s ease, border-color .3s ease, box-shadow .3s ease, transform .35s ease; }
+        .landing-nav.is-stuck{ background-color:rgba(247,245,239,.92); border-color:rgba(27,42,22,.10); box-shadow:0 1px 0 rgba(27,42,22,.04), 0 12px 30px rgba(27,42,22,.06); backdrop-filter:saturate(1.1); }
+        .landing-nav.is-hidden{ transform:translateY(-100%); }
+        .landing-nav .nav-link{ position:relative; }
+        .landing-nav .nav-link::after{ content:""; position:absolute; left:0; right:100%; bottom:-4px; height:1.5px; background:var(--green); transition:right .28s cubic-bezier(.2,.7,.2,1); }
+        .landing-nav .nav-link:hover::after{ right:0; }
 
-        .landing-nav {
-            transition: opacity .28s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .28s ease;
-        }
+        /* Buttons */
+        .landing-page .btn-primary{ background:var(--green); color:#fff; transition:transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
+        .landing-page .btn-primary:hover{ background:var(--green-d); transform:translateY(-1px); box-shadow:0 10px 22px rgba(31,61,22,.22); }
+        .landing-page .btn-ghost{ transition:color .2s ease, transform .2s ease; }
+        .landing-page .link-arrow i{ transition:transform .25s ease; }
+        .landing-page .link-arrow:hover i{ transform:translateX(4px); }
 
-        .landing-nav .landing-nav-shell {
-            transition: min-height .25s ease;
-        }
+        /* Cards */
+        .landing-page .card{ transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease, border-color .35s ease; }
+        .landing-page .card:hover{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(27,42,22,.08); border-color:rgba(47,98,31,.28); }
+        .landing-page .icon-tile{ transition:background-color .3s ease, color .3s ease, border-color .3s ease; }
+        .landing-page .card:hover .icon-tile{ background:var(--green); color:#fff; border-color:var(--green); }
 
-        .landing-nav.is-stuck {
-            border-color: rgba(47, 98, 31, .16);
-            background-color: rgba(247, 251, 242, .96);
-            box-shadow: 0 18px 45px rgba(20, 33, 18, .12);
-            transform: translateY(0);
-        }
+        /* Hero image frame */
+        .landing-page .hero-frame{ box-shadow:0 30px 60px -28px rgba(27,42,22,.45); }
+        .landing-page .hero-frame img{ transition:transform 1.2s cubic-bezier(.2,.7,.2,1); }
+        .landing-page .hero-frame:hover img{ transform:scale(1.03); }
 
-        .landing-nav.is-stuck .landing-nav-shell {
-            min-height: 4.25rem;
-        }
+        /* Reveal on scroll */
+        .landing-page [data-reveal]{ opacity:0; transform:translateY(20px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+        .landing-page [data-reveal].is-in{ opacity:1; transform:none; }
 
-        .landing-nav.is-hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-100%);
-        }
-
-        .landing-hero {
-            min-height: calc(100vh - 5rem);
-            min-height: calc(100svh - 5rem);
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-
-        .landing-hero-shell {
-            grid-template-columns: minmax(0, 620px) minmax(0, 532px);
-            gap: 4rem;
-        }
-
-        .landing-hero-title {
-            max-width: 590px;
-            margin-top: 3rem;
-            font-size: 3.05rem;
-            line-height: .94;
-        }
-
-        .landing-hero-copy {
-            max-width: 36rem;
-            margin-top: 3rem;
-            line-height: 1.75;
-        }
-
-        .landing-hero-cta {
-            margin-top: 3rem;
-        }
-
-        .landing-hero-stats {
-            max-width: 622px;
-            margin-top: 3.5rem;
-            gap: .75rem;
-        }
-
-        .landing-hero-visual {
-            min-height: 728px;
-        }
-
-        .landing-hero-image {
-            inset: 1.75rem 0 .5rem;
-        }
-
-        .landing-hero-feature {
-            top: 0;
-            right: 2rem;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
-            }
-
+        @media (prefers-reduced-motion: reduce){
+            html{ scroll-behavior:auto; }
             .landing-nav,
-            .landing-nav .landing-nav-shell {
-                transition: none;
-            }
-        }
-
-        @media (max-width: 1023.98px) {
-            .landing-hero {
-                min-height: auto;
-                padding-top: 3rem;
-                padding-bottom: 4rem;
-            }
-
-            .landing-hero-shell {
-                grid-template-columns: 1fr;
-                gap: 2.5rem;
-            }
-
-            .landing-hero-title {
-                margin-top: 2rem;
-                font-size: clamp(2.25rem, 8vw, 3.75rem);
-                line-height: 1.04;
-            }
-
-            .landing-hero-copy,
-            .landing-hero-cta {
-                margin-top: 2rem;
-            }
-
-            .landing-hero-stats {
-                margin-top: 2.5rem;
-                gap: 1rem;
-            }
-
-            .landing-hero-visual {
-                min-height: 600px;
-            }
-
-            .landing-hero-image {
-                inset: .5rem 0;
-            }
-        }
-
-        @media (max-width: 639.98px) {
-            .landing-hero-visual {
-                min-height: 460px;
-            }
-
-            .landing-hero-feature {
-                right: .5rem;
-            }
+            .landing-page [data-reveal],
+            .landing-page .hero-frame img{ transition:none !important; }
+            .landing-page [data-reveal]{ opacity:1; transform:none; }
         }
     </style>
 
-    <main class="landing-page min-h-screen bg-[#f7fbf2] text-[#142112] antialiased">
-        <nav class="landing-nav sticky top-0 z-50 border-b border-[#2f621f]/10 bg-[#f7fbf2]/90 backdrop-blur-xl" data-landing-nav>
-            <div class="landing-nav-shell mx-auto flex min-h-20 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-4 xl:px-0">
-                <a href="{{ route('landing') }}" class="flex min-w-max items-center gap-3 text-lg font-black text-[#183b18] no-underline">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-white shadow-lg shadow-[#2f621f]/10">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" class="h-8 w-8 object-contain">
+    <main class="landing-page min-h-screen">
+
+        <!-- NAV -->
+        <nav class="landing-nav sticky top-0 z-50 border-b border-transparent" data-landing-nav>
+            <div class="mx-auto flex h-[5.25rem] w-full max-w-[1216px] items-center justify-between gap-4 px-5 sm:px-7 lg:px-6 xl:px-0">
+                <a href="{{ route('landing') }}" class="flex items-center gap-3 no-underline">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-white">
+                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="Mercado Agrícola" class="h-7 w-7 object-contain">
                     </span>
-                    <span>Mercado Agricola</span>
+                    <span class="serif text-[1.15rem] text-[var(--green-d)]">Mercado Agrícola</span>
                 </a>
 
-                <div class="hidden items-center gap-7 lg:flex">
-                    <a href="#inicio" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Inicio</a>
-                    <a href="#beneficios" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Beneficios</a>
-                    <a href="#categorias" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Categorías</a>
-                    <a href="#como-funciona" class="text-sm font-bold text-[#4b5949] no-underline transition hover:text-[#2f621f]">Cómo funciona</a>
+                <div class="hidden items-center gap-9 lg:flex">
+                    <a href="#inicio" class="nav-link text-[.92rem] font-medium text-[var(--muted)] no-underline hover:text-[var(--green-d)]">Inicio</a>
+                    <a href="#beneficios" class="nav-link text-[.92rem] font-medium text-[var(--muted)] no-underline hover:text-[var(--green-d)]">Beneficios</a>
+                    <a href="#categorias" class="nav-link text-[.92rem] font-medium text-[var(--muted)] no-underline hover:text-[var(--green-d)]">Categorías</a>
+                    <a href="#como-funciona" class="nav-link text-[.92rem] font-medium text-[var(--muted)] no-underline hover:text-[var(--green-d)]">Cómo funciona</a>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -173,218 +82,253 @@
                         <i class="fas fa-truck"></i>
                         Transporte
                     </a>
-                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#2f621f]/15 bg-white px-4 text-sm font-black text-[#183b18] no-underline shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-                        Iniciar sesión
-                    </a>
+                    <a href="{{ route('login') }}" class="btn-ghost hidden min-h-10 items-center rounded-lg px-4 text-[.9rem] font-semibold text-[var(--green-d)] no-underline hover:text-[var(--green)] sm:inline-flex">Iniciar sesión</a>
+                    <a href="{{ route('register') }}" class="btn-primary inline-flex min-h-10 items-center justify-center rounded-lg px-5 text-[.9rem] font-semibold no-underline">Registrarse</a>
                 </div>
             </div>
         </nav>
 
-        <section id="inicio" class="landing-hero relative flex items-center overflow-hidden bg-gradient-to-br from-[#f8fcf3] via-[#edf8e6] to-white">
-            <div class="absolute right-[-10rem] bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-[#2f621f]/10"></div>
-            <div class="absolute top-10 left-6 h-40 w-40 rounded-full bg-[#a6c85f]/20 blur-3xl"></div>
-
-            <div class="landing-hero-shell relative mx-auto grid w-full items-center px-4 sm:px-6 lg:px-4 xl:px-0">
+        <!-- HERO -->
+        <section id="inicio" class="relative overflow-hidden">
+            <div class="mx-auto grid w-full max-w-[1216px] items-center gap-12 px-5 py-14 sm:px-7 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-6 lg:py-20 xl:px-0">
                 <div>
-                    <span class="inline-flex items-center gap-2 rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">
-                        <i class="fas fa-seedling"></i>
-                        Plataforma agropecuaria integral
-                    </span>
+                    <div class="flex items-center gap-3" data-reveal>
+                        <span class="h-px w-8 bg-[var(--wheat)]"></span>
+                        <span class="eyebrow text-[var(--wheat)]">Plataforma agropecuaria</span>
+                    </div>
 
-                    <h1 class="landing-hero-title text-4xl font-black tracking-normal text-[#142112] sm:text-5xl">
-                        Mercado Agrícola para conectar productos, animales y maquinaria en un solo lugar.
+                    <h1 class="serif mt-6 text-[2.6rem] leading-[1.04] text-[var(--ink)] sm:text-[3.2rem] lg:text-[3.5rem]" data-reveal style="transition-delay:.06s">
+                        El mercado del campo,<br>reunido en un solo lugar.
                     </h1>
 
-                    <p class="landing-hero-copy text-base text-[#66735f]">
-                        Una plataforma moderna para publicar, explorar y gestionar oportunidades del mercado agropecuario:
-                        productos orgánicos, ganado, maquinaria agrícola y servicios relacionados.
+                    <p class="mt-6 max-w-[34rem] text-[1.05rem] leading-[1.75] text-[var(--muted)]" data-reveal style="transition-delay:.12s">
+                        Publica, explora y gestiona oportunidades del sector agropecuario —productos orgánicos, ganado, maquinaria y servicios— desde un entorno claro y ordenado.
                     </p>
 
-                    <div class="landing-hero-cta flex flex-col gap-3 sm:flex-row">
-                        <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#4f8f2f] px-6 text-base font-black text-white no-underline shadow-2xl shadow-[#2f621f]/25 transition hover:-translate-y-0.5">
-                            Comenzar ahora
-                            <i class="fas fa-arrow-right text-sm"></i>
+                    <div class="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" data-reveal style="transition-delay:.18s">
+                        <a href="{{ route('register') }}" class="btn-primary link-arrow inline-flex min-h-[3.25rem] items-center justify-center gap-2.5 rounded-xl px-7 text-[.98rem] font-semibold no-underline">
+                            Comenzar ahora <i class="fas fa-arrow-right text-[.8rem]"></i>
+                        </a>
+                        <a href="#categorias" class="btn-ghost inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl px-5 text-[.98rem] font-semibold text-[var(--green-d)] no-underline hover:text-[var(--green)]">
+                            Ver categorías
                         </a>
                     </div>
 
-                    <div class="landing-hero-stats grid sm:grid-cols-2">
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
-                            <strong class="block text-2xl font-black text-[#183b18]">4 áreas</strong>
-                            <span class="mt-1 block leading-6 text-[#66735f]">Animales, maquinaria, orgánicos y servicios</span>
+                    <dl class="mt-12 grid max-w-[34rem] grid-cols-2 divide-x divide-[var(--line)] border-t border-[var(--line)] pt-7" data-reveal style="transition-delay:.24s">
+                        <div class="pr-6">
+                            <dt class="serif text-[2rem] text-[var(--green-d)]">4 áreas</dt>
+                            <dd class="mt-1 text-[.92rem] leading-6 text-[var(--muted)]">Animales, maquinaria, orgánicos y servicios</dd>
                         </div>
-                        <div class="rounded-2xl border border-[#2f621f]/10 bg-white/80 p-4 shadow-sm">
-                            <strong class="block text-2xl font-black text-[#183b18]">24/7</strong>
-                            <span class="mt-1 block leading-6 text-[#66735f]">Consulta publicaciones cuando lo necesites</span>
+                        <div class="pl-6">
+                            <dt class="serif text-[2rem] text-[var(--green-d)]">24/7</dt>
+                            <dd class="mt-1 text-[.92rem] leading-6 text-[var(--muted)]">Consulta publicaciones cuando lo necesites</dd>
                         </div>
-                    </div>
+                    </dl>
                 </div>
 
-                <div class="landing-hero-visual relative">
-                    <div class="landing-hero-image absolute overflow-hidden rounded-[2rem] border border-[#2f621f]/15 bg-white shadow-2xl shadow-[#2f621f]/20">
-                        <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#142112]/70"></div>
-                        <div class="absolute right-5 bottom-5 max-w-xs rounded-2xl border border-white/20 bg-[#142112]/75 p-5 text-white shadow-xl backdrop-blur">
-                            <span class="block text-sm text-white/70">Publicaciones activas</span>
-                            <strong class="mt-1 block text-xl font-black">Mercado organizado</strong>
+                <div class="relative" data-reveal style="transition-delay:.12s">
+                    <div class="hero-frame relative overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-white">
+                        <div class="aspect-[3/2] w-full overflow-hidden sm:aspect-[16/10] lg:aspect-[4/5]">
+                            <img src="{{ asset('img/hero-agrovida.png') }}" alt="Productos y maquinaria agrícola" class="h-full w-full object-cover object-center">
                         </div>
+                        <span class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0f1d0c]/35 via-transparent to-transparent"></span>
                     </div>
 
-                    <div class="landing-hero-feature absolute flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
-                            <i class="fas fa-tractor"></i>
-                        </span>
-                        <div>
-                            <strong class="block font-black text-[#142112]">Maquinaria</strong>
-                            <span class="text-sm text-[#66735f]">Venta o alquiler</span>
-                        </div>
-                    </div>
-
-                    <div class="absolute bottom-0 left-2 flex w-56 items-center gap-3 rounded-2xl border border-[#2f621f]/15 bg-white/95 p-4 shadow-2xl shadow-black/10 sm:left-0">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f621f] text-white">
-                            <i class="fas fa-leaf"></i>
-                        </span>
-                        <div>
-                            <strong class="block font-black text-[#142112]">Orgánicos</strong>
-                            <span class="text-sm text-[#66735f]">Productos frescos</span>
-                        </div>
+                    {{-- Tarjetas: grid estática en móvil/tablet, flotantes en desktop --}}
+                    <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:mt-0 lg:block">
+                        @foreach ([
+                            ['icon' => 'fa-tractor', 'title' => 'Maquinaria', 'text' => 'Venta o alquiler', 'pos' => 'lg:right-4 lg:top-6'],
+                            ['icon' => 'fa-leaf', 'title' => 'Orgánicos', 'text' => 'Productos frescos', 'pos' => 'lg:left-4 lg:top-1/2 lg:-translate-y-1/2'],
+                            ['icon' => 'fa-horse', 'title' => 'Animales', 'text' => 'Ganado y producción', 'pos' => 'lg:right-4 lg:bottom-6'],
+                        ] as $card)
+                            <div class="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-white px-4 py-3 shadow-[0_16px_34px_-14px_rgba(27,42,22,.4)] lg:absolute lg:w-[13.5rem] {{ $card['pos'] }}">
+                                <span class="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-[var(--green)] text-white"><i class="fas {{ $card['icon'] }} text-[.95rem]"></i></span>
+                                <div>
+                                    <strong class="block text-[.92rem] text-[var(--ink)]">{{ $card['title'] }}</strong>
+                                    <span class="text-[.8rem] text-[var(--muted)]">{{ $card['text'] }}</span>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="beneficios" class="bg-white py-16 sm:py-20">
-            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="mx-auto max-w-3xl text-center">
-                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Beneficios</span>
-                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Una experiencia clara para compradores, vendedores y productores.</h2>
-                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Centraliza publicaciones y mejora la forma de encontrar oportunidades dentro del mercado agropecuario.</p>
+        <!-- BENEFICIOS -->
+        <section id="beneficios" class="border-t border-[var(--line)] bg-white py-20 sm:py-24">
+            <div class="mx-auto w-full max-w-[1216px] px-5 sm:px-7 lg:px-6 xl:px-0">
+                <div class="max-w-2xl" data-reveal>
+                    <div class="flex items-center gap-3">
+                        <span class="h-px w-8 bg-[var(--wheat)]"></span>
+                        <span class="eyebrow text-[var(--wheat)]">Beneficios</span>
+                    </div>
+                    <h2 class="serif mt-5 text-[2.1rem] leading-[1.1] text-[var(--ink)] sm:text-[2.7rem]">Una experiencia clara para quienes trabajan el campo.</h2>
+                    <p class="mt-5 text-[1.05rem] leading-8 text-[var(--muted)]">Centraliza publicaciones y mejora la forma de encontrar oportunidades dentro del mercado agropecuario.</p>
                 </div>
 
-                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div class="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
-                        ['icon' => 'fa-box-open', 'title' => 'Publicación de productos', 'text' => 'Presenta productos agrícolas con información clara, imágenes y detalles comerciales.'],
-                        ['icon' => 'fa-horse', 'title' => 'Gestión de animales', 'text' => 'Organiza información de ganado, características, ubicación y datos relevantes.'],
-                        ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Publica maquinaria para venta, alquiler o consulta con una presentación profesional.'],
-                        ['icon' => 'fa-handshake', 'title' => 'Contacto comercial', 'text' => 'Facilita la conexión entre compradores, vendedores y operadores del sector.'],
-                    ] as $benefit)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
-                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $benefit['icon'] }}"></i>
-                            </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $benefit['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $benefit['text'] }}</p>
+                        ['icon' => 'fa-box-open', 'num' => '01', 'title' => 'Publicación de productos', 'text' => 'Presenta productos agrícolas con información clara, imágenes y detalles comerciales.'],
+                        ['icon' => 'fa-horse', 'num' => '02', 'title' => 'Gestión de animales', 'text' => 'Organiza información de ganado, características, ubicación y datos relevantes.'],
+                        ['icon' => 'fa-tractor', 'num' => '03', 'title' => 'Maquinaria agrícola', 'text' => 'Publica maquinaria para venta, alquiler o consulta con una presentación profesional.'],
+                        ['icon' => 'fa-handshake', 'num' => '04', 'title' => 'Contacto comercial', 'text' => 'Facilita la conexión entre compradores, vendedores y operadores del sector.'],
+                    ] as $i => $benefit)
+                        <article class="card group rounded-2xl border border-[var(--line)] bg-white p-7" data-reveal style="transition-delay:{{ $i * 0.08 }}s">
+                            <div class="flex items-center justify-between">
+                                <span class="icon-tile flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--line)] bg-[#f1f3ec] text-[var(--green)]"><i class="fas {{ $benefit['icon'] }} text-[1.05rem]"></i></span>
+                                <span class="serif text-[1.1rem] text-[var(--line)] group-hover:text-[var(--wheat)]">{{ $benefit['num'] }}</span>
+                            </div>
+                            <h3 class="mt-6 text-[1.1rem] font-semibold text-[var(--ink)]">{{ $benefit['title'] }}</h3>
+                            <p class="mt-2.5 text-[.95rem] leading-7 text-[var(--muted)]">{{ $benefit['text'] }}</p>
                         </article>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <section id="categorias" class="bg-gradient-to-b from-[#f4faef] to-white py-16 sm:py-20">
-            <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="grid items-end gap-6 lg:grid-cols-[1fr_0.7fr]">
+        <!-- CATEGORÍAS -->
+        <section id="categorias" class="py-20 sm:py-24">
+            <div class="mx-auto w-full max-w-[1216px] px-5 sm:px-7 lg:px-6 xl:px-0">
+                <div class="grid items-end gap-6 lg:grid-cols-[1fr_.7fr]" data-reveal>
                     <div>
-                        <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Categorías</span>
-                        <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Todo el mercado agropecuario presentado con orden.</h2>
+                        <div class="flex items-center gap-3">
+                            <span class="h-px w-8 bg-[var(--wheat)]"></span>
+                            <span class="eyebrow text-[var(--wheat)]">Categorías</span>
+                        </div>
+                        <h2 class="serif mt-5 max-w-2xl text-[2.1rem] leading-[1.1] text-[var(--ink)] sm:text-[2.7rem]">Todo el mercado agropecuario, presentado con orden.</h2>
                     </div>
-                    <p class="text-lg leading-8 text-[#66735f]">Tarjetas visuales para encontrar rápidamente el tipo de publicación que cada usuario necesita.</p>
+                    <p class="text-[1.05rem] leading-8 text-[var(--muted)] lg:pb-2">Encuentra rápidamente el tipo de publicación que necesitas, sin ruido ni desorden.</p>
                 </div>
 
-                <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                <div class="mt-14 grid gap-px overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--line)] sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ([
                         ['icon' => 'fa-horse', 'title' => 'Animales', 'text' => 'Ganado y publicaciones pecuarias con datos útiles para evaluar cada oportunidad.'],
                         ['icon' => 'fa-tractor', 'title' => 'Maquinaria agrícola', 'text' => 'Equipos, marcas, estados y opciones para trabajo agrícola o productivo.'],
                         ['icon' => 'fa-carrot', 'title' => 'Productos orgánicos', 'text' => 'Producción fresca, trazabilidad y productos naturales para el mercado local.'],
                         ['icon' => 'fa-bullhorn', 'title' => 'Servicios y anuncios', 'text' => 'Publicaciones relacionadas con operaciones, oferta y demanda del sector.'],
-                    ] as $category)
-                        <article class="rounded-3xl border border-[#2f621f]/10 bg-white p-6 shadow-xl shadow-black/[0.04] transition hover:-translate-y-1 hover:shadow-2xl">
-                            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2f621f] to-[#5c9938] text-white shadow-lg shadow-[#2f621f]/20">
-                                <i class="fas {{ $category['icon'] }}"></i>
-                            </span>
-                            <h3 class="mt-5 text-lg font-black text-[#142112]">{{ $category['title'] }}</h3>
-                            <p class="mt-3 leading-7 text-[#66735f]">{{ $category['text'] }}</p>
-                        </article>
+                    ] as $i => $category)
+                        <a href="{{ route('register') }}" class="group flex flex-col bg-white p-8 no-underline transition-colors hover:bg-[#fbfaf5]" data-reveal style="transition-delay:{{ $i * 0.08 }}s">
+                            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--green-d)] text-white"><i class="fas {{ $category['icon'] }}"></i></span>
+                            <h3 class="mt-6 text-[1.15rem] font-semibold text-[var(--ink)]">{{ $category['title'] }}</h3>
+                            <p class="mt-2.5 flex-1 text-[.95rem] leading-7 text-[var(--muted)]">{{ $category['text'] }}</p>
+                            <span class="link-arrow mt-6 inline-flex items-center gap-2 text-[.88rem] font-semibold text-[var(--green)]">Explorar <i class="fas fa-arrow-right text-[.72rem]"></i></span>
+                        </a>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <section id="como-funciona" class="bg-white py-16 sm:py-20">
-            <div class="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1fr] lg:px-8">
-                <div>
-                    <span class="inline-flex rounded-full border border-[#2f621f]/15 bg-[#edf7e7] px-4 py-2 text-xs font-black uppercase text-[#2f621f]">Cómo funciona</span>
-                    <h2 class="mt-5 text-3xl font-black leading-tight text-[#142112] sm:text-5xl">Encuentra, publica y organiza oportunidades del campo con facilidad.</h2>
-                    <p class="mt-5 text-lg leading-8 text-[#66735f]">Crea tu cuenta para explorar el mercado, compartir tus productos y gestionar contactos comerciales desde un entorno claro y ordenado.</p>
+        <!-- CÓMO FUNCIONA -->
+        <section id="como-funciona" class="border-t border-[var(--line)] bg-white py-20 sm:py-24">
+            <div class="mx-auto grid w-full max-w-[1216px] gap-14 px-5 sm:px-7 lg:grid-cols-[.85fr_1fr] lg:px-6 xl:px-0">
+                <div data-reveal>
+                    <div class="flex items-center gap-3">
+                        <span class="h-px w-8 bg-[var(--wheat)]"></span>
+                        <span class="eyebrow text-[var(--wheat)]">Cómo funciona</span>
+                    </div>
+                    <h2 class="serif mt-5 text-[2.1rem] leading-[1.1] text-[var(--ink)] sm:text-[2.7rem]">Encuentra, publica y organiza oportunidades del campo.</h2>
+                    <p class="mt-5 text-[1.05rem] leading-8 text-[var(--muted)]">Crea tu cuenta para explorar el mercado, compartir tus productos y gestionar contactos comerciales desde un entorno claro y ordenado.</p>
+                    <a href="{{ route('register') }}" class="btn-primary link-arrow mt-8 inline-flex min-h-[3.25rem] items-center gap-2.5 rounded-xl px-7 text-[.98rem] font-semibold text-white no-underline">Crear cuenta <i class="fas fa-arrow-right text-[.8rem]"></i></a>
                 </div>
 
-                <div class="grid gap-5">
-                    @foreach ([
-                        ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
-                        ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
-                        ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
-                    ] as $item)
-                        <article class="grid gap-4 rounded-3xl border border-[#2f621f]/10 bg-gradient-to-br from-white to-[#f7fbf2] p-6 shadow-xl shadow-black/[0.04] sm:grid-cols-[auto_1fr]">
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2f621f]/15 bg-[#edf7e7] text-lg font-black text-[#183b18]">{{ $item['step'] }}</span>
-                            <div>
-                                <h3 class="text-xl font-black text-[#142112]">{{ $item['title'] }}</h3>
-                                <p class="mt-2 leading-7 text-[#66735f]">{{ $item['text'] }}</p>
+                <div class="relative">
+                    <span class="absolute left-[1.55rem] top-3 bottom-3 hidden w-px bg-[var(--line)] sm:block"></span>
+                    <div class="grid gap-6">
+                        @foreach ([
+                            ['step' => '01', 'title' => 'Crea tu cuenta', 'text' => 'Regístrate para acceder a las funcionalidades del mercado agrícola.'],
+                            ['step' => '02', 'title' => 'Publica o explora productos', 'text' => 'Revisa animales, maquinaria, productos orgánicos y publicaciones del mercado.'],
+                            ['step' => '03', 'title' => 'Contacta y gestiona operaciones', 'text' => 'Ordena oportunidades, administra información y da seguimiento desde tu panel.'],
+                        ] as $i => $item)
+                            <article class="relative flex gap-5" data-reveal style="transition-delay:{{ $i * 0.1 }}s">
+                                <span class="serif relative z-10 flex h-[3.1rem] w-[3.1rem] flex-none items-center justify-center rounded-full border border-[var(--line)] bg-white text-[1.15rem] text-[var(--green-d)]">{{ $item['step'] }}</span>
+                                <div class="rounded-2xl border border-[var(--line)] bg-[var(--cream)] p-6">
+                                    <h3 class="text-[1.15rem] font-semibold text-[var(--ink)]">{{ $item['title'] }}</h3>
+                                    <p class="mt-2 text-[.95rem] leading-7 text-[var(--muted)]">{{ $item['text'] }}</p>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="px-5 pb-20 pt-4 sm:px-7 sm:pb-24 lg:px-6 xl:px-0">
+            <div class="mx-auto max-w-[1216px]">
+                <div class="relative overflow-hidden rounded-[1.75rem] bg-[var(--green-d)] px-8 py-14 sm:px-14 sm:py-16" data-reveal>
+                    <img src="{{ asset('img/bg-agrovida.jpg') }}" alt="" class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[.14]">
+                    <div class="relative grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <span class="h-px w-8 bg-white/40"></span>
+                                <span class="eyebrow text-white/70">Mercado Agrícola</span>
                             </div>
-                        </article>
-                    @endforeach
+                            <h2 class="serif mt-5 max-w-2xl text-[2.1rem] leading-[1.12] text-white sm:text-[2.7rem]">Impulsa tus publicaciones agropecuarias con una plataforma profesional.</h2>
+                            <p class="mt-5 max-w-xl text-[1.05rem] leading-8 text-white/75">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
+                        </div>
+                        <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                            <a href="{{ route('register') }}" class="inline-flex min-h-[3.25rem] items-center justify-center rounded-xl bg-white px-7 text-[.98rem] font-semibold text-[var(--green-d)] no-underline transition hover:-translate-y-0.5">Registrarse</a>
+                            <a href="{{ route('login') }}" class="inline-flex min-h-[3.25rem] items-center justify-center rounded-xl border border-white/30 px-7 text-[.98rem] font-semibold text-white no-underline transition hover:bg-white/10">Iniciar sesión</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="bg-white px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-            <div class="mx-auto grid max-w-7xl items-center gap-8 rounded-[2rem] bg-[linear-gradient(135deg,rgba(24,59,24,0.98),rgba(47,98,31,0.95)),url('/img/bg-agrovida.jpg')] bg-cover bg-center p-8 text-white shadow-2xl shadow-[#183b18]/25 sm:p-12 lg:grid-cols-[1fr_auto]">
+        <!-- FOOTER -->
+        <footer class="bg-[#12220f] py-12 text-[#dfeada]">
+            <div class="mx-auto grid w-full max-w-[1216px] gap-8 px-5 sm:px-7 lg:grid-cols-[1.4fr_1fr_auto] lg:items-start lg:px-6 xl:px-0">
                 <div>
-                    <span class="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase text-white">Mercado Agrícola</span>
-                    <h2 class="mt-5 max-w-3xl text-3xl font-black leading-tight sm:text-5xl">Impulsa tus publicaciones agropecuarias con una plataforma profesional.</h2>
-                    <p class="mt-5 max-w-2xl text-lg leading-8 text-white/75">Crea tu cuenta para comenzar a explorar, publicar y organizar oportunidades del sector.</p>
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"><i class="fas fa-seedling text-white"></i></span>
+                        <strong class="serif text-[1.15rem] font-normal text-white">Mercado Agrícola</strong>
+                    </div>
+                    <p class="mt-4 max-w-md text-[.92rem] leading-7 text-white/60">Plataforma para conectar productos, animales, maquinaria y servicios agropecuarios.</p>
                 </div>
-                <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                    <a href="{{ route('register') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#183b18] no-underline shadow-xl transition hover:-translate-y-0.5">Registrarse</a>
-                    <a href="{{ route('login') }}" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-6 font-black text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/15">Iniciar sesión</a>
+                <div class="flex flex-col gap-3">
+                    <span class="eyebrow text-white/40">Secciones</span>
+                    <a href="#beneficios" class="text-[.92rem] text-white/75 no-underline hover:text-white">Beneficios</a>
+                    <a href="#categorias" class="text-[.92rem] text-white/75 no-underline hover:text-white">Categorías</a>
+                    <a href="#como-funciona" class="text-[.92rem] text-white/75 no-underline hover:text-white">Cómo funciona</a>
                 </div>
-            </div>
-        </section>
-
-        <footer class="bg-[#132714] py-8 text-[#dfeada]">
-            <div class="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 sm:px-6 lg:grid-cols-[1fr_auto_auto] lg:px-8">
-                <div>
-                    <strong class="block text-lg font-black text-white">Mercado Agrícola</strong>
-                    <p class="mt-2 max-w-md text-white/65">Plataforma para conectar productos, animales, maquinaria y servicios agropecuarios.</p>
+                <div class="lg:text-right">
+                    <span class="text-[.85rem] text-white/45">© {{ date('Y') }} Mercado Agrícola</span>
                 </div>
-                <div class="flex flex-wrap gap-4">
-                    <a href="#beneficios" class="font-bold text-[#dfeada] no-underline hover:text-white">Beneficios</a>
-                    <a href="#categorias" class="font-bold text-[#dfeada] no-underline hover:text-white">Categorías</a>
-                    <a href="#como-funciona" class="font-bold text-[#dfeada] no-underline hover:text-white">Cómo funciona</a>
-                </div>
-                <span class="text-white/60">© {{ date('Y') }} Mercado Agrícola</span>
             </div>
         </footer>
     </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Navegación: fija al hacer scroll y se oculta al bajar
             const nav = document.querySelector('[data-landing-nav]');
-            if (!nav) {
-                return;
+            if (nav) {
+                let lastScrollY = window.scrollY;
+                const updateNav = () => {
+                    const y = window.scrollY;
+                    nav.classList.toggle('is-stuck', y > 12);
+                    nav.classList.toggle('is-hidden', y > lastScrollY && y > 120);
+                    lastScrollY = Math.max(y, 0);
+                };
+                updateNav();
+                window.addEventListener('scroll', updateNav, { passive: true });
             }
 
-            let lastScrollY = window.scrollY;
-
-            const updateNav = () => {
-                const currentScrollY = window.scrollY;
-                const isScrollingDown = currentScrollY > lastScrollY;
-
-                nav.classList.toggle('is-stuck', currentScrollY > 12);
-                nav.classList.toggle('is-hidden', isScrollingDown && currentScrollY > 48);
-
-                lastScrollY = Math.max(currentScrollY, 0);
-            };
-
-            updateNav();
-            window.addEventListener('scroll', updateNav, { passive: true });
+            // Animación sutil de aparición al hacer scroll
+            const reveals = document.querySelectorAll('.landing-page [data-reveal]');
+            if ('IntersectionObserver' in window) {
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-in');
+                            io.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+                reveals.forEach((el) => io.observe(el));
+            } else {
+                reveals.forEach((el) => el.classList.add('is-in'));
+            }
         });
     </script>
 @endsection

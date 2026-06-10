@@ -526,10 +526,6 @@
                                 <dd data-publication-preview-department>-</dd>
                             </div>
                             <div>
-                                <dt>Coordenadas</dt>
-                                <dd data-publication-preview-coordinates>-</dd>
-                            </div>
-                            <div>
                                 <dt>Imágenes</dt>
                                 <dd data-publication-preview-images-count>-</dd>
                             </div>
@@ -1261,7 +1257,6 @@
             setPreviewText('[data-publication-preview-city]', fieldValue('ciudad') || fieldValue('municipio'), 'Sin ciudad o municipio');
             setPreviewText('[data-publication-preview-province]', fieldValue('provincia'), 'Sin provincia');
             setPreviewText('[data-publication-preview-department]', fieldValue('departamento'), 'Sin departamento');
-            setPreviewText('[data-publication-preview-coordinates]', lat && lng ? `${lat}, ${lng}` : '', 'Sin coordenadas');
             setPreviewText(
                 '[data-publication-preview-images-count]',
                 `${visibleImagesCount} ${visibleImagesCount === 1 ? 'imagen' : 'imágenes'} cargadas`,

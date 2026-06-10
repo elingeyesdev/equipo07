@@ -15,10 +15,36 @@ class PedidoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pedido::where('user_id', Auth::id());
+        return $this->listado($request, false);
+    }
+
+    public function historial(Request $request)
+    {
+        return $this->listado($request, true);
+    }
+
+    private function listado(Request $request, bool $historial)
+    {
+        $query = Pedido::with('detalles')->where('user_id', Auth::id());
+
+        if ($historial) {
+            $query->where('estado', 'finalizado');
+        } else {
+            $query->where('estado', '!=', 'finalizado');
+        }
 
         if ($request->filled('pedido_id')) {
-            $query->where('id', $request->pedido_id);
+            $busqueda = $request->pedido_id;
+            $query->where(function ($sub) use ($busqueda) {
+                if (ctype_digit((string) $busqueda)) {
+                    $sub->where('id', $busqueda);
+                }
+
+                $sub->orWhereHas('detalles', function ($detalle) use ($busqueda) {
+                    $detalle->where('nombre_producto', 'like', "%{$busqueda}%")
+                        ->orWhere('product_type', 'like', "%{$busqueda}%");
+                });
+            });
         }
 
         if ($request->filled('estado')) {
@@ -37,7 +63,9 @@ class PedidoController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        return view('pedidos.index', compact('pedidos'));
+        $modoHistorial = $historial;
+
+        return view('pedidos.index', compact('pedidos', 'modoHistorial'));
     }
 
 

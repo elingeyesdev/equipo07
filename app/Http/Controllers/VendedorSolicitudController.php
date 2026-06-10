@@ -57,6 +57,7 @@ class VendedorSolicitudController extends Controller
         $transportistas = User::whereHas('role', function ($query) {
                 $query->where('nombre', Role::TRANSPORTISTA);
             })
+            ->where('transportista_creado_por_id', Auth::id())
             ->orderBy('name')
             ->get();
 
@@ -185,6 +186,10 @@ class VendedorSolicitudController extends Controller
 
         if (!$transportista->isTransportista()) {
             return back()->with('error', 'El usuario seleccionado no tiene rol transportista.');
+        }
+
+        if ((int) $transportista->transportista_creado_por_id !== (int) Auth::id()) {
+            return back()->with('error', 'Solo puedes asignar transportistas creados por ti.');
         }
 
         $solicitud->update([

@@ -202,12 +202,55 @@
             }
 
             @media (max-width: 576px) {
+                .driver-gps-card {
+                    max-width: none;
+                    margin: 0 -.5rem;
+                    border-radius: 0;
+                }
+
+                .driver-gps-status {
+                    grid-template-columns: 1fr 1fr;
+                    gap: .55rem;
+                }
+
+                .driver-gps-status__item {
+                    padding: .7rem;
+                }
+
+                .driver-gps-status__item strong {
+                    font-size: .92rem;
+                }
+
                 .driver-gps-actions .btn {
                     width: 100%;
+                    padding: .78rem 1rem;
+                    font-weight: 800;
                 }
 
                 #driver-gps-map {
-                    min-height: 360px;
+                    min-height: 470px;
+                    border-radius: 0;
+                }
+
+                .driver-transport-flow {
+                    display: flex;
+                    gap: .6rem;
+                    overflow-x: auto;
+                    padding-bottom: .35rem;
+                }
+
+                .driver-transport-flow__step {
+                    min-width: 138px;
+                }
+
+                .tracking-map-legend {
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    padding-bottom: .35rem;
+                }
+
+                .tracking-map-legend__item {
+                    flex: 0 0 auto;
                 }
             }
         </style>
@@ -385,6 +428,9 @@
             var transportStateBadge = document.getElementById('transport-state-badge');
             var transportStateControl = document.getElementById('transport-state-control');
             var transportStateCurrentLabel = document.getElementById('transport-state-current-label');
+            var transportStateStatusUrl = @json(route('pedidos.detalles.estadoTransporte', $solicitud, false));
+            var lastReceptionConfirmedAt = @json($solicitud->recepcion_confirmada_at?->format('d/m/Y H:i'));
+            var lastNextTransportState = @json($solicitud->siguiente_estado_transporte);
             var productPoint = {
                 lat: @json($solicitud->product_latitud ? (float) $solicitud->product_latitud : null),
                 lng: @json($solicitud->product_longitud ? (float) $solicitud->product_longitud : null),
@@ -600,36 +646,42 @@
             }
 
             function renderTransportControl(data) {
-                currentTransportState = data.estado;
+                var estado = data.estado || data.estado_transporte;
+                var estadoLabel = data.estado_label || data.estado_transporte_label;
+                var siguienteEstado = data.siguiente_estado || null;
+                var siguienteEstadoLabel = data.siguiente_estado_label || null;
+
+                currentTransportState = estado;
+                lastNextTransportState = siguienteEstado;
 
                 if (transportStateBadge) {
-                    transportStateBadge.textContent = data.estado_label;
+                    transportStateBadge.textContent = estadoLabel;
                 }
 
                 if (transportStateCurrentLabel) {
-                    transportStateCurrentLabel.textContent = data.estado_label;
+                    transportStateCurrentLabel.textContent = estadoLabel;
                 }
 
-                renderTransportFlow(data.estado);
-                setTargetMarker(data.estado, true);
+                renderTransportFlow(estado);
+                setTargetMarker(estado, true);
 
                 if (!transportStateControl) {
                     return;
                 }
 
-                if (data.siguiente_estado) {
+                if (siguienteEstado) {
                     transportStateControl.innerHTML =
                         '<form action="{{ route('transportista.envios.tracking.estado', $solicitud, false) }}" method="POST" class="mb-0" id="transport-state-form">' +
                             '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
                             '<button type="submit" class="btn btn-primary" id="transport-state-button">' +
-                                '<i class="fas fa-arrow-right mr-1"></i><span>Marcar: ' + data.siguiente_estado_label + '</span>' +
+                                '<i class="fas fa-arrow-right mr-1"></i><span>Marcar: ' + siguienteEstadoLabel + '</span>' +
                             '</button>' +
                         '</form>';
                     bindTransportStateForm();
                     return;
                 }
 
-                if (data.estado === 'esperando_confirmacion') {
+                if (estado === 'esperando_confirmacion') {
                     transportStateControl.innerHTML =
                         '<div class="alert alert-warning mb-0">' +
                             '<i class="fas fa-user-check mr-1"></i> Esperando que el comprador confirme la recepcion desde su pedido.' +
@@ -641,6 +693,40 @@
                     '<div class="alert alert-success mb-0">' +
                         '<i class="fas fa-check-circle mr-1"></i> La entrega ya no tiene pasos de transporte pendientes.' +
                     '</div>';
+            }
+
+            function refreshTransportState() {
+                fetch(transportStateStatusUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('No se pudo consultar el estado.');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        var estadoServidor = data.estado_transporte;
+                        var recepcionCambio = data.recepcion_confirmada_at !== lastReceptionConfirmedAt;
+                        var siguienteCambio = data.siguiente_estado !== lastNextTransportState;
+                        var estadoCambio = estadoServidor !== currentTransportState;
+
+                        if (estadoCambio || recepcionCambio || siguienteCambio) {
+                            renderTransportControl(data);
+
+                            if (recepcionCambio && data.recepcion_confirmada_at) {
+                                setMessage('success', 'El comprador confirmo la recepcion. Ya puedes continuar con el siguiente paso.');
+                            }
+
+                            lastReceptionConfirmedAt = data.recepcion_confirmada_at;
+                        }
+                    })
+                    .catch(function() {
+                        // El GPS sigue funcionando; el proximo intento volvera a sincronizar el estado.
+                    });
             }
 
             function bindTransportStateForm() {
@@ -827,6 +913,8 @@
             });
 
             bindTransportStateForm();
+            refreshTransportState();
+            setInterval(refreshTransportState, 5000);
         });
     </script>
 @endsection

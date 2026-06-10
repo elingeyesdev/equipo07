@@ -10,10 +10,45 @@ class TransportistaEnvioController extends Controller
 {
     public function index(Request $request)
     {
+        return $this->listado($request, false);
+    }
+
+    public function historial(Request $request)
+    {
+        return $this->listado($request, true);
+    }
+
+    private function listado(Request $request, bool $historial)
+    {
         $query = PedidoDetalle::with(['pedido.user', 'vendedor'])
             ->where('transportista_id', Auth::id())
-            ->where('estado_solicitud', 'aceptada')
-            ->orderByDesc('updated_at');
+            ->where('estado_solicitud', 'aceptada');
+
+        if ($historial) {
+            $query->where(function ($sub) {
+                $sub->whereHas('pedido', function ($pedido) {
+                    $pedido->whereIn('estado', ['finalizado', 'cancelado']);
+                })
+                    ->orWhere('estado_alquiler', 'finalizado')
+                    ->orWhere('estado_transporte', 'devuelto_vendedor');
+            });
+        } else {
+            $query->where(function ($sub) {
+                $sub->whereDoesntHave('pedido', function ($pedido) {
+                    $pedido->whereIn('estado', ['finalizado', 'cancelado']);
+                })
+                    ->where(function ($active) {
+                        $active->whereNull('estado_alquiler')
+                            ->orWhere('estado_alquiler', '!=', 'finalizado');
+                    })
+                    ->where(function ($active) {
+                        $active->whereNull('estado_transporte')
+                            ->orWhere('estado_transporte', '!=', 'devuelto_vendedor');
+                    });
+            });
+        }
+
+        $query->orderByDesc('updated_at');
 
         if ($request->filled('estado')) {
             $query->where('estado_transporte', $request->estado);
@@ -32,8 +67,9 @@ class TransportistaEnvioController extends Controller
 
         $envios = $query->paginate(12)->withQueryString();
         $estados = PedidoDetalle::transporteEstados();
+        $modoHistorial = $historial;
 
-        return view('transportista.envios.index', compact('envios', 'estados'));
+        return view('transportista.envios.index', compact('envios', 'estados', 'modoHistorial'));
     }
 
     public function show(PedidoDetalle $envio)
