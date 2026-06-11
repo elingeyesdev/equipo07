@@ -5,9 +5,12 @@ namespace Database\Seeders;
 use App\Models\Categoria;
 use App\Models\EstadoMaquinaria;
 use App\Models\Ganado;
+use App\Models\GanadoImagen;
 use App\Models\Maquinaria;
+use App\Models\MaquinariaImagen;
 use App\Models\MarcaMaquinaria;
 use App\Models\Organico;
+use App\Models\OrganicoImagen;
 use App\Models\OrganicoTrazabilidad;
 use App\Models\Raza;
 use App\Models\Role;
@@ -51,7 +54,26 @@ class DemoDataSeeder extends Seeder
         $maquinarias = Maquinaria::factory()->count(18)->create();
         $organicos = Organico::factory()->count(20)->create();
 
+        foreach ($ganados as $ganado) {
+            GanadoImagen::updateOrCreate(
+                ['ganado_id' => $ganado->id, 'orden' => 0],
+                ['ruta' => 'demo/ganado.svg']
+            );
+        }
+
+        foreach ($maquinarias as $maquinaria) {
+            MaquinariaImagen::updateOrCreate(
+                ['maquinaria_id' => $maquinaria->id, 'orden' => 0],
+                ['ruta' => 'demo/maquinaria.svg']
+            );
+        }
+
         foreach ($organicos as $organico) {
+            OrganicoImagen::updateOrCreate(
+                ['organico_id' => $organico->id, 'orden' => 0],
+                ['ruta' => 'demo/organico.svg']
+            );
+
             OrganicoTrazabilidad::updateOrCreate(
                 ['organico_id' => $organico->id],
                 [

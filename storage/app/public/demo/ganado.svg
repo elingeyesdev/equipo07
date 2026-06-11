@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff3d8"/>
+      <stop offset="1" stop-color="#83b96b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="1010" cy="145" r="82" fill="#f8d66d"/>
+  <path d="M0 570 Q260 430 520 570 T1200 530 V800 H0Z" fill="#4c8b4b"/>
+  <path d="M0 650 Q300 520 610 650 T1200 610 V800 H0Z" fill="#2f6f3a"/>
+  <g transform="translate(315 250)" fill="#f6f0df" stroke="#553f2d" stroke-width="18" stroke-linejoin="round">
+    <path d="M180 190 C100 130 65 55 105 30 C155 75 205 85 260 88 C315 85 365 75 415 30 C455 55 420 130 340 190Z"/>
+    <rect x="130" y="160" width="260" height="260" rx="110"/>
+    <path d="M170 385 L150 545 M350 385 L370 545"/>
+    <path d="M390 260 Q500 285 470 390"/>
+    <ellipse cx="260" cy="285" rx="92" ry="72" fill="#e6c9a1"/>
+    <circle cx="205" cy="210" r="15" fill="#32251d" stroke="none"/>
+    <circle cx="315" cy="210" r="15" fill="#32251d" stroke="none"/>
+    <circle cx="225" cy="285" r="10" fill="#553f2d" stroke="none"/>
+    <circle cx="295" cy="285" r="10" fill="#553f2d" stroke="none"/>
+  </g>
+  <text x="600" y="725" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="700" fill="#fff">Ganado AgroVida</text>
+</svg>
