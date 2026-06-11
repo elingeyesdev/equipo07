@@ -32,7 +32,14 @@ class ReclamoController extends Controller
 
     public function show(Reclamo $reclamo)
     {
-        $reclamo->load(['creador', 'detalle.pedido.user', 'detalle.vendedor', 'detalle.organico']);
+        $reclamo->load([
+            'creador',
+            'detalle.pedido.user',
+            'detalle.vendedor',
+            'detalle.ganado',
+            'detalle.maquinaria',
+            'detalle.organico',
+        ]);
         $this->autorizar($reclamo);
 
         return view('reclamos.show', compact('reclamo'));

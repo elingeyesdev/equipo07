@@ -82,7 +82,10 @@ class InteraccionOrganicoController extends Controller
     private function autorizarParticipante(PedidoDetalle $detalle): string
     {
         $detalle->loadMissing('pedido');
-        abort_unless($detalle->product_type === 'organico', 404);
+        abort_unless(
+            in_array($detalle->product_type, ['ganado', 'maquinaria', 'organico'], true),
+            404
+        );
 
         if ((int) $detalle->pedido->user_id === (int) Auth::id()) {
             return 'comprador';

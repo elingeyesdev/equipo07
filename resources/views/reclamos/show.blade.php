@@ -18,6 +18,7 @@
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-sm-4">Producto</dt><dd class="col-sm-8">{{ $reclamo->detalle->nombre_producto }}</dd>
+                            <dt class="col-sm-4">Tipo</dt><dd class="col-sm-8">{{ ucfirst($reclamo->detalle->product_type) }}</dd>
                             <dt class="col-sm-4">Pedido</dt><dd class="col-sm-8">#{{ $reclamo->detalle->pedido_id }}</dd>
                             <dt class="col-sm-4">Reportado por</dt><dd class="col-sm-8">{{ $reclamo->creador?->name }} ({{ $reclamo->creador_rol }})</dd>
                             <dt class="col-sm-4">Comprador</dt><dd class="col-sm-8">{{ $reclamo->detalle->pedido->user?->name }}</dd>

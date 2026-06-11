@@ -10,7 +10,6 @@
             in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
             || $detalle->pedido->estado === 'finalizado'
         );
-    $reclamosHabilitados = $detalle->product_type === 'organico';
     $reclamoPropio = $detalle->reclamos->firstWhere('creador_id', auth()->id());
     $reclamosVisibles = $esComprador
         ? $detalle->reclamos->where('creador_id', auth()->id())
@@ -78,7 +77,7 @@
         </form>
     @endif
 
-    @if($reclamosHabilitados && $reclamable && !$reclamoPropio && !$esAdmin)
+    @if($reclamable && !$reclamoPropio && !$esAdmin)
         <details class="bg-white border rounded p-3">
             <summary class="font-weight-bold" style="cursor:pointer">
                 <i class="fas fa-flag text-warning mr-1"></i>Abrir un reclamo
@@ -106,7 +105,7 @@
         </details>
     @endif
 
-    @foreach($reclamosHabilitados ? $reclamosVisibles : collect() as $reclamo)
+    @foreach($reclamosVisibles as $reclamo)
         <a href="{{ route('reclamos.show', $reclamo) }}"
             class="d-flex justify-content-between align-items-center bg-white border rounded p-2 mt-2 text-dark">
             <span>

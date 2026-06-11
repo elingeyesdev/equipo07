@@ -9,7 +9,7 @@
             <div class="card-header bg-white">
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
                     <div>
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-flag text-warning mr-2"></i>Reclamos de orgánicos</h3>
+                        <h3 class="card-title font-weight-bold"><i class="fas fa-flag text-warning mr-2"></i>Reclamos de productos</h3>
                         <div class="small text-muted mt-1">{{ $reclamos->total() }} casos registrados</div>
                     </div>
                     <form method="GET" class="form-inline mt-2 mt-md-0">
