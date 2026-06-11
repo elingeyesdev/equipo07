@@ -34,6 +34,36 @@ class PedidoDetalle extends Model
         'devuelto_vendedor' => 'Devuelto al vendedor',
     ];
 
+    public const TRANSPORTE_FASES = [
+        'asignado' => 'Asignado',
+        'en_camino_recogida' => 'En camino a recoger',
+        'recogido' => 'Recogido',
+        'en_camino_entrega' => 'En camino a entregar',
+        'llego_destino' => 'Llego a la ubicacion',
+        'confirmacion' => 'Confirmacion',
+        'en_uso' => 'En uso',
+        'devolucion' => 'Devolucion',
+        'devuelto' => 'Devuelto',
+    ];
+
+    public const TRANSPORTE_ESTADO_FASES = [
+        'asignado' => 'asignado',
+        'en_camino_recogida' => 'en_camino_recogida',
+        'llego_recogida' => 'en_camino_recogida',
+        'producto_recogido' => 'recogido',
+        'en_camino_entrega' => 'en_camino_entrega',
+        'llego_destino' => 'llego_destino',
+        'esperando_confirmacion' => 'confirmacion',
+        'entregado' => 'en_uso',
+        'devolucion_solicitada' => 'en_uso',
+        'en_camino_recoger_devolucion' => 'devolucion',
+        'llego_recoger_devolucion' => 'devolucion',
+        'maquinaria_recogida_retorno' => 'devolucion',
+        'en_camino_retorno' => 'devolucion',
+        'llego_retorno' => 'devolucion',
+        'devuelto_vendedor' => 'devuelto',
+    ];
+
     protected $fillable = [
         'pedido_id',
         'vendedor_id',
@@ -71,6 +101,21 @@ class PedidoDetalle extends Model
     public static function transporteEstados(): array
     {
         return self::TRANSPORTE_ESTADOS;
+    }
+
+    public static function transporteFases(): array
+    {
+        return self::TRANSPORTE_FASES;
+    }
+
+    public static function transporteEstadoFases(): array
+    {
+        return self::TRANSPORTE_ESTADO_FASES;
+    }
+
+    public static function transporteFasePara(?string $estado): ?string
+    {
+        return $estado ? (self::TRANSPORTE_ESTADO_FASES[$estado] ?? $estado) : null;
     }
 
     public function pedido()

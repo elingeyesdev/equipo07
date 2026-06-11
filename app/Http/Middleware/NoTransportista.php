@@ -10,10 +10,6 @@ class NoTransportista
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user()?->isTransportista()) {
-            return redirect()->route('transportista.envios.index');
-        }
-
         return $next($request);
     }
 }

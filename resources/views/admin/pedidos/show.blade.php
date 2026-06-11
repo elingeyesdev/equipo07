@@ -181,13 +181,20 @@
                                     <td class="orders-table__total">Bs {{ number_format($detalle->subtotal, 2) }}</td>
                                     <td>
                                         <span class="badge badge-{{ $colorSolicitud }}">{{ $labelSolicitud }}</span>
-                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
+                                        @if (in_array($detalle->product_type, ['organico', 'maquinaria'], true) && $detalle->estado_solicitud === 'aceptada')
                                             @php
-                                                $adminDeliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
-                                                $adminDeliveryCurrent = $detalle->estado_transporte_actual === 'asignado'
+                                                $adminDeliveryLabels = $detalle->es_alquiler_maquinaria
+                                                    ? \App\Models\PedidoDetalle::transporteFases()
+                                                    : \App\Services\TransporteAccesoService::ESTADOS_ORGANICO;
+                                                $adminDeliveryStatePhases = $detalle->es_alquiler_maquinaria
+                                                    ? \App\Models\PedidoDetalle::transporteEstadoFases()
+                                                    : [];
+                                                $adminDeliveryFlow = array_keys($adminDeliveryLabels);
+                                                $adminDeliveryCurrent = $detalle->estado_transporte_actual === 'asignado' && $detalle->product_type === 'organico'
                                                     ? 'aceptado'
                                                     : $detalle->estado_transporte_actual;
-                                                $adminDeliveryIndex = array_search($adminDeliveryCurrent, $adminDeliveryFlow, true);
+                                                $adminDeliveryCurrentVisible = $adminDeliveryStatePhases[$adminDeliveryCurrent] ?? $adminDeliveryCurrent;
+                                                $adminDeliveryIndex = array_search($adminDeliveryCurrentVisible, $adminDeliveryFlow, true);
                                             @endphp
                                             <div class="mt-2">
                                                 <span class="badge badge-info" id="admin-delivery-badge-{{ $detalle->id }}">
@@ -209,11 +216,11 @@
                                                         @php
                                                             $stepClass = $adminDeliveryIndex !== false && $index < $adminDeliveryIndex
                                                                 ? 'is-done'
-                                                                : ($state === $adminDeliveryCurrent ? 'is-current' : '');
+                                                                : ($state === $adminDeliveryCurrentVisible ? 'is-current' : '');
                                                         @endphp
                                                         <div class="admin-delivery-tracking__step {{ $stepClass }}"
                                                             data-state="{{ $state }}">
-                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$state] }}
+                                                            {{ $adminDeliveryLabels[$state] ?? ucfirst(str_replace('_', ' ', $state)) }}
                                                         </div>
                                                     @endforeach
                                                 </div>
@@ -341,7 +348,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var trackers = Array.from(document.querySelectorAll('[data-admin-delivery]'));
-            var flow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+            var transportStatePhases = @json(\App\Models\PedidoDetalle::transporteEstadoFases());
             var busy = false;
             var timer = null;
 
@@ -364,7 +371,10 @@
 
                         const data = await response.json();
                         const detailId = tracker.dataset.detailId;
-                        const currentIndex = flow.indexOf(data.estado);
+                        const flow = Array.from(tracker.querySelectorAll('[data-state]'))
+                            .map(function(step) { return step.dataset.state; });
+                        const currentVisibleState = transportStatePhases[data.estado] || data.estado;
+                        const currentIndex = flow.indexOf(currentVisibleState);
                         const status = document.getElementById('admin-delivery-status-' + detailId);
                         const badge = document.getElementById('admin-delivery-badge-' + detailId);
 
@@ -376,7 +386,7 @@
                         tracker.querySelectorAll('[data-state]').forEach(function(step) {
                             const index = flow.indexOf(step.dataset.state);
                             step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
-                            step.classList.toggle('is-current', step.dataset.state === data.estado);
+                            step.classList.toggle('is-current', step.dataset.state === currentVisibleState);
                         });
                     } catch {
                         // Keep the last known state if a refresh fails.

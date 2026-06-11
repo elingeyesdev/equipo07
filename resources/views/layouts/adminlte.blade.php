@@ -210,19 +210,6 @@
                                 </li>
                             @endif
 
-                            {{-- ===== OPCIONES SOLO PARA TRANSPORTISTA ===== --}}
-                            @if (auth()->user()->isTransportista())
-                                <li class="nav-header">TRANSPORTE</li>
-                                <li class="nav-item">
-                                    <a href="{{ route('transportista.envios.index') }}"
-                                        class="nav-link {{ request()->routeIs('transportista.envios.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-route"></i>
-                                        <p>Mis envíos</p>
-                                    </a>
-                                </li>
-                            @endif
-
-
                             {{-- ===== OPCIONES SOLO PARA ADMIN ===== --}}
                             @if (auth()->user()->isAdmin())
                                 <li class="nav-header">CONFIGURACIÓN</li>
@@ -417,14 +404,6 @@
                                     </a>
                                 </li>
 
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.transportistas.index') }}"
-                                        class="nav-link {{ request()->routeIs('admin.transportistas.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-truck"></i>
-                                        <p>Transportistas</p>
-                                    </a>
-                                </li>
-
                                 <!-- SOLICITUDES DE VENDEDOR -->
                                 <li class="nav-item">
                                     <a href="{{ route('admin.solicitudes-vendedor.index') }}"
@@ -457,13 +436,6 @@
                                         class="nav-link {{ request()->routeIs('reclamos.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-flag"></i>
                                         <p>Reclamos</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('vendedor.transportistas.index') }}"
-                                        class="nav-link {{ request()->routeIs('vendedor.transportistas.*') ? 'active' : '' }}">
-                                        <i class="nav-icon fas fa-truck"></i>
-                                        <p>Mis transportistas</p>
                                     </a>
                                 </li>
                             @endif

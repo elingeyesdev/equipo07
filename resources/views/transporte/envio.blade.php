@@ -104,7 +104,7 @@
         .btn-danger { color: #a52620; border-color: #e7b9b6; background: #fff; }
         .btn:disabled { opacity: .55; cursor: not-allowed; }
         .gps-status { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); background: #f8faf7; }
-        .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 16px; }
+        .timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 6px; margin-top: 16px; }
         .step { min-height: 62px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; color: #748073; font-size: .72rem; font-weight: 700; text-align: center; }
         .step i { display: block; margin-bottom: 5px; }
         .step.current, .step.done { color: #245c1c; border-color: #82b879; background: #edf7ea; }
@@ -161,9 +161,15 @@
 </head>
 <body>
     @php
-        $flujo = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
-        $actual = $detalle->estado_transporte_actual === 'asignado' ? 'aceptado' : $detalle->estado_transporte_actual;
-        $actualIndex = array_search($actual, $flujo, true);
+        $actual = $detalle->estado_transporte_actual === 'asignado' && $detalle->product_type === 'organico'
+            ? 'aceptado'
+            : $detalle->estado_transporte_actual;
+        $actualVisible = $estadoFases[$actual] ?? $actual;
+        $actualIndex = array_search($actualVisible, $flujo, true);
+        $productoUbicacion = $detalle->product?->ubicacion
+            ?? $detalle->organico?->origen
+            ?? 'Ubicacion no registrada';
+        $tipoEnvio = $detalle->es_alquiler_maquinaria ? 'maquinaria' : 'organico';
     @endphp
 
     <header class="topbar">
@@ -180,7 +186,7 @@
     <main class="page">
         <section class="status-band">
             <div>
-                <small>Envio organico #{{ $detalle->id }}</small>
+                <small>Envio de {{ $tipoEnvio }} #{{ $detalle->id }}</small>
                 <strong>{{ $detalle->nombre_producto }}</strong>
             </div>
             <span class="status-pill" id="estado-label">{{ $detalle->estado_transporte_label }}</span>
@@ -189,10 +195,10 @@
         <div class="timeline" id="timeline">
             @foreach ($flujo as $index => $estado)
                 @php
-                    $label = \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$estado];
+                    $label = $faseLabels[$estado] ?? ucfirst(str_replace('_', ' ', $estado));
                     $class = $actualIndex !== false && $index < $actualIndex
                         ? 'done'
-                        : ($estado === $actual ? 'current' : '');
+                        : ($estado === $actualVisible ? 'current' : '');
                 @endphp
                 <div class="step {{ $class }}" data-state="{{ $estado }}">
                     <i class="fas {{ $class === 'done' ? 'fa-check' : 'fa-circle' }}"></i>
@@ -210,7 +216,7 @@
                     <dl class="facts">
                         <div><dt>Producto</dt><dd>{{ $detalle->nombre_producto }}</dd></div>
                         <div><dt>Cantidad</dt><dd>{{ $detalle->cantidad_tiempo_texto }}</dd></div>
-                        <div><dt>Recojo</dt><dd>{{ $detalle->organico?->origen ?: 'Ubicacion no registrada' }}</dd></div>
+                        <div><dt>Recojo</dt><dd>{{ $productoUbicacion }}</dd></div>
                         <div><dt>Entrega</dt><dd>{{ $detalle->pedido->destino_entrega ?: 'Destino no registrado' }}</dd></div>
                         <div><dt>Comprador</dt><dd>{{ $detalle->pedido->user->name ?? 'No disponible' }}</dd></div>
                         <div>
@@ -227,7 +233,7 @@
 
                     <div class="actions">
                         <button type="button" class="btn btn-primary" id="gps-start"
-                            {{ in_array($actual, ['preparando', 'en_camino_entrega', 'esperando_confirmacion'], true) ? '' : 'disabled' }}>
+                            {{ $puedeActivarGps ? '' : 'disabled' }}>
                             <i class="fas fa-location-arrow"></i> Activar GPS
                         </button>
                         <button type="button" class="btn btn-outline" id="gps-stop" disabled>
@@ -238,18 +244,18 @@
                             <i class="fas fa-arrow-right"></i>
                             <span id="state-next-label">
                                 @if ($siguienteEstado)
-                                    Marcar: {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$siguienteEstado] }}
+                                    Marcar: {{ $siguienteEstadoLabel }}
                                 @endif
                             </span>
                         </button>
                         <button type="button" class="btn btn-danger" id="state-cancel"
-                            style="{{ in_array($actual, ['preparando', 'en_camino_entrega'], true) ? '' : 'display:none' }}">
+                            style="{{ in_array($actual, ['preparando', 'en_camino_entrega', 'asignado', 'en_camino_recogida'], true) ? '' : 'display:none' }}">
                             <i class="fas fa-times"></i> Cancelar envio
                         </button>
                     </div>
 
                     <div class="gps-status" id="gps-status">
-                        {{ $actual === 'aceptado' ? 'Esperando que el vendedor marque el producto como preparado.' : 'GPS detenido.' }}
+                        {{ $puedeActivarGps ? 'GPS detenido.' : 'Esperando que el transporte sea habilitado.' }}
                     </div>
                 </div>
             </section>
@@ -258,8 +264,8 @@
                 <div class="panel-header"><i class="fas fa-map-marked-alt"></i> Ruta de entrega</div>
                 <div class="map-summary">
                     <div class="map-summary__item">
-                        <small><i class="fas fa-box mr-1"></i>Recojo</small>
-                        <strong>{{ $detalle->nombre_producto }}</strong>
+                        <small><i class="fas fa-route mr-1"></i>Ruta actual</small>
+                        <strong id="map-route-target">Esperando GPS</strong>
                     </div>
                     <div class="map-summary__item">
                         <small><i class="fas fa-truck mr-1"></i>Transportista</small>
@@ -295,12 +301,17 @@
             let watchId = null;
             let lastSentAt = 0;
             let liveMarker = null;
+            let originMarker = null;
+            let targetMarker = null;
+            let routeLine = null;
+            let lastRouteKey = null;
             let currentState = @json($actual);
             let currentNextState = @json($siguienteEstado);
             let updateBusy = false;
             let updateTimer = null;
-            const stateLabels = @json(\App\Services\TransporteAccesoService::ESTADOS_ORGANICO);
-            const flow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+            const stateLabels = @json($estadoLabels);
+            const statePhases = @json($estadoFases);
+            const flow = @json($flujo);
 
             const center = targetLat && targetLng
                 ? [targetLat, targetLng]
@@ -328,32 +339,105 @@
             const driverIcon = mapIcon('driver', 'fa-truck', 'Mi ubicacion');
 
             if (originLat && originLng) {
-                L.marker([originLat, originLng], { icon: originIcon })
+                originMarker = L.marker([originLat, originLng], { icon: originIcon })
                     .addTo(map)
                     .bindPopup('<strong>Punto de recojo</strong><br>' + @json($detalle->nombre_producto) +
-                        '<br>' + @json($detalle->organico?->origen ?: 'Ubicacion del vendedor'));
+                        '<br>' + @json($productoUbicacion));
                 bounds.push([originLat, originLng]);
             }
             if (targetLat && targetLng) {
-                L.marker([targetLat, targetLng], { icon: targetIcon })
+                targetMarker = L.marker([targetLat, targetLng], { icon: targetIcon })
                     .addTo(map)
                     .bindPopup('<strong>Destino del comprador</strong><br>' +
                         @json($detalle->pedido->user->name ?? 'Comprador') + '<br>' +
                         @json($detalle->pedido->destino_entrega ?: 'Destino registrado'));
                 bounds.push([targetLat, targetLng]);
             }
+
+            function routeTargetForState(state) {
+                const pickupTarget = originLat && originLng ? {
+                    lat: originLat,
+                    lng: originLng,
+                    label: 'Hacia la maquinaria',
+                    popup: 'Ruta al punto de recojo',
+                    marker: originMarker
+                } : null;
+                const deliveryTarget = targetLat && targetLng ? {
+                    lat: targetLat,
+                    lng: targetLng,
+                    label: 'Hacia el comprador',
+                    popup: 'Ruta al destino del comprador',
+                    marker: targetMarker
+                } : null;
+
+                if (['asignado', 'en_camino_recogida', 'llego_recogida'].includes(state)) {
+                    return pickupTarget;
+                }
+
+                if (['producto_recogido', 'en_camino_entrega', 'llego_destino', 'esperando_confirmacion'].includes(state)) {
+                    return deliveryTarget;
+                }
+
+                if ([
+                    'entregado',
+                    'devolucion_solicitada',
+                    'en_camino_recoger_devolucion',
+                    'llego_recoger_devolucion',
+                    'maquinaria_recogida_retorno',
+                    'en_camino_retorno',
+                    'llego_retorno'
+                ].includes(state)) {
+                    return pickupTarget ? {
+                        ...pickupTarget,
+                        label: 'Retorno al punto de recojo',
+                        popup: 'Ruta de devolucion'
+                    } : null;
+                }
+
+                return deliveryTarget || pickupTarget;
+            }
+
+            function updateRouteSummary() {
+                const target = routeTargetForState(currentState);
+                document.getElementById('map-route-target').textContent = target ? target.label : 'Ruta no disponible';
+            }
+
+            function setActiveTargetMarker() {
+                const target = routeTargetForState(currentState);
+                if (originMarker) originMarker.setOpacity(!target || target.marker === originMarker ? 1 : .38);
+                if (targetMarker) targetMarker.setOpacity(!target || target.marker === targetMarker ? 1 : .38);
+            }
+
+            function clearRoute() {
+                if (routeLine) {
+                    map.removeLayer(routeLine);
+                    routeLine = null;
+                }
+            }
+
             function drawFallbackRoute(points) {
-                const line = L.polyline(points, {
+                clearRoute();
+                routeLine = L.polyline(points, {
                     color: '#2f7d24',
                     weight: 4,
                     opacity: .85,
                     dashArray: '8,8'
                 }).addTo(map);
-                map.fitBounds(line.getBounds(), { padding: [35, 35], maxZoom: 14 });
+                map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 14 });
             }
 
-            function drawRoadRoute(fromLat, fromLng, toLat, toLng) {
+            function drawRoadRoute(fromLat, fromLng, toLat, toLng, label) {
                 const points = [[fromLat, fromLng], [toLat, toLng]];
+                const routeKey = [
+                    currentState,
+                    Number(fromLat).toFixed(5),
+                    Number(fromLng).toFixed(5),
+                    Number(toLat).toFixed(5),
+                    Number(toLng).toFixed(5)
+                ].join('|');
+                if (routeKey === lastRouteKey) return;
+                lastRouteKey = routeKey;
+
                 const osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
                     fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
                     '?overview=full&geometries=geojson';
@@ -372,22 +456,44 @@
                         const coordinates = route.geometry.coordinates.map(function (coordinate) {
                             return [coordinate[1], coordinate[0]];
                         });
-                        const line = L.polyline(coordinates, {
+                        clearRoute();
+                        routeLine = L.polyline(coordinates, {
                             color: '#2f7d24',
                             weight: 5,
                             opacity: .9
                         }).addTo(map);
                         const distance = (route.distance / 1000).toFixed(1);
                         const minutes = Math.round(route.duration / 60);
-                        line.bindPopup('<strong>Ruta vehicular</strong><br>' + distance +
+                        routeLine.bindPopup('<strong>' + label + '</strong><br>' + distance +
                             ' km · ' + minutes + ' min aprox.');
-                        map.fitBounds(line.getBounds(), { padding: [35, 35], maxZoom: 14 });
+                        map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 14 });
                     })
                     .catch(function () { drawFallbackRoute(points); });
             }
 
-            if (bounds.length > 1) {
-                drawRoadRoute(originLat, originLng, targetLat, targetLng);
+            function updateRouteFromDriver(lat, lng) {
+                const target = routeTargetForState(currentState);
+                updateRouteSummary();
+                setActiveTargetMarker();
+
+                if (!target) {
+                    clearRoute();
+                    return;
+                }
+
+                drawRoadRoute(lat, lng, target.lat, target.lng, target.popup);
+            }
+
+            updateRouteSummary();
+            setActiveTargetMarker();
+
+            if (!liveMarker && bounds.length > 1) {
+                const initialTarget = routeTargetForState(currentState);
+                if (initialTarget && originLat && originLng && initialTarget.lat !== originLat && initialTarget.lng !== originLng) {
+                    drawRoadRoute(originLat, originLng, initialTarget.lat, initialTarget.lng, initialTarget.popup);
+                } else {
+                    map.fitBounds(bounds, { padding: [35, 35], maxZoom: 14 });
+                }
             }
 
             function showNotice(type, message) {
@@ -418,6 +524,7 @@
                 } else {
                     liveMarker.setLatLng(latLng);
                 }
+                updateRouteFromDriver(coords.latitude, coords.longitude);
 
                 fetch(locationUrl, {
                     method: 'POST',
@@ -442,34 +549,42 @@
                 currentState = data.estado;
                 currentNextState = data.siguiente_estado;
                 document.getElementById('estado-label').textContent = data.estado_label;
-                const currentIndex = flow.indexOf(currentState);
+                const currentVisibleState = statePhases[currentState] || currentState;
+                const currentIndex = flow.indexOf(currentVisibleState);
+                updateRouteSummary();
+                setActiveTargetMarker();
+
+                if (liveMarker) {
+                    const latLng = liveMarker.getLatLng();
+                    updateRouteFromDriver(latLng.lat, latLng.lng);
+                }
 
                 document.querySelectorAll('#timeline .step').forEach(function (step) {
                     const index = flow.indexOf(step.dataset.state);
                     const done = currentIndex >= 0 && index < currentIndex;
                     step.classList.toggle('done', done);
-                    step.classList.toggle('current', step.dataset.state === currentState);
+                    step.classList.toggle('current', step.dataset.state === currentVisibleState);
                     step.querySelector('i').className = 'fas ' + (done ? 'fa-check' : 'fa-circle');
                 });
 
                 const nextButton = document.getElementById('state-next');
                 if (data.siguiente_estado) {
                     document.getElementById('state-next-label').textContent =
-                        'Marcar: ' + stateLabels[data.siguiente_estado];
+                        'Marcar: ' + (data.siguiente_estado_label || stateLabels[data.siguiente_estado]);
                     nextButton.style.display = '';
                 } else {
                     nextButton.style.display = 'none';
                 }
 
                 document.getElementById('state-cancel').style.display =
-                    ['preparando', 'en_camino_entrega'].includes(currentState) ? '' : 'none';
+                    ['preparando', 'en_camino_entrega', 'asignado', 'en_camino_recogida'].includes(currentState) ? '' : 'none';
 
                 if (watchId === null) {
                     gpsStart.disabled = !data.puede_activar_gps;
-                    if (!data.puede_activar_gps && currentState === 'aceptado') {
-                        gpsStatus.textContent = 'Esperando que el vendedor marque el producto como preparado.';
+                    if (!data.puede_activar_gps && ['aceptado', 'esperando_confirmacion'].includes(currentState)) {
+                        gpsStatus.textContent = 'Esperando que el transporte sea habilitado para el siguiente paso.';
                     } else if (data.puede_activar_gps && gpsStatus.textContent.includes('Esperando')) {
-                        gpsStatus.textContent = 'Producto preparado. Ya puedes activar el GPS e iniciar la entrega.';
+                        gpsStatus.textContent = 'Ya puedes activar el GPS y continuar el recorrido.';
                     }
                 }
 
@@ -480,6 +595,7 @@
                     } else {
                         liveMarker.setLatLng(latLng);
                     }
+                    updateRouteFromDriver(data.ubicacion.latitud, data.ubicacion.longitud);
                     document.getElementById('map-driver-status').textContent =
                         data.ubicacion.fecha_humana ? 'Actualizado ' + data.ubicacion.fecha_humana : 'GPS activo';
                 }
@@ -556,7 +672,17 @@
                     .then(async function (response) {
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.message || Object.values(data.errors || {})[0]?.[0]);
-                        window.location.reload();
+                        Swal.close();
+                        renderState(data);
+                        showNotice('success', data.message || 'Estado actualizado correctamente.');
+
+                        if (watchId !== null && data.puede_activar_gps && navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                function (position) { sendPosition(position, true); },
+                                function () {},
+                                { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+                            );
+                        }
                     })
                     .catch(function (error) {
                         Swal.close();
@@ -567,16 +693,17 @@
             function confirmStateAdvance() {
                 if (!currentNextState) return;
 
-                const isStarting = currentNextState === 'en_camino_entrega';
-                const title = isStarting
-                    ? '¿Iniciar la entrega?'
-                    : '¿Confirmar que el pedido fue entregado?';
-                const text = isStarting
-                    ? 'El estado cambiará a En camino y el comprador podrá seguir tu ubicación durante el recorrido.'
-                    : 'Confirma únicamente cuando hayas llegado y entregado el producto al comprador.';
-                const confirmText = isStarting
-                    ? 'Sí, iniciar recorrido'
-                    : 'Sí, producto entregado';
+                const nextLabel = stateLabels[currentNextState] || currentNextState;
+                const isWaitingBuyer = currentNextState === 'esperando_confirmacion';
+                const title = isWaitingBuyer
+                    ? '¿Confirmar llegada al comprador?'
+                    : '¿Cambiar estado a ' + nextLabel + '?';
+                const text = isWaitingBuyer
+                    ? 'Despues de esto el comprador debe confirmar que recibio el producto.'
+                    : 'El estado se actualizara y las otras pantallas podran ver el avance.';
+                const confirmText = isWaitingBuyer
+                    ? 'Si, llegue al destino'
+                    : 'Si, continuar';
 
                 Swal.fire({
                     title: title,
@@ -594,7 +721,7 @@
                     if (!result.isConfirmed) return;
 
                     Swal.fire({
-                        title: isStarting ? 'Iniciando el recorrido...' : 'Registrando la entrega...',
+                        title: 'Actualizando el recorrido...',
                         html: '<div class="transport-loading">' +
                             '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
                             '</div>',

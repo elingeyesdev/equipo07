@@ -21,15 +21,17 @@
         $cantidadLabel = $solicitud->cantidad_label;
         $precioLabel = $solicitud->precio_label;
         $totalLabel = $isMaquinaria ? 'Total del alquiler' : 'Subtotal';
-        $alquilerEstados = \App\Models\PedidoDetalle::alquilerEstados();
-        $estadoAlquilerActual = $solicitud->estado_alquiler_actual;
-        $estadoKeys = array_keys($alquilerEstados);
-        $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
-        $deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
-        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado'
+        $usaTransporteExterno = in_array($solicitud->product_type, ['organico', 'maquinaria'], true);
+        $deliveryLabels = $isMaquinaria
+            ? \App\Models\PedidoDetalle::transporteFases()
+            : \App\Services\TransporteAccesoService::ESTADOS_ORGANICO;
+        $deliveryStatePhases = $isMaquinaria ? \App\Models\PedidoDetalle::transporteEstadoFases() : [];
+        $deliveryFlow = array_keys($deliveryLabels);
+        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado' && $solicitud->product_type === 'organico'
             ? 'aceptado'
             : $solicitud->estado_transporte_actual;
-        $deliveryIndex = array_search($deliveryCurrent, $deliveryFlow, true);
+        $deliveryCurrentVisible = $deliveryStatePhases[$deliveryCurrent] ?? $deliveryCurrent;
+        $deliveryIndex = array_search($deliveryCurrentVisible, $deliveryFlow, true);
     @endphp
 
     <style>
@@ -226,14 +228,13 @@
                                 <dd class="col-sm-7">{{ $solicitud->notas }}</dd>
                             @endif
 
-                            @if ($solicitud->estado_solicitud === 'aceptada')
-                                <dt class="col-sm-5">Transportista</dt>
+                            @if ($solicitud->estado_solicitud === 'aceptada' && $usaTransporteExterno)
+                                <dt class="col-sm-5">Acceso transporte</dt>
                                 <dd class="col-sm-7">
-                                    @if ($solicitud->transportista)
-                                        {{ $solicitud->transportista->name }}<br>
-                                        <small class="text-muted">{{ $solicitud->transportista->email }}</small>
+                                    @if ($solicitud->transporteAcceso?->estaActivo())
+                                        <span class="badge badge-success">Codigo/QR activo</span>
                                     @else
-                                        <span class="text-warning">Sin asignar</span>
+                                        <span class="badge badge-secondary">Sin codigo activo</span>
                                     @endif
                                 </dd>
                             @endif
@@ -248,7 +249,7 @@
                         </dl>
                     </div>
 
-                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type === 'organico')
+                    @if ($solicitud->estado_solicitud === 'aceptada' && $usaTransporteExterno)
                         <div class="card-body border-top">
                             <div class="rental-tracking-card p-3 mb-3">
                                 <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
@@ -264,7 +265,7 @@
                                         @php
                                             $stepClass = $deliveryIndex !== false && $index < $deliveryIndex
                                                 ? 'is-done'
-                                                : ($state === $deliveryCurrent ? 'is-current' : '');
+                                                : ($state === $deliveryCurrentVisible ? 'is-current' : '');
                                         @endphp
                                         <div class="rental-tracking-step {{ $stepClass }}" data-state="{{ $state }}">
                                             <span>
@@ -274,27 +275,27 @@
                                                     {{ $index + 1 }}
                                                 @endif
                                             </span>
-                                            <div>{{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$state] }}</div>
+                                            <div>{{ $deliveryLabels[$state] ?? ucfirst(str_replace('_', ' ', $state)) }}</div>
                                         </div>
                                     @endforeach
                                 </div>
                             </div>
 
-                            @if (in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
+                            @if (!$isMaquinaria && in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
                                 <form method="POST"
                                     action="{{ route('vendedor.solicitudes.transporte.preparado', $solicitud) }}"
                                     class="mb-3 question-confirm-form"
-                                    data-confirm-title="¿Marcar el producto como preparado?"
-                                    data-confirm-text="El transportista podrá activar el GPS e iniciar la entrega. Después de continuar, el pedido ya no volverá al estado Aceptado."
-                                    data-confirm-button="Sí, marcar preparado"
+                                    data-confirm-title="¿Habilitar el transporte?"
+                                    data-confirm-text="La persona con el codigo o QR podra activar el GPS y avanzar el recorrido."
+                                    data-confirm-button="Sí, habilitar"
                                     data-cancel-button="Todavía no"
                                     data-loading-text="Actualizando el estado...">
                                     @csrf
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-box-open mr-1"></i>Producto preparado
+                                        <i class="fas fa-box-open mr-1"></i>Habilitar transporte
                                     </button>
                                     <small class="text-muted d-block mt-2">
-                                        Al marcarlo, el transportista podra activar el GPS e iniciar la entrega.
+                                        Al marcarlo, el acceso por codigo/QR podra activar el GPS e iniciar el recorrido.
                                     </small>
                                 </form>
                             @endif
@@ -374,111 +375,13 @@
                         </div>
                     @endif
 
-                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type !== 'organico')
-                        <div class="card-body border-top">
-                            @if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado')
-                                <div class="alert alert-light border mb-0">
-                                    <i class="fas fa-truck mr-1"></i>
-                                    El transportista ya inicio el recorrido. No se puede cambiar la asignacion.
-                                </div>
-                            @else
-                                <form action="{{ route('vendedor.solicitudes.transportista.asignar', $solicitud) }}"
-                                    method="POST" class="mb-0">
-                                    @csrf
-                                    <label for="transportista_id" class="font-weight-bold">
-                                        <i class="fas fa-truck mr-1"></i>Asignar transportista
-                                    </label>
-                                    <div class="input-group">
-                                        <select name="transportista_id" id="transportista_id" class="form-control" required>
-                                            <option value="">Selecciona un transportista</option>
-                                            @foreach ($transportistas as $transportista)
-                                                <option value="{{ $transportista->id }}"
-                                                    {{ (int) $solicitud->transportista_id === (int) $transportista->id ? 'selected' : '' }}>
-                                                    {{ $transportista->name }} - {{ $transportista->email }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <div class="input-group-append">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-save mr-1"></i>Asignar
-                                            </button>
-                                        </div>
-                                    </div>
-                                    @if ($transportistas->isEmpty())
-                                        <small class="text-danger d-block mt-2">
-                                            Todavia no creaste transportistas.
-                                            <a href="{{ route('vendedor.transportistas.index') }}">Crear transportista</a>
-                                        </small>
-                                    @else
-                                        <small class="text-muted d-block mt-2">
-                                            Solo aparecen los transportistas creados por ti.
-                                        </small>
-                                    @endif
-                                </form>
-                            @endif
-                        </div>
-                    @endif
-
-                    @if ($isMaquinaria && $solicitud->estado_solicitud === 'aceptada')
-                        <div class="card-body border-top">
-                            <div class="rental-tracking-card p-3">
-                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h5 class="mb-1 font-weight-bold">
-                                            <i class="fas fa-route mr-1"></i>Seguimiento del alquiler
-                                        </h5>
-                                        <small class="text-muted">
-                                            El transportista asignado maneja el recorrido y los cambios de estado.
-                                        </small>
-                                    </div>
-                                    <span class="badge badge-success mt-2 mt-md-0">
-                                        <span data-vendor-rental-label>{{ $solicitud->estado_alquiler_label }}</span>
-                                    </span>
-                                </div>
-
-                                <div class="rental-tracking-steps mb-3">
-                                    @foreach ($alquilerEstados as $estadoKey => $estadoLabel)
-                                        @php
-                                            $index = array_search($estadoKey, $estadoKeys, true);
-                                            $stepClass = '';
-                                            if ($estadoActualIndex !== false && $index < $estadoActualIndex) {
-                                                $stepClass = 'is-done';
-                                            } elseif ($estadoKey === $estadoAlquilerActual) {
-                                                $stepClass = 'is-current';
-                                            }
-                                        @endphp
-                                        <div class="rental-tracking-step {{ $stepClass }}"
-                                            data-vendor-rental-step
-                                            data-rental-state="{{ $estadoKey }}">
-                                            <span>
-                                                @if ($stepClass === 'is-done')
-                                                    <i class="fas fa-check"></i>
-                                                @else
-                                                    {{ $index + 1 }}
-                                                @endif
-                                            </span>
-                                            <div>{{ $estadoLabel }}</div>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                @if ($solicitud->estado_alquiler_actual === 'devuelto')
-                                    <div class="alert alert-success mb-0">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        La maquinaria fue devuelta. Ya puedes finalizar el alquiler.
-                                    </div>
-                                @else
-                                    <div class="alert alert-light border mb-0">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Estado actual: <span data-vendor-rental-current>{{ $solicitud->estado_alquiler_label }}</span>.
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
-
-                    @if($solicitud->estado_solicitud === 'aceptada'
-                        && in_array($solicitud->estado_transporte_actual, ['entregado', 'cancelado'], true))
+                    @if(in_array($solicitud->product_type, ['organico', 'maquinaria'], true)
+                        && $solicitud->estado_solicitud === 'aceptada'
+                        && (
+                            $solicitud->recepcion_confirmada_at
+                            || in_array($solicitud->estado_transporte_actual, ['entregado', 'cancelado'], true)
+                            || $solicitud->pedido->estado === 'finalizado'
+                        ))
                         <div class="card-body border-top">
                             @include('organicos.partials.postventa', ['detalle' => $solicitud, 'modo' => 'vendedor'])
                         </div>
@@ -513,17 +416,18 @@
                         && $solicitud->estado_transporte_actual !== 'cancelado')
                         <div class="card-footer">
                             <form action="{{ route('vendedor.solicitudes.finalizar', $solicitud) }}" method="POST"
-                                onsubmit="return confirm('¿Finalizar este pedido?')">
+                                class="question-confirm-form"
+                                data-confirm-title="¿Finalizar este pedido?"
+                                data-confirm-text="Confirma solo cuando el producto ya cumplió todo el flujo de entrega o devolución."
+                                data-confirm-button="Sí, finalizar"
+                                data-cancel-button="Todavía no"
+                                data-loading-text="Finalizando el pedido...">
                                 @csrf
                                 <button type="submit" class="btn btn-success" data-vendor-finalize-button
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
-                                @if ($solicitud->product_type !== 'organico' && !$solicitud->transportista_id)
-                                    <small class="text-muted d-block mt-2">
-                                        Para continuar, primero asigna un transportista.
-                                    </small>
-                                @elseif (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
+                                @if (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
                                     <small class="text-muted d-block mt-2">
                                         Para finalizar, primero el transportista debe devolver la maquinaria.
                                     </small>
@@ -617,7 +521,8 @@
                 var trackingUrl = @json(route('pedidos.detalles.tracking.latest', $solicitud, false));
                 var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
                 var transportistaMarker = null;
-                var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+                var deliveryFlow = @json($deliveryFlow);
+                var deliveryStatePhases = @json($deliveryStatePhases);
                 var trackingBusy = false;
                 var trackingTimer = null;
 
@@ -783,11 +688,12 @@
                             var status = document.getElementById('seller-delivery-status');
                             if (status) status.textContent = data.estado_label;
 
-                            var currentIndex = deliveryFlow.indexOf(data.estado);
+                            var currentVisibleState = deliveryStatePhases[data.estado] || data.estado;
+                            var currentIndex = deliveryFlow.indexOf(currentVisibleState);
                             document.querySelectorAll('#seller-delivery-steps [data-state]').forEach(function(step) {
                                 var index = deliveryFlow.indexOf(step.dataset.state);
                                 step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
-                                step.classList.toggle('is-current', step.dataset.state === data.estado);
+                                step.classList.toggle('is-current', step.dataset.state === currentVisibleState);
                             });
 
                             if (!data.ubicacion) return;
@@ -827,68 +733,26 @@
             });
         </script>
     @endif
-    @if ($solicitud->product_type === 'organico' && $solicitud->transporteAcceso?->estaActivo())
-        @vite('resources/js/transport-qr-seller.js')
+    @if ($usaTransporteExterno && $solicitud->transporteAcceso?->estaActivo())
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+        <script src="{{ asset('js/transport-qr-seller.js') }}?v={{ filemtime(public_path('js/transport-qr-seller.js')) }}"></script>
     @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var estadoUrl = @json(route('pedidos.detalles.estadoTransporte', $solicitud, false));
-            var rentalStates = @json($estadoKeys);
-
-            function updateRentalSteps(currentState) {
-                if (!currentState) {
-                    return;
-                }
-
-                var currentIndex = rentalStates.indexOf(currentState);
-
-                document.querySelectorAll('[data-vendor-rental-step]').forEach(function(step) {
-                    var state = step.getAttribute('data-rental-state');
-                    var index = rentalStates.indexOf(state);
-                    var marker = step.querySelector('span');
-
-                    step.classList.remove('is-done', 'is-current');
-
-                    if (currentIndex !== -1 && index < currentIndex) {
-                        step.classList.add('is-done');
-                        if (marker) {
-                            marker.innerHTML = '<i class="fas fa-check"></i>';
-                        }
-                    } else if (state === currentState) {
-                        step.classList.add('is-current');
-                        if (marker) {
-                            marker.textContent = index + 1;
-                        }
-                    } else if (marker) {
-                        marker.textContent = index + 1;
-                    }
-                });
-            }
 
             function applyState(data) {
                 var transportLabel = document.querySelector('[data-vendor-transport-label]');
-                var rentalLabel = document.querySelector('[data-vendor-rental-label]');
-                var rentalCurrent = document.querySelector('[data-vendor-rental-current]');
                 var finalizeButton = document.querySelector('[data-vendor-finalize-button]');
 
                 if (transportLabel && data.estado_transporte_label) {
                     transportLabel.textContent = data.estado_transporte_label;
                 }
 
-                if (rentalLabel && data.estado_alquiler_label) {
-                    rentalLabel.textContent = data.estado_alquiler_label;
-                }
-
-                if (rentalCurrent && data.estado_alquiler_label) {
-                    rentalCurrent.textContent = data.estado_alquiler_label;
-                }
-
                 if (finalizeButton) {
                     finalizeButton.disabled = !data.puede_finalizar_desde_vendedor;
                 }
-
-                updateRentalSteps(data.estado_alquiler);
             }
 
             function refreshState() {

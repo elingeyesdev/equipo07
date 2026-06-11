@@ -210,6 +210,7 @@
         </section>
     </div>
 
-    @vite('resources/js/transport-qr-scanner.js')
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="{{ asset('js/transport-qr-scanner.js') }}?v={{ filemtime(public_path('js/transport-qr-scanner.js')) }}"></script>
 </body>
 </html>

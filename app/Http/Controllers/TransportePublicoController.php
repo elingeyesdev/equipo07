@@ -47,25 +47,48 @@ class TransportePublicoController extends Controller
             'detalle.pedido.user',
             'detalle.vendedor',
             'detalle.organico',
+            'detalle.maquinaria',
             'detalle.ultimaUbicacion',
             'detalle.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(12),
         ]);
 
         $detalle = $acceso->detalle;
         $siguienteEstado = $service->siguienteEstado($detalle);
+        $estadoLabels = $service->estadosPara($detalle);
+        $faseLabels = $service->fasesPara($detalle);
+        $flujo = $service->flujoVisiblePara($detalle);
+        $estadoFases = $detalle->es_alquiler_maquinaria
+            ? \App\Models\PedidoDetalle::transporteEstadoFases()
+            : [];
+        $siguienteEstadoLabel = $siguienteEstado
+            ? ($faseLabels[$estadoFases[$siguienteEstado] ?? $siguienteEstado]
+                ?? $estadoLabels[$siguienteEstado]
+                ?? ucfirst(str_replace('_', ' ', $siguienteEstado)))
+            : null;
+        $puedeActivarGps = $service->puedeActivarGps($detalle);
 
-        return view('transporte.envio', compact('acceso', 'detalle', 'siguienteEstado'));
+        return view('transporte.envio', compact(
+            'acceso',
+            'detalle',
+            'siguienteEstado',
+            'estadoLabels',
+            'faseLabels',
+            'flujo',
+            'estadoFases',
+            'siguienteEstadoLabel',
+            'puedeActivarGps'
+        ));
     }
 
-    public function ubicacion(Request $request)
+    public function ubicacion(Request $request, TransporteAccesoService $service)
     {
         $acceso = $request->attributes->get('transporteAcceso');
         $detalle = $acceso->detalle;
 
-        if (!in_array($detalle->estado_transporte_actual, ['preparando', 'en_camino_entrega', 'esperando_confirmacion'], true)) {
+        if (!$service->puedeActivarGps($detalle)) {
             return response()->json([
                 'ok' => false,
-                'message' => 'El vendedor debe marcar primero el producto como preparado.',
+                'message' => 'El transporte todavia no esta habilitado para compartir ubicacion.',
             ], 422);
         }
 
@@ -87,7 +110,7 @@ class TransportePublicoController extends Controller
             'precision_metros' => $data['precision_metros'] ?? null,
             'velocidad_m_s' => $data['velocidad_m_s'] ?? null,
             'rumbo_grados' => $data['rumbo_grados'] ?? null,
-            'tipo_recorrido' => 'entrega',
+            'tipo_recorrido' => $service->tipoRecorrido($detalle),
         ]);
 
         return response()->json([
@@ -119,7 +142,9 @@ class TransportePublicoController extends Controller
             'estado' => $detalle->estado_transporte_actual,
             'estado_label' => $detalle->estado_transporte_label,
             'siguiente_estado' => $service->siguienteEstado($detalle),
+            'siguiente_estado_label' => $this->siguienteEstadoVisibleLabel($detalle, $service),
             'motivo_cancelacion' => $detalle->cancelacion_motivo,
+            'puede_activar_gps' => $service->puedeActivarGps($detalle),
         ]);
     }
 
@@ -134,12 +159,9 @@ class TransportePublicoController extends Controller
             'estado' => $detalle->estado_transporte_actual,
             'estado_label' => $detalle->estado_transporte_label,
             'siguiente_estado' => $service->siguienteEstado($detalle),
+            'siguiente_estado_label' => $this->siguienteEstadoVisibleLabel($detalle, $service),
             'motivo_cancelacion' => $detalle->cancelacion_motivo,
-            'puede_activar_gps' => in_array(
-                $detalle->estado_transporte_actual,
-                ['preparando', 'en_camino_entrega', 'esperando_confirmacion'],
-                true
-            ),
+            'puede_activar_gps' => $service->puedeActivarGps($detalle),
             'ubicacion' => $ubicacion ? [
                 'latitud' => (float) $ubicacion->latitud,
                 'longitud' => (float) $ubicacion->longitud,
@@ -157,5 +179,24 @@ class TransportePublicoController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('transporte.index');
+    }
+
+    private function siguienteEstadoVisibleLabel($detalle, TransporteAccesoService $service): ?string
+    {
+        $siguiente = $service->siguienteEstado($detalle);
+
+        if (!$siguiente) {
+            return null;
+        }
+
+        $estadoLabels = $service->estadosPara($detalle);
+        $faseLabels = $service->fasesPara($detalle);
+        $estadoFases = $detalle->es_alquiler_maquinaria
+            ? \App\Models\PedidoDetalle::transporteEstadoFases()
+            : [];
+
+        return $faseLabels[$estadoFases[$siguiente] ?? $siguiente]
+            ?? $estadoLabels[$siguiente]
+            ?? ucfirst(str_replace('_', ' ', $siguiente));
     }
 }

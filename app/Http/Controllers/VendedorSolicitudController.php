@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
-use App\Models\Role;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +13,7 @@ class VendedorSolicitudController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PedidoDetalle::with(['pedido.user', 'transportista'])
+        $query = PedidoDetalle::with(['pedido.user', 'transporteAcceso'])
             ->where('vendedor_id', Auth::id())
             ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
             ->orderByDesc('created_at');
@@ -46,7 +44,6 @@ class VendedorSolicitudController extends Controller
 
         $solicitud->load([
             'pedido.user',
-            'transportista',
             'ultimaUbicacion',
             'transporteAcceso',
             'transporteEventos' => fn ($query) => $query->latest('created_at')->limit(10),
@@ -54,14 +51,8 @@ class VendedorSolicitudController extends Controller
             'reclamos.creador',
         ]);
         $estados = $this->estados();
-        $transportistas = User::whereHas('role', function ($query) {
-                $query->where('nombre', Role::TRANSPORTISTA);
-            })
-            ->where('transportista_creado_por_id', Auth::id())
-            ->orderBy('name')
-            ->get();
 
-        return view('vendedor.solicitudes.show', compact('solicitud', 'estados', 'transportistas'));
+        return view('vendedor.solicitudes.show', compact('solicitud', 'estados'));
     }
 
     public function aceptar(PedidoDetalle $solicitud, TransporteAccesoService $transporteService)
@@ -83,7 +74,7 @@ class VendedorSolicitudController extends Controller
                     'respondido_at' => now(),
                 ]);
 
-                if ($solicitud->product_type === 'organico') {
+                if (in_array($solicitud->product_type, ['organico', 'maquinaria'], true)) {
                     $transporteService->generar($solicitud->fresh(), Auth::id());
                 }
 
@@ -108,7 +99,7 @@ class VendedorSolicitudController extends Controller
             ->route('vendedor.solicitudes.show', $solicitud)
             ->with(
                 'success',
-                $solicitud->product_type === 'organico'
+                in_array($solicitud->product_type, ['organico', 'maquinaria'], true)
                     ? 'Solicitud aceptada. Se genero el codigo para el transportista externo.'
                     : 'Solicitud aceptada. Las demas solicitudes pendientes de este producto fueron canceladas.'
             );
@@ -163,44 +154,7 @@ class VendedorSolicitudController extends Controller
     {
         $this->authorizeSeller($solicitud);
 
-        return back()->with('error', 'El seguimiento del alquiler lo maneja el transportista asignado.');
-    }
-
-    public function asignarTransportista(Request $request, PedidoDetalle $solicitud)
-    {
-        $this->authorizeSeller($solicitud);
-
-        if ($solicitud->estado_solicitud !== 'aceptada') {
-            return back()->with('error', 'Primero debes aceptar la solicitud para asignar transportista.');
-        }
-
-        if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado') {
-            return back()->with('error', 'No puedes cambiar el transportista cuando el recorrido ya inicio.');
-        }
-
-        $data = $request->validate([
-            'transportista_id' => 'required|exists:users,id',
-        ]);
-
-        $transportista = User::findOrFail($data['transportista_id']);
-
-        if (!$transportista->isTransportista()) {
-            return back()->with('error', 'El usuario seleccionado no tiene rol transportista.');
-        }
-
-        if ((int) $transportista->transportista_creado_por_id !== (int) Auth::id()) {
-            return back()->with('error', 'Solo puedes asignar transportistas creados por ti.');
-        }
-
-        $solicitud->update([
-            'transportista_id' => $transportista->id,
-            'estado_transporte' => $solicitud->estado_transporte ?: 'asignado',
-            'estado_alquiler' => $solicitud->es_alquiler_maquinaria
-                ? ($solicitud->estado_alquiler ?: 'aceptado')
-                : $solicitud->estado_alquiler,
-        ]);
-
-        return back()->with('success', 'Transportista asignado correctamente: ' . $transportista->name . '.');
+        return back()->with('error', 'El seguimiento del alquiler lo maneja el acceso de transporte por codigo o QR.');
     }
 
     public function regenerarCodigo(
@@ -231,7 +185,7 @@ class VendedorSolicitudController extends Controller
         $this->authorizeSeller($solicitud);
         $transporteService->prepararPorVendedor($solicitud, Auth::id());
 
-        return back()->with('success', 'Producto preparado. El transportista ya puede iniciar la entrega y compartir su GPS.');
+        return back()->with('success', 'Transporte habilitado. La persona con el codigo o QR ya puede iniciar el recorrido y compartir GPS.');
     }
 
     private function authorizeSeller(PedidoDetalle $solicitud): void

@@ -14,7 +14,7 @@
             default => 'secondary',
         };
         $detalleConUbicacion = $pedido->detalles->first(
-            fn($detalle) => $detalle->product_type === 'organico'
+            fn($detalle) => in_array($detalle->product_type, ['organico', 'maquinaria'], true)
                 && $detalle->estado_solicitud === 'aceptada'
                 && $detalle->product_latitud
                 && $detalle->product_longitud
@@ -35,8 +35,6 @@
             ->map(fn($detalle) => [
                 'id' => $detalle->id,
                 'url' => route('pedidos.detalles.estadoTransporte', $detalle, false),
-                'rentalStates' => array_keys(\App\Models\PedidoDetalle::alquilerEstados()),
-                'isRental' => $detalle->es_alquiler_maquinaria,
             ])
             ->values();
     @endphp
@@ -44,7 +42,6 @@
     <div class="container-fluid orders-page">
         <style>
             .order-rental-tracking {
-                min-width: 360px;
                 margin-top: .75rem;
                 padding: .85rem;
                 border: 1px solid rgba(63, 126, 42, .14);
@@ -63,7 +60,7 @@
 
             .order-rental-tracking__steps {
                 display: grid;
-                grid-template-columns: repeat(7, minmax(86px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
                 gap: .45rem;
             }
 
@@ -89,13 +86,32 @@
             }
 
             @media (max-width: 768px) {
-                .order-rental-tracking {
-                    min-width: 0;
-                }
-
                 .order-rental-tracking__steps {
                     grid-template-columns: repeat(2, minmax(0, 1fr));
                 }
+            }
+
+            .orders-detail-expanded-row td {
+                padding: 0 1rem 1rem;
+                vertical-align: top;
+                background: #fbfdf9;
+            }
+
+            .orders-detail-expanded {
+                max-width: 980px;
+            }
+
+            .post-sale-box textarea {
+                height: 86px;
+                min-height: 86px;
+                max-height: 86px;
+                resize: none;
+            }
+
+            .post-sale-box .post-sale-review textarea {
+                height: 74px;
+                min-height: 74px;
+                max-height: 74px;
             }
 
             .tracking-pin {
@@ -226,13 +242,9 @@
                                     $isMaquinaria = $detalle->es_alquiler_maquinaria;
                                     $cantidadTexto = $detalle->cantidad_tiempo_texto;
                                     $precioLabel = $detalle->precio_corto_label;
-                                    $alquilerEstados = \App\Models\PedidoDetalle::alquilerEstados();
-                                    $estadoAlquilerActual = $detalle->estado_alquiler_actual;
-                                    $estadoKeys = array_keys($alquilerEstados);
-                                    $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
                                 @endphp
-                                <tr @if($detalle->product_type === 'organico')
-                                    data-buyer-organic-detail="{{ $detalle->id }}"
+                                <tr @if(in_array($detalle->product_type, ['organico', 'maquinaria'], true))
+                                    data-buyer-delivery-detail="{{ $detalle->id }}"
                                     data-request-state="{{ $detalle->estado_solicitud }}"
                                     data-transport-state="{{ $detalle->estado_transporte_actual }}"
                                     @endif>
@@ -260,100 +272,6 @@
                                                 {{ $detalle->estado_transporte_label ?: 'Pendiente' }}
                                             </span>
                                         </small>
-                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
-                                            @php
-                                                $deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
-                                                $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado'
-                                                    ? 'aceptado'
-                                                    : $detalle->estado_transporte_actual;
-                                                $deliveryIndex = array_search($deliveryCurrent, $deliveryFlow, true);
-                                            @endphp
-                                            <div class="order-rental-tracking">
-                                                <div class="order-rental-tracking__title">
-                                                    <span><i class="fas fa-truck mr-1"></i>Seguimiento de entrega</span>
-                                                    <span class="text-success"
-                                                        id="buyer-delivery-status-{{ $detalle->id }}">{{ $detalle->estado_transporte_label }}</span>
-                                                </div>
-                                                <div class="order-rental-tracking__steps"
-                                                    style="grid-template-columns: repeat(5, minmax(86px, 1fr));">
-                                                    @foreach ($deliveryFlow as $deliveryStepIndex => $deliveryState)
-                                                        @php
-                                                            $deliveryClass = '';
-                                                            if ($deliveryIndex !== false && $deliveryStepIndex < $deliveryIndex) {
-                                                                $deliveryClass = 'is-done';
-                                                            } elseif ($deliveryState === $deliveryCurrent) {
-                                                                $deliveryClass = 'is-current';
-                                                            }
-                                                        @endphp
-                                                        <div class="order-rental-tracking__step {{ $deliveryClass }}"
-                                                            data-delivery-detail="{{ $detalle->id }}"
-                                                            data-state="{{ $deliveryState }}">
-                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$deliveryState] }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                        <div data-live-confirm-container="{{ $detalle->id }}"
-                                            style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display: none;' }}">
-                                            <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
-                                                method="POST" class="mt-2 question-confirm-form"
-                                                id="buyer-receive-form-{{ $detalle->id }}"
-                                                style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display:none' }}"
-                                                data-confirm-title="¿Recibiste tu pedido?"
-                                                data-confirm-text="Confirma únicamente cuando el producto ya esté contigo. Al continuar, la entrega quedará registrada como recibida."
-                                                data-confirm-button="Sí, recibí mi pedido"
-                                                data-cancel-button="Aún no"
-                                                data-loading-text="Confirmando la recepción...">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
-                                                </button>
-                                            </form>
-                                        </div>
-                                        <div class="small text-success mt-2"
-                                            id="buyer-received-{{ $detalle->id }}"
-                                            data-live-recepcion="{{ $detalle->id }}"
-                                            style="{{ $detalle->recepcion_confirmada_at ? '' : 'display: none;' }}">
-                                            <i class="fas fa-check-circle mr-1"></i>
-                                            Recepcion confirmada
-                                            <span data-live-recepcion-date="{{ $detalle->id }}">
-                                                {{ $detalle->recepcion_confirmada_at ? 'el ' . $detalle->recepcion_confirmada_at->format('d/m/Y H:i') : '' }}
-                                            </span>
-                                        </div>
-                                        @if($detalle->estado_solicitud === 'aceptada'
-                                            && in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true))
-                                            @include('organicos.partials.postventa', ['detalle' => $detalle, 'modo' => 'comprador'])
-                                        @endif
-                                        @if ($isMaquinaria)
-                                            <div class="order-rental-tracking" data-live-rental-tracking="{{ $detalle->id }}"
-                                                style="{{ $detalle->estado_solicitud === 'aceptada' && $detalle->estado_transporte_actual && $detalle->estado_transporte_actual !== 'asignado' ? '' : 'display: none;' }}">
-                                                <div class="order-rental-tracking__title">
-                                                    <span><i class="fas fa-route mr-1"></i>Seguimiento del alquiler</span>
-                                                    <span class="text-success" data-live-rental-label="{{ $detalle->id }}">
-                                                        {{ $detalle->estado_alquiler_label ?: 'Pendiente' }}
-                                                    </span>
-                                                </div>
-                                                <div class="order-rental-tracking__steps">
-                                                    @foreach ($alquilerEstados as $estadoKey => $estadoLabel)
-                                                        @php
-                                                            $index = array_search($estadoKey, $estadoKeys, true);
-                                                            $stepClass = '';
-                                                            if ($estadoActualIndex !== false && $index < $estadoActualIndex) {
-                                                                $stepClass = 'is-done';
-                                                            } elseif ($estadoKey === $estadoAlquilerActual) {
-                                                            $stepClass = 'is-current';
-                                                        }
-                                                    @endphp
-                                                        <div class="order-rental-tracking__step {{ $stepClass }}"
-                                                            data-live-rental-step="{{ $detalle->id }}"
-                                                            data-rental-state="{{ $estadoKey }}">
-                                                            {{ $estadoLabel }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
                                     </td>
                                     <td>{{ ucfirst($detalle->product_type) }}</td>
                                     <td>{{ $cantidadTexto }}</td>
@@ -366,6 +284,90 @@
                                         <span class="badge badge-{{ $colorSolicitud }}">{{ $labelSolicitud }}</span>
                                     </td>
                                 </tr>
+                                @if (in_array($detalle->product_type, ['organico', 'maquinaria'], true) && $detalle->estado_solicitud === 'aceptada')
+                                    @php
+                                        $deliveryLabels = $detalle->es_alquiler_maquinaria
+                                            ? \App\Models\PedidoDetalle::transporteFases()
+                                            : \App\Services\TransporteAccesoService::ESTADOS_ORGANICO;
+                                        $deliveryStatePhases = $detalle->es_alquiler_maquinaria
+                                            ? \App\Models\PedidoDetalle::transporteEstadoFases()
+                                            : [];
+                                        $deliveryFlow = array_keys($deliveryLabels);
+                                        $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado' && $detalle->product_type === 'organico'
+                                            ? 'aceptado'
+                                            : $detalle->estado_transporte_actual;
+                                        $deliveryCurrentVisible = $deliveryStatePhases[$deliveryCurrent] ?? $deliveryCurrent;
+                                        $deliveryIndex = array_search($deliveryCurrentVisible, $deliveryFlow, true);
+                                        $mostrarPostventa = $detalle->estado_solicitud === 'aceptada'
+                                            && (
+                                                $detalle->recepcion_confirmada_at
+                                                || in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
+                                                || $pedido->estado === 'finalizado'
+                                            );
+                                    @endphp
+                                    <tr class="orders-detail-expanded-row">
+                                        <td colspan="6">
+                                            <div class="orders-detail-expanded">
+                                                <div class="order-rental-tracking">
+                                                    <div class="order-rental-tracking__title">
+                                                        <span><i class="fas fa-truck mr-1"></i>Seguimiento de entrega</span>
+                                                        <span class="text-success"
+                                                            id="buyer-delivery-status-{{ $detalle->id }}">{{ $detalle->estado_transporte_label }}</span>
+                                                    </div>
+                                                    <div class="order-rental-tracking__steps">
+                                                        @foreach ($deliveryFlow as $deliveryStepIndex => $deliveryState)
+                                                            @php
+                                                                $deliveryClass = '';
+                                                                if ($deliveryIndex !== false && $deliveryStepIndex < $deliveryIndex) {
+                                                                    $deliveryClass = 'is-done';
+                                                                } elseif ($deliveryState === $deliveryCurrentVisible) {
+                                                                    $deliveryClass = 'is-current';
+                                                                }
+                                                            @endphp
+                                                            <div class="order-rental-tracking__step {{ $deliveryClass }}"
+                                                                data-delivery-detail="{{ $detalle->id }}"
+                                                                data-state="{{ $deliveryState }}">
+                                                                {{ $deliveryLabels[$deliveryState] ?? ucfirst(str_replace('_', ' ', $deliveryState)) }}
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+
+                                                <div data-live-confirm-container="{{ $detalle->id }}"
+                                                    style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display: none;' }}">
+                                                    <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
+                                                        method="POST" class="mt-2 question-confirm-form"
+                                                        id="buyer-receive-form-{{ $detalle->id }}"
+                                                        style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display:none' }}"
+                                                        data-confirm-title="¿Recibiste tu pedido?"
+                                                        data-confirm-text="Confirma únicamente cuando el producto ya esté contigo. Al continuar, la entrega quedará registrada como recibida."
+                                                        data-confirm-button="Sí, recibí mi pedido"
+                                                        data-cancel-button="Aún no"
+                                                        data-loading-text="Confirmando la recepción...">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                                <div class="small text-success mt-2"
+                                                    id="buyer-received-{{ $detalle->id }}"
+                                                    data-live-recepcion="{{ $detalle->id }}"
+                                                    style="{{ $detalle->recepcion_confirmada_at ? '' : 'display: none;' }}">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Recepcion confirmada
+                                                    <span data-live-recepcion-date="{{ $detalle->id }}">
+                                                        {{ $detalle->recepcion_confirmada_at ? 'el ' . $detalle->recepcion_confirmada_at->format('d/m/Y H:i') : '' }}
+                                                    </span>
+                                                </div>
+
+                                                @if($mostrarPostventa)
+                                                    @include('organicos.partials.postventa', ['detalle' => $detalle, 'modo' => 'comprador'])
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endforeach
                         </tbody>
                     </table>
@@ -388,12 +390,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var statesUrl = @json(route('pedidos.tracking.estados', $pedido, false));
-            var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
+            var transportStatePhases = @json(\App\Models\PedidoDetalle::transporteEstadoFases());
             var statusBusy = false;
             var statusTimer = null;
 
             function updateDeliveryDetail(detail) {
-                var row = document.querySelector('[data-buyer-organic-detail="' + detail.detalle_id + '"]');
+                var row = document.querySelector('[data-buyer-delivery-detail="' + detail.detalle_id + '"]');
 
                 if (row && row.dataset.requestState !== detail.estado_solicitud) {
                     window.location.reload();
@@ -412,11 +414,14 @@
                     status.textContent = detail.estado_label;
                 }
 
-                var currentIndex = deliveryFlow.indexOf(detail.estado);
-                document.querySelectorAll('[data-delivery-detail="' + detail.detalle_id + '"]').forEach(function(step) {
+                var steps = Array.from(document.querySelectorAll('[data-delivery-detail="' + detail.detalle_id + '"]'));
+                var deliveryFlow = steps.map(function(step) { return step.dataset.state; });
+                var currentVisibleState = transportStatePhases[detail.estado] || detail.estado;
+                var currentIndex = deliveryFlow.indexOf(currentVisibleState);
+                steps.forEach(function(step) {
                     var index = deliveryFlow.indexOf(step.dataset.state);
                     step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
-                    step.classList.toggle('is-current', step.dataset.state === detail.estado);
+                    step.classList.toggle('is-current', step.dataset.state === currentVisibleState);
                 });
 
                 var receiveForm = document.getElementById('buyer-receive-form-' + detail.detalle_id);
@@ -492,8 +497,6 @@
                 var googleMapsUrl = @json($mapsUrl);
                 var trackingUrl = @json($trackingUrl);
                 var trackingDetailId = @json($detalleConUbicacion?->id);
-                var currentTrackingState = @json($detalleConUbicacion?->estado_transporte_actual);
-                var deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
                 var liveStatus = document.getElementById('pedido-live-status');
                 var liveMarker = null;
                 var liveLine = null;
@@ -726,32 +729,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             var detailStates = @json($liveDetailStates);
 
-            function updateRentalSteps(detailId, currentState, states) {
-                if (!currentState || !states) {
-                    return;
-                }
-
-                var currentIndex = states.indexOf(currentState);
-
-                document.querySelectorAll('[data-live-rental-step="' + detailId + '"]').forEach(function(step) {
-                    var state = step.getAttribute('data-rental-state');
-                    var index = states.indexOf(state);
-
-                    step.classList.remove('is-done', 'is-current');
-
-                    if (currentIndex !== -1 && index < currentIndex) {
-                        step.classList.add('is-done');
-                    } else if (state === currentState) {
-                        step.classList.add('is-current');
-                    }
-                });
-            }
-
             function applyDetailState(config, data) {
                 var transportWrap = document.querySelector('[data-live-transport-wrap="' + config.id + '"]');
                 var transportLabel = document.querySelector('[data-live-transport-label="' + config.id + '"]');
-                var rentalLabel = document.querySelector('[data-live-rental-label="' + config.id + '"]');
-                var rentalTracking = document.querySelector('[data-live-rental-tracking="' + config.id + '"]');
                 var confirmContainer = document.querySelector('[data-live-confirm-container="' + config.id + '"]');
                 var recepcion = document.querySelector('[data-live-recepcion="' + config.id + '"]');
                 var recepcionDate = document.querySelector('[data-live-recepcion-date="' + config.id + '"]');
@@ -762,19 +742,6 @@
 
                 if (transportWrap) {
                     transportWrap.style.display = data.estado_transporte_label ? '' : 'none';
-                }
-
-                if (rentalLabel && data.estado_alquiler_label) {
-                    rentalLabel.textContent = data.estado_alquiler_label;
-                }
-
-                if (rentalTracking) {
-                    rentalTracking.style.display = config.isRental
-                        && data.estado_solicitud === 'aceptada'
-                        && data.estado_transporte
-                        && data.estado_transporte !== 'asignado'
-                            ? ''
-                            : 'none';
                 }
 
                 if (confirmContainer) {
@@ -788,8 +755,6 @@
                 if (recepcionDate) {
                     recepcionDate.textContent = data.recepcion_confirmada_at ? 'el ' + data.recepcion_confirmada_at : '';
                 }
-
-                updateRentalSteps(config.id, data.estado_alquiler, config.rentalStates);
             }
 
             function refreshDetailStates() {

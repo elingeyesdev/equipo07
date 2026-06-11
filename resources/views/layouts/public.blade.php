@@ -59,12 +59,6 @@
                                             <i class="fas fa-clipboard-list"></i> Solicitudes
                                         </a>
                                     </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link text-white {{ request()->routeIs('admin.datos-sanitarios.*') ? 'active' : '' }}"
-                                            href="{{ route('admin.datos-sanitarios.index') }}">
-                                            <i class="fas fa-syringe"></i> Datos Sanitarios
-                                        </a>
-                                    </li>
                                 @endif
                                 @if (auth()->user()->isCliente())
                                     <li class="nav-item">

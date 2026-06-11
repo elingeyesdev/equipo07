@@ -18,16 +18,13 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
-use App\Http\Controllers\AdminTransportistaController;
 use App\Http\Controllers\PedidoUbicacionController;
 use App\Http\Controllers\ReporteController;
-use App\Http\Controllers\TransportistaEnvioController;
 use App\Http\Controllers\VendedorSolicitudController;
 use App\Http\Controllers\TransportePublicoController;
 use App\Http\Controllers\ProductoVentaController;
 use App\Http\Controllers\InteraccionOrganicoController;
 use App\Http\Controllers\ReclamoController;
-use App\Http\Controllers\VendedorTransportistaController;
 
 
 Route::view('/', 'public.landing')->name('landing');
@@ -102,8 +99,6 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/pedidos/{pedido}', [AdminPedidoController::class, 'show'])->name('pedidos.show');
     Route::put('/pedidos/{pedido}/estado', [AdminPedidoController::class, 'updateEstado'])->name('pedidos.updateEstado');
 
-    Route::get('/transportistas', [AdminTransportistaController::class, 'index'])->name('transportistas.index');
-
     // REPORTES
     // Ventas
     Route::get('/reportes/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
@@ -146,16 +141,12 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
     Route::post('/vendedor/solicitudes/{solicitud}/alquiler/avanzar', [VendedorSolicitudController::class, 'avanzarAlquiler'])->name('vendedor.solicitudes.alquiler.avanzar');
     Route::post('/vendedor/solicitudes/{solicitud}/finalizar', [VendedorSolicitudController::class, 'finalizarPedido'])->name('vendedor.solicitudes.finalizar');
-    Route::post('/vendedor/solicitudes/{solicitud}/transportista', [VendedorSolicitudController::class, 'asignarTransportista'])->name('vendedor.solicitudes.transportista.asignar');
     Route::post('/vendedor/solicitudes/{solicitud}/transporte/codigo', [VendedorSolicitudController::class, 'regenerarCodigo'])
         ->name('vendedor.solicitudes.transporte.codigo');
     Route::delete('/vendedor/solicitudes/{solicitud}/transporte/codigo', [VendedorSolicitudController::class, 'revocarCodigo'])
         ->name('vendedor.solicitudes.transporte.revocar');
     Route::post('/vendedor/solicitudes/{solicitud}/transporte/preparado', [VendedorSolicitudController::class, 'marcarPreparado'])
         ->name('vendedor.solicitudes.transporte.preparado');
-
-    Route::get('/vendedor/transportistas', [VendedorTransportistaController::class, 'index'])->name('vendedor.transportistas.index');
-    Route::post('/vendedor/transportistas', [VendedorTransportistaController::class, 'store'])->name('vendedor.transportistas.store');
 });
 
 Route::middleware('auth')->get(
@@ -167,15 +158,6 @@ Route::middleware('auth')->get(
     '/mis-pedidos/{pedido}/estados-actuales',
     [PedidoUbicacionController::class, 'estadosPedido']
 )->name('pedidos.tracking.estados');
-
-Route::middleware(['auth', 'role.transportista'])->group(function () {
-    Route::get('/transportista/envios', [TransportistaEnvioController::class, 'index'])->name('transportista.envios.index');
-    Route::get('/transportista/envios/historial', [TransportistaEnvioController::class, 'historial'])->name('transportista.envios.historial');
-    Route::get('/transportista/envios/{envio}', [TransportistaEnvioController::class, 'show'])->name('transportista.envios.show');
-    Route::get('/transportista/envios/{envio}/tracking', [TransportistaEnvioController::class, 'tracking'])->name('transportista.envios.tracking');
-    Route::post('/transportista/envios/{solicitud}/tracking', [PedidoUbicacionController::class, 'store'])->name('transportista.envios.tracking.store');
-    Route::post('/transportista/envios/{solicitud}/tracking/estado', [PedidoUbicacionController::class, 'avanzarEstado'])->name('transportista.envios.tracking.estado');
-});
 
 // TODOS LOS USUARIOS AUTENTICADOS
 Route::middleware(['auth', 'not.transportista'])->group(function () {

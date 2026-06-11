@@ -7,8 +7,6 @@ export default defineConfig({
       input: [
         'resources/css/app.css',
         'resources/js/app.js',
-        'resources/js/transport-qr-seller.js',
-        'resources/js/transport-qr-scanner.js',
       ],
       refresh: true,
     }),

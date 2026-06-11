@@ -82,6 +82,7 @@ class InteraccionOrganicoController extends Controller
     private function autorizarParticipante(PedidoDetalle $detalle): string
     {
         $detalle->loadMissing('pedido');
+
         abort_unless(
             in_array($detalle->product_type, ['ganado', 'maquinaria', 'organico'], true),
             404
@@ -101,15 +102,22 @@ class InteraccionOrganicoController extends Controller
     private function puedeCrearResena(PedidoDetalle $detalle): bool
     {
         return $detalle->estado_solicitud === 'aceptada'
-            && $detalle->estado_transporte_actual === 'entregado'
-            && in_array($detalle->pedido->estado, ['entregado', 'finalizado'], true);
+            && (
+                $detalle->recepcion_confirmada_at !== null
+                || (
+                    $detalle->estado_transporte_actual === 'entregado'
+                    && in_array($detalle->pedido->estado, ['entregado', 'finalizado'], true)
+                )
+                || $detalle->pedido->estado === 'finalizado'
+            );
     }
 
     private function puedeCrearReclamo(PedidoDetalle $detalle): bool
     {
         return $detalle->estado_solicitud === 'aceptada'
             && (
-                in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
+                $detalle->recepcion_confirmada_at !== null
+                || in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
                 || $detalle->pedido->estado === 'finalizado'
             );
     }

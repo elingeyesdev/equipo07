@@ -3,22 +3,30 @@
     $esComprador = $modo === 'comprador';
     $esAdmin = $modo === 'admin';
     $finalizado = $detalle->estado_solicitud === 'aceptada'
-        && $detalle->estado_transporte_actual === 'entregado'
-        && in_array($detalle->pedido->estado, ['entregado', 'finalizado'], true);
-    $reclamable = $detalle->estado_solicitud === 'aceptada'
         && (
-            in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
+            $detalle->recepcion_confirmada_at !== null
+            || (
+                $detalle->estado_transporte_actual === 'entregado'
+                && in_array($detalle->pedido->estado, ['entregado', 'finalizado'], true)
+            )
             || $detalle->pedido->estado === 'finalizado'
         );
+    $reclamable = $detalle->estado_solicitud === 'aceptada'
+        && (
+            $detalle->recepcion_confirmada_at !== null
+            || in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
+            || $detalle->pedido->estado === 'finalizado'
+        );
+    $esMaquinaria = $detalle->product_type === 'maquinaria';
     $reclamoPropio = $detalle->reclamos->firstWhere('creador_id', auth()->id());
     $reclamosVisibles = $esComprador
         ? $detalle->reclamos->where('creador_id', auth()->id())
         : $detalle->reclamos;
 @endphp
 
-<div class="mt-3 border rounded bg-light p-3">
+<div class="post-sale-box mt-3 border rounded bg-light p-3">
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
-        <strong><i class="fas fa-comment-dots text-success mr-1"></i>Postventa del producto</strong>
+        <strong><i class="fas fa-comment-dots text-success mr-1"></i>Postventa {{ $esMaquinaria ? 'de la maquinaria' : 'del producto' }}</strong>
         <span class="badge badge-{{ $detalle->estado_transporte_actual === 'cancelado' ? 'danger' : 'success' }}">
             {{ $detalle->estado_transporte_label }}
         </span>
@@ -54,9 +62,9 @@
             </small>
         </div>
     @elseif($esComprador && $finalizado)
-        <form method="POST" action="{{ route('resenas.store', $detalle) }}" class="bg-white border rounded p-3 mb-3">
+        <form method="POST" action="{{ route('resenas.store', $detalle) }}" class="post-sale-review bg-white border rounded p-3 mb-3">
             @csrf
-            <label class="font-weight-bold d-block">Califica tu compra</label>
+            <label class="font-weight-bold d-block">Califica tu {{ $esMaquinaria ? 'alquiler' : 'compra' }}</label>
             <div class="form-row">
                 <div class="col-md-3 mb-2">
                     <select name="estrellas" class="form-control" required>
@@ -68,7 +76,7 @@
                 </div>
                 <div class="col-md-9 mb-2">
                     <textarea name="comentario" class="form-control" rows="2" minlength="10" maxlength="1200"
-                        placeholder="Cuenta cómo fue el producto y la atención del vendedor" required></textarea>
+                        placeholder="{{ $esMaquinaria ? 'Cuenta cómo fue la maquinaria, el alquiler y la atención' : 'Cuenta cómo fue el producto y la atención del vendedor' }}" required></textarea>
                 </div>
             </div>
             <button class="btn btn-sm btn-success" type="submit">

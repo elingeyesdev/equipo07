@@ -191,7 +191,7 @@ class PedidoController extends Controller
             'estado_alquiler' => $detalle->es_alquiler_maquinaria ? 'en_uso' : $detalle->estado_alquiler,
         ]);
 
-        if ($detalle->product_type === 'organico') {
+        if (in_array($detalle->product_type, ['organico', 'maquinaria'], true)) {
             TransporteEvento::create([
                 'pedido_detalle_id' => $detalle->id,
                 'transporte_acceso_id' => $detalle->transporteAcceso?->id,
@@ -200,7 +200,9 @@ class PedidoController extends Controller
                 'estado_anterior' => 'esperando_confirmacion',
                 'estado_nuevo' => 'entregado',
             ]);
+        }
 
+        if ($detalle->product_type === 'organico') {
             $detalle->transporteAcceso?->update([
                 'estado' => TransporteAcceso::ESTADO_REVOCADO,
             ]);

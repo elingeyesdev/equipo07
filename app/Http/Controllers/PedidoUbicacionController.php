@@ -117,7 +117,7 @@ class PedidoUbicacionController extends Controller
         }
 
         $detalles = $pedido->detalles()
-            ->where('product_type', 'organico')
+            ->whereIn('product_type', ['organico', 'maquinaria'])
             ->get()
             ->map(fn (PedidoDetalle $detalle) => [
                 'detalle_id' => $detalle->id,

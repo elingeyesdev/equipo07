@@ -44,7 +44,7 @@
                                 <th>Total</th>
                                 <th>Destino</th>
                                 <th>Estado</th>
-                                <th>Transportista</th>
+                                <th>Transporte</th>
                                 <th class="text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -84,12 +84,12 @@
                                         </span>
                                     </td>
                                     <td>
-                                        @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->transportista)
-                                            <small>
-                                                <i class="fas fa-truck mr-1"></i>{{ $solicitud->transportista->name }}
-                                            </small>
+                                        @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->transporteAcceso?->estaActivo())
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-qrcode mr-1"></i>QR activo
+                                            </span>
                                         @elseif ($solicitud->estado_solicitud === 'aceptada')
-                                            <span class="badge badge-warning">Sin asignar</span>
+                                            <span class="badge badge-warning">Sin QR activo</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif

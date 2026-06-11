@@ -28,6 +28,7 @@ class TransporteAccesoServiceTest extends TestCase
     {
         $service = new TransporteAccesoService();
         $detalle = new PedidoDetalle([
+            'product_type' => 'organico',
             'estado_solicitud' => 'aceptada',
             'estado_transporte' => 'aceptado',
         ]);
@@ -39,5 +40,35 @@ class TransporteAccesoServiceTest extends TestCase
 
         $detalle->estado_transporte = 'en_camino_entrega';
         $this->assertSame('esperando_confirmacion', $service->siguienteEstado($detalle));
+    }
+
+    public function test_flujo_maquinaria_usa_recogida_entrega_y_retorno(): void
+    {
+        $service = new TransporteAccesoService();
+        $detalle = new PedidoDetalle([
+            'product_type' => 'maquinaria',
+            'estado_solicitud' => 'aceptada',
+            'estado_transporte' => 'asignado',
+        ]);
+
+        $this->assertSame('en_camino_recogida', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'en_camino_recogida';
+        $this->assertSame('producto_recogido', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'producto_recogido';
+        $this->assertSame('en_camino_entrega', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'en_camino_entrega';
+        $this->assertSame('llego_destino', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'llego_destino';
+        $this->assertSame('esperando_confirmacion', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'entregado';
+        $this->assertSame('en_camino_retorno', $service->siguienteEstado($detalle));
+
+        $detalle->estado_transporte = 'en_camino_retorno';
+        $this->assertSame('devuelto_vendedor', $service->siguienteEstado($detalle));
     }
 }

@@ -17,6 +17,19 @@ textarea {
   font-family: var(--app-font);
 }
 
+.post-sale-box textarea.form-control {
+  height: 86px;
+  min-height: 86px;
+  max-height: 86px;
+  resize: none;
+}
+
+.post-sale-box .post-sale-review textarea.form-control {
+  height: 74px;
+  min-height: 74px;
+  max-height: 74px;
+}
+
 body {
   color: var(--app-text);
   font-size: .95rem;
@@ -40,8 +53,31 @@ body {
 .project-topbar {
   background: var(--agro) !important;
 }
+.project-topbar .container {
+  max-width: 1160px;
+  gap: .75rem;
+}
+.project-topbar .navbar-brand {
+  flex-shrink: 0;
+  min-height: 52px;
+}
+.project-topbar .navbar-collapse {
+  min-width: 0;
+}
+.project-topbar .navbar-nav {
+  align-items: center;
+  gap: .15rem;
+  min-width: 0;
+}
 .project-topbar .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 42px;
+  padding: .45rem .6rem !important;
   color: #fff !important;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 .project-topbar .nav-link.active {
   background: rgba(255, 255, 255, 0.15);
