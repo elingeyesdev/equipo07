@@ -246,8 +246,39 @@
         }
 
         @media (max-width: 575.98px) {
+            .hero {
+                min-height: auto !important;
+            }
+
+            .hero > .container {
+                max-width: 100%;
+                padding: 2.25rem 1rem !important;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+                line-height: 1.15;
+                overflow-wrap: anywhere;
+            }
+
+            .hero h1 br {
+                display: none;
+            }
+
+            .hero-search-panel {
+                max-width: 100%;
+                padding: 1rem !important;
+            }
+
             .hero-filter-form.form-row {
                 grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .hero-filter-form select,
+            .hero-filter-form input,
+            .hero-filter-form button {
+                max-width: 100%;
             }
         }
     </style>

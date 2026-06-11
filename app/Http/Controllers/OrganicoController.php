@@ -67,7 +67,20 @@ class OrganicoController extends Controller
     {
         $organico->load(array_merge($this->relacionesOrganico(), ['resenas.comprador']));
 
-        return view('organicos.show', compact('organico'));
+        $puedeGestionarCertificados = auth()->user()?->isAdmin()
+            || $organico->user_id === auth()->id();
+
+        if (!$puedeGestionarCertificados) {
+            $organico->setRelation(
+                'certificadoRegistros',
+                $organico->certificadoRegistros
+                    ->where('estado', OrganicoCertificado::ESTADO_VERIFICADO)
+                    ->filter(fn (OrganicoCertificado $registro) => filled($registro->archivo))
+                    ->values()
+            );
+        }
+
+        return view('organicos.show', compact('organico', 'puedeGestionarCertificados'));
     }
 
     public function edit(Organico $organico)

@@ -511,48 +511,52 @@
                                         <small class="d-block text-muted">Sin archivo cargado.</small>
                                     @endif
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge badge-{{ $badge }} mr-2">{{ $textoEstado }}</span>
+                                @if ($puedeGestionarCertificados)
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-{{ $badge }} mr-2">{{ $textoEstado }}</span>
 
-                                    @if (auth()->user()?->isAdmin())
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-light border" type="button"
-                                                id="certificadoMenu{{ $registro->id }}" data-toggle="dropdown"
-                                                aria-haspopup="true" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="certificadoMenu{{ $registro->id }}">
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="verificado">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-check text-success mr-2"></i>Aprobar
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="rechazado">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-times text-danger mr-2"></i>Desaprobar
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="pendiente">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-clock text-warning mr-2"></i>Marcar pendiente
-                                                    </button>
-                                                </form>
+                                        @if (auth()->user()?->isAdmin())
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light border" type="button"
+                                                    id="certificadoMenu{{ $registro->id }}" data-toggle="dropdown"
+                                                    aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="certificadoMenu{{ $registro->id }}">
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="verificado">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-check text-success mr-2"></i>Aprobar
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="rechazado">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-times text-danger mr-2"></i>Desaprobar
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="pendiente">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-clock text-warning mr-2"></i>Marcar pendiente
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
-                                        </div>
-                                    @endif
-                                </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         @empty
-                            <span class="text-muted">Sin certificados registrados.</span>
+                            <span class="text-muted">
+                                {{ $puedeGestionarCertificados ? 'Sin certificados registrados.' : 'Este producto no tiene certificados aprobados para mostrar.' }}
+                            </span>
                         @endforelse
                     </div>
                 </div>

@@ -21,7 +21,7 @@
     <div class="wrapper">
 
         @if (!View::hasSection('standalone_public') && !request()->routeIs('login', 'register'))
-            <nav class="main-header navbar navbar-expand navbar-white navbar-light border-0 project-topbar">
+            <nav class="main-header navbar navbar-expand-lg navbar-white navbar-light border-0 project-topbar">
                 <div class="container">
                     <a href="{{ route('home') }}" class="navbar-brand d-flex align-items-center">
                         <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" style="height:34px">
