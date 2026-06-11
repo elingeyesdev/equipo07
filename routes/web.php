@@ -92,6 +92,8 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('unidades_organicos', App\Http\Controllers\UnidadOrganicoController::class);
     Route::resource('tipo_cultivos', TipoCultivoController::class)->except(['show', 'create', 'edit']);
     Route::resource('certificados_organicos', CertificadoOrganicoController::class)->except(['show', 'create', 'edit']);
+    Route::get('/organicos/certificados-pendientes', [OrganicoController::class, 'certificadosPendientes'])
+        ->name('organicos.certificados.pendientes');
     Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
         ->name('organicos.certificados.estado');
 

@@ -146,6 +146,18 @@ class OrganicoController extends Controller
         return back()->with('ok', 'Estado del certificado actualizado.');
     }
 
+    public function certificadosPendientes()
+    {
+        $certificados = OrganicoCertificado::query()
+            ->with(['organico.user', 'certificado'])
+            ->whereNotNull('archivo')
+            ->where('estado', OrganicoCertificado::ESTADO_PENDIENTE)
+            ->latest()
+            ->paginate(15);
+
+        return view('admin.organicos.certificados-pendientes', compact('certificados'));
+    }
+
     private function catalogosFormulario(): array
     {
         return [

@@ -275,8 +275,8 @@
                                     </ul>
                                 </li>
 
-                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'menu-open' : '' }}">
-                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'active' : '' }}">
+                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-seedling"></i>
                                         <p>
                                             Selectores Organicos
@@ -303,6 +303,13 @@
                                                 class="nav-link {{ request()->routeIs('admin.certificados_organicos.*') ? 'active' : '' }}">
                                                 <i class="far fa-circle nav-icon"></i>
                                                 <p>Certificados</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.organicos.certificados.pendientes') }}"
+                                                class="nav-link {{ request()->routeIs('admin.organicos.certificados.pendientes') ? 'active' : '' }}">
+                                                <i class="far fa-clock nav-icon"></i>
+                                                <p>Documentos Pendientes</p>
                                             </a>
                                         </li>
                                     </ul>
