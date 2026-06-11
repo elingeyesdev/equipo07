@@ -357,18 +357,12 @@
                                     @if($solicitud->archivo_documento)
                                         @php
                                             $documentUrl = asset('storage/'.$solicitud->archivo_documento);
-                                            $documentExtension = strtolower(pathinfo($solicitud->archivo_documento, PATHINFO_EXTENSION));
-                                            $documentType = in_array($documentExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])
-                                                ? 'image'
-                                                : ($documentExtension === 'pdf' ? 'pdf' : 'file');
                                         @endphp
                                         <button type="button"
                                                 class="btn btn-document-view"
-                                                data-toggle="modal"
-                                                data-target="#sellerDocumentModal"
-                                                data-document-url="{{ $documentUrl }}"
-                                                data-document-type="{{ $documentType }}"
-                                                data-document-name="Documento de {{ $solicitud->user->name }}">
+                                                data-file-viewer
+                                                data-file-url="{{ $documentUrl }}"
+                                                data-file-title="Documento de {{ $solicitud->user->name }}">
                                             <i class="fas fa-eye"></i> Ver documento
                                         </button>
                                     @else

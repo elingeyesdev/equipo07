@@ -160,7 +160,7 @@
                                                         @if ($item->carnet_dueno_foto)
                                                             <a href="{{ asset('storage/' . $item->carnet_dueno_foto) }}"
                                                                 class="sanitary-doc-btn mt-2"
-                                                                data-sanitary-image-viewer
+                                                                data-file-viewer
                                                                 data-image-url="{{ asset('storage/' . $item->carnet_dueno_foto) }}"
                                                                 data-image-title="Carnet del dueño"
                                                                 data-download-name="{{ basename($item->carnet_dueno_foto) }}">
@@ -203,7 +203,7 @@
                                                 @if ($item->certificado_imagen)
                                                     <a href="{{ asset('storage/' . $item->certificado_imagen) }}"
                                                         class="sanitary-doc-btn"
-                                                        data-sanitary-image-viewer
+                                                        data-file-viewer
                                                         data-image-url="{{ asset('storage/' . $item->certificado_imagen) }}"
                                                         data-image-title="Certificado sanitario"
                                                         data-download-name="{{ basename($item->certificado_imagen) }}">
@@ -234,7 +234,7 @@
                                                         <div class="mb-1">
                                                             <a href="{{ asset('storage/' . $item->marca_ganado_foto) }}"
                                                                 class="sanitary-doc-btn"
-                                                                data-sanitary-image-viewer
+                                                                data-file-viewer
                                                                 data-image-url="{{ asset('storage/' . $item->marca_ganado_foto) }}"
                                                                 data-image-title="Foto de marca"
                                                                 data-download-name="{{ basename($item->marca_ganado_foto) }}">
@@ -400,5 +400,4 @@
         }
     </style>
 
-    @include('datos_sanitarios.partials.image-viewer-modal')
 @endsection

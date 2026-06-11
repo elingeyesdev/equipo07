@@ -13,6 +13,5 @@
             'mode' => 'edit',
         ])
 
-        @include('datos_sanitarios.partials.image-viewer-modal')
     </div>
 @endsection

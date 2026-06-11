@@ -480,8 +480,6 @@
                         @forelse ($organico->certificadoRegistros as $registro)
                             @php
                                 $archivoUrl = $registro->archivo ? asset('storage/' . $registro->archivo) : null;
-                                $extension = strtolower(pathinfo($registro->archivo ?? '', PATHINFO_EXTENSION));
-                                $esImagen = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                                 $esObligatorioSinArchivo = (bool) ($registro->certificado?->es_obligatorio && !$registro->archivo);
                                 $estadoClases = [
                                     'verificado' => 'success',
@@ -504,18 +502,11 @@
                                     @endif
                                     @if ($registro->archivo)
                                         <small class="d-block text-muted">Archivo: {{ basename($registro->archivo) }}</small>
-                                        @if ($esImagen)
-                                            <button type="button" class="btn btn-sm btn-outline-success mt-2"
-                                                data-toggle="modal" data-target="#certificadoModal"
-                                                data-certificado-url="{{ $archivoUrl }}"
-                                                data-certificado-titulo="{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}">
-                                                <i class="fas fa-eye mr-1"></i> Ver certificado
-                                            </button>
-                                        @else
-                                            <a href="{{ $archivoUrl }}" target="_blank" class="btn btn-sm btn-outline-success mt-2">
-                                                <i class="fas fa-eye mr-1"></i> Ver PDF
-                                            </a>
-                                        @endif
+                                        <button type="button" class="btn btn-sm btn-outline-success mt-2"
+                                            data-file-viewer data-file-url="{{ $archivoUrl }}"
+                                            data-file-title="{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}">
+                                            <i class="fas fa-eye mr-1"></i> Ver certificado
+                                        </button>
                                     @else
                                         <small class="d-block text-muted">Sin archivo cargado.</small>
                                     @endif
@@ -704,34 +695,6 @@
             });
         </script>
     @endif
-
-    {{-- MODAL CERTIFICADO --}}
-    <div class="modal fade" id="certificadoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="certificadoModalTitulo">Certificado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-center bg-light">
-                    <img id="certificadoModalImg" src="" class="img-fluid rounded"
-                        style="max-height: 78vh; object-fit: contain;">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        window.addEventListener('load', function() {
-            $('#certificadoModal').on('show.bs.modal', function(event) {
-                const button = $(event.relatedTarget);
-                $('#certificadoModalTitulo').text(button.data('certificado-titulo') || 'Certificado');
-                $('#certificadoModalImg').attr('src', button.data('certificado-url') || '');
-            });
-        });
-    </script>
 
     {{-- MODAL IMAGEN --}}
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">

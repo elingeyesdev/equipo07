@@ -570,9 +570,8 @@
                             <div class="btn-inline-img">
                                 <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
                                     class="doc-preview-btn"
-                                    data-toggle="modal"
-                                    data-target="#imageModal"
-                                    onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}';">
+                                    data-file-viewer
+                                    data-file-title="Certificado de Vacunacion SENASAG">
                                     <i class="fas fa-file-image"></i> Ver Certificado
                                 </a>
                                 <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
@@ -599,9 +598,8 @@
                             <div class="btn-inline-img">
                                 <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
                                     class="doc-preview-btn"
-                                    data-toggle="modal"
-                                    data-target="#imageModal"
-                                    onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}';">
+                                    data-file-viewer
+                                    data-file-title="Certificado de Campeon">
                                     <i class="fas fa-trophy"></i> Ver Certificado Campeón
                                 </a>
                                 <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
@@ -758,8 +756,8 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <a href="{{ asset('storage/' . $ganado->datoSanitario->arbol_genealogico) }}" target="_blank"
-                                class="btn btn-success btn-sm">
+                            <a href="{{ asset('storage/' . $ganado->datoSanitario->arbol_genealogico) }}"
+                                class="btn btn-success btn-sm" data-file-viewer data-file-title="Arbol genealogico">
                                 <i class="fas fa-sitemap"></i> Ver Árbol Genealógico
                             </a>
                         </div>
@@ -970,9 +968,8 @@
                                         <div class="btn-inline-img">
                                             <a href="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
                                                 class="doc-preview-btn"
-                                                data-toggle="modal"
-                                                data-target="#imageModal"
-                                                onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}';">
+                                                data-file-viewer
+                                                data-file-title="Foto de la marca">
                                                 <i class="fas fa-image"></i> Ver Foto
                                             </a>
                                             <img src="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
@@ -1020,9 +1017,8 @@
                                     <div class="btn-inline-img">
                                         <a href="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
                                             class="doc-preview-btn"
-                                            data-toggle="modal"
-                                            data-target="#imageModal"
-                                            onclick="event.preventDefault(); document.getElementById('imageModalImg').src = '{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}';">
+                                            data-file-viewer
+                                            data-file-title="Carnet del dueno">
                                             <i class="fas fa-id-card"></i> Ver Carnet
                                         </a>
                                         <img src="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
