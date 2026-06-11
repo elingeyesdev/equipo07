@@ -45,6 +45,46 @@
     .cert-file-panel.is-active {
         display: block;
     }
+
+    .certificate-upload-preview {
+        background: #f7faf6;
+        border: 1px solid rgba(63, 126, 42, 0.2);
+        border-radius: 10px;
+        display: none;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        padding: 0.75rem;
+    }
+
+    .certificate-upload-preview.is-visible {
+        display: block;
+    }
+
+    .certificate-upload-preview__media {
+        align-items: center;
+        background: #fff;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        min-height: 150px;
+        overflow: hidden;
+    }
+
+    .certificate-upload-preview__media img {
+        max-height: 260px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .certificate-upload-preview__media iframe {
+        border: 0;
+        height: 300px;
+        width: 100%;
+    }
+
+    .certificate-upload-preview__name {
+        overflow-wrap: anywhere;
+    }
 </style>
 
 <input type="hidden" name="categoria_id" value="{{ $categoriaSeleccionada }}">
@@ -335,7 +375,8 @@
 
                                 <div id="cert_file_{{ $certificado->id }}" class="cert-file-panel {{ !$sinCertificado ? 'is-active' : '' }}">
                                     <input type="file" name="certificados[{{ $certificado->id }}][archivo]"
-                                        class="form-control mb-2" accept=".pdf,image/*">
+                                        class="form-control mb-2 certificate-file-input" accept=".pdf,image/*">
+                                    <div class="certificate-upload-preview" data-certificate-preview></div>
                                     @if ($registro?->archivo)
                                         <small class="form-text text-muted mb-2">Archivo actual: {{ basename($registro->archivo) }}</small>
                                     @endif
@@ -369,7 +410,8 @@
                                 </div>
                                 <small class="d-block text-muted mb-2">{{ $certificado->descripcion }}</small>
                                 <input type="file" name="certificados[{{ $certificado->id }}][archivo]"
-                                    class="form-control mb-2" accept=".pdf,image/*">
+                                    class="form-control mb-2 certificate-file-input" accept=".pdf,image/*">
+                                <div class="certificate-upload-preview" data-certificate-preview></div>
                                 @if ($registro?->archivo)
                                     <small class="form-text text-muted mb-2">Archivo actual: {{ basename($registro->archivo) }}</small>
                                 @endif
@@ -401,8 +443,10 @@
                             placeholder="Nombre del certificado adicional">
                     </div>
                     <div class="col-md-4 mb-2">
-                        <input type="file" name="certificados_adicionales[0][archivo]" class="form-control"
+                        <input type="file" name="certificados_adicionales[0][archivo]"
+                            class="form-control certificate-file-input"
                             accept=".pdf,image/*">
+                        <div class="certificate-upload-preview mt-2" data-certificate-preview></div>
                     </div>
                     <div class="col-md-4 mb-2">
                         <input type="text" name="certificados_adicionales[0][observaciones]" class="form-control"
@@ -766,7 +810,95 @@
                 const panel = document.getElementById('cert_file_' + this.dataset.cert);
                 if (panel) {
                     panel.classList.toggle('is-active', this.value === '0' && this.checked);
+
+                    if (this.value === '1' && this.checked) {
+                        const fileInput = panel.querySelector('.certificate-file-input');
+                        if (fileInput) {
+                            fileInput.value = '';
+                            fileInput.dispatchEvent(new Event('change'));
+                        }
+                    }
                 }
+            });
+        });
+
+        wizard.querySelectorAll('.certificate-file-input').forEach(input => {
+            const preview = input.parentElement.querySelector('[data-certificate-preview]');
+            let objectUrl = null;
+
+            if (!preview) return;
+
+            function clearPreview(clearInput = false) {
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                    objectUrl = null;
+                }
+
+                if (clearInput) {
+                    input.value = '';
+                }
+
+                preview.innerHTML = '';
+                preview.classList.remove('is-visible');
+            }
+
+            input.addEventListener('change', function() {
+                clearPreview();
+
+                const file = this.files && this.files[0];
+                if (!file) return;
+
+                objectUrl = URL.createObjectURL(file);
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                const isImage = file.type.startsWith('image/');
+
+                const header = document.createElement('div');
+                header.className = 'd-flex justify-content-between align-items-start mb-2';
+
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'pr-2';
+                fileInfo.innerHTML =
+                    '<strong class="d-block certificate-upload-preview__name"></strong>' +
+                    '<small class="text-muted"></small>';
+                fileInfo.querySelector('strong').textContent = file.name;
+                fileInfo.querySelector('small').textContent =
+                    (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-sm btn-outline-danger';
+                removeButton.innerHTML = '<i class="fas fa-times mr-1"></i> Quitar archivo';
+                removeButton.addEventListener('click', function() {
+                    clearPreview(true);
+                });
+
+                header.appendChild(fileInfo);
+                header.appendChild(removeButton);
+                preview.appendChild(header);
+
+                const media = document.createElement('div');
+                media.className = 'certificate-upload-preview__media';
+
+                if (isImage) {
+                    const image = document.createElement('img');
+                    image.src = objectUrl;
+                    image.alt = file.name;
+                    media.appendChild(image);
+                } else if (isPdf) {
+                    const frame = document.createElement('iframe');
+                    frame.src = objectUrl;
+                    frame.title = file.name;
+                    media.appendChild(frame);
+                } else {
+                    media.innerHTML =
+                        '<div class="text-center text-muted p-4">' +
+                        '<i class="fas fa-file fa-3x mb-2"></i>' +
+                        '<span class="d-block">No hay vista previa para este formato.</span>' +
+                        '</div>';
+                }
+
+                preview.appendChild(media);
+                preview.classList.add('is-visible');
             });
         });
 

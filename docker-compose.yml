@@ -23,7 +23,8 @@ services:
     env_file:
       - .env.docker
     environment:
-      SESSION_DRIVER: cookie
+      SESSION_DRIVER: file
+      SESSION_COOKIE: agrovida_session_v2
       CACHE_STORE: array
     depends_on:
       db:
