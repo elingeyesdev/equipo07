@@ -14,7 +14,8 @@
             default => 'secondary',
         };
         $detalleConUbicacion = $pedido->detalles->first(
-            fn($detalle) => $detalle->estado_solicitud === 'aceptada'
+            fn($detalle) => $detalle->product_type === 'organico'
+                && $detalle->estado_solicitud === 'aceptada'
                 && $detalle->product_latitud
                 && $detalle->product_longitud
         ) ?: $pedido->detalles->first(fn($detalle) => $detalle->product_latitud && $detalle->product_longitud);
@@ -230,8 +231,8 @@
                                     $estadoKeys = array_keys($alquilerEstados);
                                     $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
                                 @endphp
-                                <tr @if($detalle->estado_solicitud === 'aceptada')
-                                    data-buyer-delivery-detail="{{ $detalle->id }}"
+                                <tr @if($detalle->product_type === 'organico')
+                                    data-buyer-organic-detail="{{ $detalle->id }}"
                                     data-request-state="{{ $detalle->estado_solicitud }}"
                                     data-transport-state="{{ $detalle->estado_transporte_actual }}"
                                     @endif>
@@ -259,7 +260,7 @@
                                                 {{ $detalle->estado_transporte_label ?: 'Pendiente' }}
                                             </span>
                                         </small>
-                                        @if ($detalle->estado_solicitud === 'aceptada')
+                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
                                             @php
                                                 $deliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
                                                 $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado'
@@ -287,7 +288,7 @@
                                                         <div class="order-rental-tracking__step {{ $deliveryClass }}"
                                                             data-delivery-detail="{{ $detalle->id }}"
                                                             data-state="{{ $deliveryState }}">
-                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_DELIVERY[$deliveryState] }}
+                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$deliveryState] }}
                                                         </div>
                                                     @endforeach
                                                 </div>
@@ -393,7 +394,7 @@
             var statusTimer = null;
 
             function updateDeliveryDetail(detail) {
-                var row = document.querySelector('[data-buyer-delivery-detail="' + detail.detalle_id + '"]');
+                var row = document.querySelector('[data-buyer-organic-detail="' + detail.detalle_id + '"]');
 
                 if (row && row.dataset.requestState !== detail.estado_solicitud) {
                     window.location.reload();

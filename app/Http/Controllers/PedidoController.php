@@ -191,18 +191,20 @@ class PedidoController extends Controller
             'estado_alquiler' => $detalle->es_alquiler_maquinaria ? 'en_uso' : $detalle->estado_alquiler,
         ]);
 
-        TransporteEvento::create([
-            'pedido_detalle_id' => $detalle->id,
-            'transporte_acceso_id' => $detalle->transporteAcceso?->id,
-            'user_id' => Auth::id(),
-            'actor' => 'comprador',
-            'estado_anterior' => 'esperando_confirmacion',
-            'estado_nuevo' => 'entregado',
-        ]);
+        if ($detalle->product_type === 'organico') {
+            TransporteEvento::create([
+                'pedido_detalle_id' => $detalle->id,
+                'transporte_acceso_id' => $detalle->transporteAcceso?->id,
+                'user_id' => Auth::id(),
+                'actor' => 'comprador',
+                'estado_anterior' => 'esperando_confirmacion',
+                'estado_nuevo' => 'entregado',
+            ]);
 
-        $detalle->transporteAcceso?->update([
-            'estado' => TransporteAcceso::ESTADO_REVOCADO,
-        ]);
+            $detalle->transporteAcceso?->update([
+                'estado' => TransporteAcceso::ESTADO_REVOCADO,
+            ]);
+        }
 
         if ($detalle->es_alquiler_maquinaria) {
             $detalle->pedido()->update(['estado' => 'en_uso']);

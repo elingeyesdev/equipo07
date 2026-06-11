@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class TransporteAccesoService
 {
-    public const ESTADOS_DELIVERY = [
+    public const ESTADOS_ORGANICO = [
         'aceptado' => 'Aceptado',
         'preparando' => 'Preparando',
         'en_camino_entrega' => 'En camino',
@@ -20,11 +20,9 @@ class TransporteAccesoService
         'cancelado' => 'Cancelado',
     ];
 
-    public const ESTADOS_ORGANICO = self::ESTADOS_DELIVERY;
-
     public function generar(PedidoDetalle $detalle, ?int $createdBy = null, bool $regenerar = false): TransporteAcceso
     {
-        $this->validarDetalle($detalle);
+        $this->validarDetalleOrganico($detalle);
 
         return DB::transaction(function () use ($detalle, $createdBy, $regenerar) {
             $existente = TransporteAcceso::where('pedido_detalle_id', $detalle->id)
@@ -63,8 +61,6 @@ class TransporteAccesoService
         $acceso = TransporteAcceso::with([
             'detalle.pedido.user',
             'detalle.vendedor',
-            'detalle.ganado',
-            'detalle.maquinaria',
             'detalle.organico',
         ])->where('codigo_hash', self::hashCodigo($codigo))->first();
 
@@ -72,7 +68,8 @@ class TransporteAccesoService
             return null;
         }
 
-        if ($acceso->detalle?->estado_solicitud !== 'aceptada') {
+        if ($acceso->detalle?->product_type !== 'organico'
+            || $acceso->detalle?->estado_solicitud !== 'aceptada') {
             return null;
         }
 
@@ -100,7 +97,7 @@ class TransporteAccesoService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->validarDetalle($detalle);
+            $this->validarDetalleOrganico($detalle);
 
             if ((int) $detalle->vendedor_id !== $vendedorId) {
                 abort(403);
@@ -136,7 +133,7 @@ class TransporteAccesoService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->validarDetalle($detalle);
+            $this->validarDetalleOrganico($detalle);
             $estadoAnterior = $detalle->estado_transporte_actual;
 
             if ($accion === 'cancelar') {
@@ -236,12 +233,11 @@ class TransporteAccesoService
         return $codigo;
     }
 
-    private function validarDetalle(PedidoDetalle $detalle): void
+    private function validarDetalleOrganico(PedidoDetalle $detalle): void
     {
-        if (!in_array($detalle->product_type, ['ganado', 'maquinaria', 'organico'], true)
-            || $detalle->estado_solicitud !== 'aceptada') {
+        if ($detalle->product_type !== 'organico' || $detalle->estado_solicitud !== 'aceptada') {
             throw ValidationException::withMessages([
-                'transporte' => 'El acceso externo solo esta disponible para solicitudes aceptadas.',
+                'transporte' => 'El acceso externo solo esta disponible para solicitudes organicas aceptadas.',
             ]);
         }
     }

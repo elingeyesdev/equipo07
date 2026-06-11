@@ -79,11 +79,13 @@ class VendedorSolicitudController extends Controller
                 $solicitud->update([
                     'estado_solicitud' => 'aceptada',
                     'estado_alquiler' => $solicitud->product_type === 'maquinaria' ? 'aceptado' : null,
-                    'estado_transporte' => 'aceptado',
+                    'estado_transporte' => $solicitud->product_type === 'organico' ? 'aceptado' : 'asignado',
                     'respondido_at' => now(),
                 ]);
 
-                $transporteService->generar($solicitud->fresh(), Auth::id());
+                if ($solicitud->product_type === 'organico') {
+                    $transporteService->generar($solicitud->fresh(), Auth::id());
+                }
 
                 PedidoDetalle::where('product_type', $solicitud->product_type)
                     ->where('product_id', $solicitud->product_id)
@@ -106,7 +108,9 @@ class VendedorSolicitudController extends Controller
             ->route('vendedor.solicitudes.show', $solicitud)
             ->with(
                 'success',
-                'Solicitud aceptada. Se genero el codigo para la persona que realizara la entrega.'
+                $solicitud->product_type === 'organico'
+                    ? 'Solicitud aceptada. Se genero el codigo para el transportista externo.'
+                    : 'Solicitud aceptada. Las demas solicitudes pendientes de este producto fueron canceladas.'
             );
     }
 

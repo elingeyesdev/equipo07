@@ -24,24 +24,20 @@ class TransporteAccesoServiceTest extends TestCase
         );
     }
 
-    public function test_flujo_delivery_avanza_en_orden_para_todos_los_productos(): void
+    public function test_flujo_organico_avanza_en_orden(): void
     {
         $service = new TransporteAccesoService();
+        $detalle = new PedidoDetalle([
+            'estado_solicitud' => 'aceptada',
+            'estado_transporte' => 'aceptado',
+        ]);
 
-        foreach (['ganado', 'maquinaria', 'organico'] as $productType) {
-            $detalle = new PedidoDetalle([
-                'product_type' => $productType,
-                'estado_solicitud' => 'aceptada',
-                'estado_transporte' => 'aceptado',
-            ]);
+        $this->assertNull($service->siguienteEstado($detalle));
 
-            $this->assertNull($service->siguienteEstado($detalle));
+        $detalle->estado_transporte = 'preparando';
+        $this->assertSame('en_camino_entrega', $service->siguienteEstado($detalle));
 
-            $detalle->estado_transporte = 'preparando';
-            $this->assertSame('en_camino_entrega', $service->siguienteEstado($detalle));
-
-            $detalle->estado_transporte = 'en_camino_entrega';
-            $this->assertSame('esperando_confirmacion', $service->siguienteEstado($detalle));
-        }
+        $detalle->estado_transporte = 'en_camino_entrega';
+        $this->assertSame('esperando_confirmacion', $service->siguienteEstado($detalle));
     }
 }
