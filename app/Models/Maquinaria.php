@@ -80,6 +80,12 @@ class Maquinaria extends Model
         return $this->hasMany(MaquinariaImagen::class)->orderBy('orden');
     }
 
+    public function resenas()
+    {
+        return $this->hasMany(ResenaProducto::class, 'product_id')
+            ->where('product_type', 'maquinaria');
+    }
+
     public function getUbicacionAttribute($value)
     {
         return $this->ubicacionMaquinaria?->ubicacion ?? $value;

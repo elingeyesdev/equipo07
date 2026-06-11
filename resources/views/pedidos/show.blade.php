@@ -321,8 +321,7 @@
                                                 {{ $detalle->recepcion_confirmada_at ? 'el ' . $detalle->recepcion_confirmada_at->format('d/m/Y H:i') : '' }}
                                             </span>
                                         </div>
-                                        @if($detalle->product_type === 'organico'
-                                            && $detalle->estado_solicitud === 'aceptada'
+                                        @if($detalle->estado_solicitud === 'aceptada'
                                             && in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true))
                                             @include('organicos.partials.postventa', ['detalle' => $detalle, 'modo' => 'comprador'])
                                         @endif

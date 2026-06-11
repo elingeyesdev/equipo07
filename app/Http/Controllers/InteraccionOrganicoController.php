@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PedidoDetalle;
 use App\Models\Reclamo;
-use App\Models\ResenaOrganico;
+use App\Models\ResenaProducto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,7 +18,7 @@ class InteraccionOrganicoController extends Controller
             return back()->with('error', 'La reseña se habilita cuando la entrega fue confirmada o finalizada.');
         }
 
-        if ($detalle->resenaOrganico()->exists()) {
+        if ($detalle->resenaProducto()->exists()) {
             return back()->with('error', 'Ya registraste una reseña para este producto.');
         }
 
@@ -27,11 +27,13 @@ class InteraccionOrganicoController extends Controller
             'comentario' => ['required', 'string', 'min:10', 'max:1200'],
         ]);
 
-        ResenaOrganico::create([
+        ResenaProducto::create([
             'pedido_detalle_id' => $detalle->id,
             'comprador_id' => Auth::id(),
             'vendedor_id' => $detalle->vendedor_id,
-            'organico_id' => $detalle->product_id,
+            'product_type' => $detalle->product_type,
+            'product_id' => $detalle->product_id,
+            'organico_id' => $detalle->product_type === 'organico' ? $detalle->product_id : null,
             ...$data,
         ]);
 
@@ -71,7 +73,7 @@ class InteraccionOrganicoController extends Controller
         $detalle->loadMissing('pedido');
 
         abort_unless(
-            $detalle->product_type === 'organico'
+            in_array($detalle->product_type, ['ganado', 'maquinaria', 'organico'], true)
                 && (int) $detalle->pedido->user_id === (int) Auth::id(),
             403
         );

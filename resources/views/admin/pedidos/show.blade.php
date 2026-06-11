@@ -228,14 +228,14 @@
                                                     {{ $detalle->cancelacion_motivo ?: 'No registrado' }}
                                                 </div>
                                             @endif
-                                            @if($detalle->resenaOrganico)
+                                            @if($detalle->resenaProducto)
                                                 <div class="small mt-2">
                                                     <span class="text-warning">
                                                         @for($i = 1; $i <= 5; $i++)
-                                                            <i class="{{ $i <= $detalle->resenaOrganico->estrellas ? 'fas' : 'far' }} fa-star"></i>
+                                                            <i class="{{ $i <= $detalle->resenaProducto->estrellas ? 'fas' : 'far' }} fa-star"></i>
                                                         @endfor
                                                     </span>
-                                                    {{ $detalle->resenaOrganico->comentario }}
+                                                    {{ $detalle->resenaProducto->comentario }}
                                                 </div>
                                             @endif
                                             @if($detalle->reclamos->isNotEmpty())

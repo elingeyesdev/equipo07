@@ -116,7 +116,8 @@ class Organico extends Model
 
     public function resenas()
     {
-        return $this->hasMany(ResenaOrganico::class);
+        return $this->hasMany(ResenaProducto::class, 'product_id')
+            ->where('product_type', 'organico');
     }
 
     public function getPrecioAttribute($value)

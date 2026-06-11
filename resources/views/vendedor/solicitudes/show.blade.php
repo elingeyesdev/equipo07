@@ -477,8 +477,7 @@
                         </div>
                     @endif
 
-                    @if($solicitud->product_type === 'organico'
-                        && $solicitud->estado_solicitud === 'aceptada'
+                    @if($solicitud->estado_solicitud === 'aceptada'
                         && in_array($solicitud->estado_transporte_actual, ['entregado', 'cancelado'], true))
                         <div class="card-body border-top">
                             @include('organicos.partials.postventa', ['detalle' => $solicitud, 'modo' => 'vendedor'])

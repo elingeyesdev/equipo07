@@ -95,7 +95,12 @@ class PedidoDetalle extends Model
 
     public function resenaOrganico()
     {
-        return $this->hasOne(ResenaOrganico::class, 'pedido_detalle_id');
+        return $this->resenaProducto();
+    }
+
+    public function resenaProducto()
+    {
+        return $this->hasOne(ResenaProducto::class, 'pedido_detalle_id');
     }
 
     public function reclamos()

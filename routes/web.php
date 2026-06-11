@@ -200,7 +200,7 @@ Route::middleware(['auth', 'not.transportista'])->group(function () {
     Route::get('/mis-pedidos/{pedido}/ubicacion-actual', [PedidoUbicacionController::class, 'latest'])->name('pedidos.tracking.latest');
     Route::post('/mis-pedidos/detalles/{detalle}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion'])->name('pedidos.detalles.confirmarRecepcion');
     Route::post('/pedidos/detalles/{detalle}/resena', [InteraccionOrganicoController::class, 'guardarResena'])
-        ->name('organicos.resenas.store');
+        ->name('resenas.store');
     Route::post('/pedidos/detalles/{detalle}/reclamo', [InteraccionOrganicoController::class, 'guardarReclamo'])
         ->name('reclamos.store');
     Route::get('/reclamos', [ReclamoController::class, 'index'])->name('reclamos.index');

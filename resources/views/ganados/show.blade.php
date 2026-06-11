@@ -1106,7 +1106,9 @@
 
     <!-- Modal del Mapa -->
     @if ($ganado->latitud && $ganado->longitud)
-        <div class="modal fade" id="mapModal" tabindex="-1">
+    @include('components.product-reviews', ['producto' => $ganado])
+
+    <div class="modal fade" id="mapModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">

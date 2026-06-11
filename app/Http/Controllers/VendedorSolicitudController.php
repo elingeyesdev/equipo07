@@ -50,7 +50,7 @@ class VendedorSolicitudController extends Controller
             'ultimaUbicacion',
             'transporteAcceso',
             'transporteEventos' => fn ($query) => $query->latest('created_at')->limit(10),
-            'resenaOrganico.comprador',
+            'resenaProducto.comprador',
             'reclamos.creador',
         ]);
         $estados = $this->estados();

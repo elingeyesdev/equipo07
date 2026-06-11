@@ -49,7 +49,7 @@ class AdminPedidoController extends Controller
         $pedido->load([
             'detalles.transporteAcceso',
             'detalles.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(8),
-            'detalles.resenaOrganico.comprador',
+            'detalles.resenaProducto.comprador',
             'detalles.reclamos.creador',
             'user',
         ]);

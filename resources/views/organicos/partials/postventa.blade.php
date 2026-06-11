@@ -10,6 +10,7 @@
             in_array($detalle->estado_transporte_actual, ['entregado', 'cancelado'], true)
             || $detalle->pedido->estado === 'finalizado'
         );
+    $reclamosHabilitados = $detalle->product_type === 'organico';
     $reclamoPropio = $detalle->reclamos->firstWhere('creador_id', auth()->id());
     $reclamosVisibles = $esComprador
         ? $detalle->reclamos->where('creador_id', auth()->id())
@@ -40,21 +41,21 @@
         </div>
     @endif
 
-    @if($detalle->resenaOrganico)
+    @if($detalle->resenaProducto)
         <div class="bg-white border rounded p-3 mb-3">
-            <div class="text-warning mb-1" aria-label="{{ $detalle->resenaOrganico->estrellas }} estrellas">
+            <div class="text-warning mb-1" aria-label="{{ $detalle->resenaProducto->estrellas }} estrellas">
                 @for($i = 1; $i <= 5; $i++)
-                    <i class="{{ $i <= $detalle->resenaOrganico->estrellas ? 'fas' : 'far' }} fa-star"></i>
+                    <i class="{{ $i <= $detalle->resenaProducto->estrellas ? 'fas' : 'far' }} fa-star"></i>
                 @endfor
             </div>
-            <div>{{ $detalle->resenaOrganico->comentario }}</div>
+            <div>{{ $detalle->resenaProducto->comentario }}</div>
             <small class="text-muted">
-                {{ $detalle->resenaOrganico->comprador?->name }} ·
-                {{ $detalle->resenaOrganico->created_at->format('d/m/Y') }}
+                {{ $detalle->resenaProducto->comprador?->name }} ·
+                {{ $detalle->resenaProducto->created_at->format('d/m/Y') }}
             </small>
         </div>
     @elseif($esComprador && $finalizado)
-        <form method="POST" action="{{ route('organicos.resenas.store', $detalle) }}" class="bg-white border rounded p-3 mb-3">
+        <form method="POST" action="{{ route('resenas.store', $detalle) }}" class="bg-white border rounded p-3 mb-3">
             @csrf
             <label class="font-weight-bold d-block">Califica tu compra</label>
             <div class="form-row">
@@ -77,7 +78,7 @@
         </form>
     @endif
 
-    @if($reclamable && !$reclamoPropio && !$esAdmin)
+    @if($reclamosHabilitados && $reclamable && !$reclamoPropio && !$esAdmin)
         <details class="bg-white border rounded p-3">
             <summary class="font-weight-bold" style="cursor:pointer">
                 <i class="fas fa-flag text-warning mr-1"></i>Abrir un reclamo
@@ -105,7 +106,7 @@
         </details>
     @endif
 
-    @foreach($reclamosVisibles as $reclamo)
+    @foreach($reclamosHabilitados ? $reclamosVisibles : collect() as $reclamo)
         <a href="{{ route('reclamos.show', $reclamo) }}"
             class="d-flex justify-content-between align-items-center bg-white border rounded p-2 mt-2 text-dark">
             <span>

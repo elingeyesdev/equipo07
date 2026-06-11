@@ -1020,7 +1020,9 @@
 
     <!-- Modal del Mapa -->
     @if ($maquinaria->latitud && $maquinaria->longitud)
-        <div class="modal fade" id="mapModal" tabindex="-1" role="dialog" aria-labelledby="mapModalLabel"
+    @include('components.product-reviews', ['producto' => $maquinaria])
+
+    <div class="modal fade" id="mapModal" tabindex="-1" role="dialog" aria-labelledby="mapModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content" style="border-radius: var(--border-radius);">

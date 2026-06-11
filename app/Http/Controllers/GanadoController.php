@@ -35,7 +35,7 @@ class GanadoController extends Controller
      */
     public function show(Ganado $ganado)
     {
-        $ganado->load(array_merge($this->relacionesGanado(), ['user.role']));
+        $ganado->load(array_merge($this->relacionesGanado(), ['user.role', 'resenas.comprador']));
         return view('ganados.show', compact('ganado'));
     }
 
