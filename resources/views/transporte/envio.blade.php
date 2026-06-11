@@ -180,7 +180,7 @@
     <main class="page">
         <section class="status-band">
             <div>
-                <small>Envio organico #{{ $detalle->id }}</small>
+                <small>Envio de {{ ucfirst($detalle->product_type) }} #{{ $detalle->id }}</small>
                 <strong>{{ $detalle->nombre_producto }}</strong>
             </div>
             <span class="status-pill" id="estado-label">{{ $detalle->estado_transporte_label }}</span>
@@ -210,7 +210,7 @@
                     <dl class="facts">
                         <div><dt>Producto</dt><dd>{{ $detalle->nombre_producto }}</dd></div>
                         <div><dt>Cantidad</dt><dd>{{ $detalle->cantidad_tiempo_texto }}</dd></div>
-                        <div><dt>Recojo</dt><dd>{{ $detalle->organico?->origen ?: 'Ubicacion no registrada' }}</dd></div>
+                        <div><dt>Recojo</dt><dd>{{ $detalle->product?->ubicacion ?: $detalle->product?->origen ?: 'Ubicacion no registrada' }}</dd></div>
                         <div><dt>Entrega</dt><dd>{{ $detalle->pedido->destino_entrega ?: 'Destino no registrado' }}</dd></div>
                         <div><dt>Comprador</dt><dd>{{ $detalle->pedido->user->name ?? 'No disponible' }}</dd></div>
                         <div>
@@ -331,7 +331,7 @@
                 L.marker([originLat, originLng], { icon: originIcon })
                     .addTo(map)
                     .bindPopup('<strong>Punto de recojo</strong><br>' + @json($detalle->nombre_producto) +
-                        '<br>' + @json($detalle->organico?->origen ?: 'Ubicacion del vendedor'));
+                        '<br>' + @json($detalle->product?->ubicacion ?: $detalle->product?->origen ?: 'Ubicacion del vendedor'));
                 bounds.push([originLat, originLng]);
             }
             if (targetLat && targetLng) {

@@ -13,12 +13,17 @@ class TransporteAccesoExterno
     {
         $accesoId = $request->session()->get('transporte_acceso_id');
         $acceso = $accesoId
-            ? TransporteAcceso::with(['detalle.pedido.user', 'detalle.vendedor', 'detalle.organico'])
+            ? TransporteAcceso::with([
+                'detalle.pedido.user',
+                'detalle.vendedor',
+                'detalle.ganado',
+                'detalle.maquinaria',
+                'detalle.organico',
+            ])
                 ->find($accesoId)
             : null;
 
         if (!$acceso || !$acceso->estaActivo()
-            || $acceso->detalle?->product_type !== 'organico'
             || $acceso->detalle?->estado_solicitud !== 'aceptada') {
             $request->session()->forget('transporte_acceso_id');
 

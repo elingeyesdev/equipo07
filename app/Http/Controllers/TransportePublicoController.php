@@ -46,6 +46,8 @@ class TransportePublicoController extends Controller
         $acceso->load([
             'detalle.pedido.user',
             'detalle.vendedor',
+            'detalle.ganado',
+            'detalle.maquinaria',
             'detalle.organico',
             'detalle.ultimaUbicacion',
             'detalle.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(12),

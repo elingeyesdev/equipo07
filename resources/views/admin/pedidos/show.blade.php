@@ -181,7 +181,7 @@
                                     <td class="orders-table__total">Bs {{ number_format($detalle->subtotal, 2) }}</td>
                                     <td>
                                         <span class="badge badge-{{ $colorSolicitud }}">{{ $labelSolicitud }}</span>
-                                        @if ($detalle->product_type === 'organico' && $detalle->estado_solicitud === 'aceptada')
+                                        @if ($detalle->estado_solicitud === 'aceptada')
                                             @php
                                                 $adminDeliveryFlow = ['aceptado', 'preparando', 'en_camino_entrega', 'esperando_confirmacion', 'entregado'];
                                                 $adminDeliveryCurrent = $detalle->estado_transporte_actual === 'asignado'
@@ -213,7 +213,7 @@
                                                         @endphp
                                                         <div class="admin-delivery-tracking__step {{ $stepClass }}"
                                                             data-state="{{ $state }}">
-                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$state] }}
+                                                            {{ \App\Services\TransporteAccesoService::ESTADOS_DELIVERY[$state] }}
                                                         </div>
                                                     @endforeach
                                                 </div>

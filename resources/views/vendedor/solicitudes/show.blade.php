@@ -248,7 +248,7 @@
                         </dl>
                     </div>
 
-                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type === 'organico')
+                    @if ($solicitud->estado_solicitud === 'aceptada')
                         <div class="card-body border-top">
                             <div class="rental-tracking-card p-3 mb-3">
                                 <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
@@ -274,7 +274,7 @@
                                                     {{ $index + 1 }}
                                                 @endif
                                             </span>
-                                            <div>{{ \App\Services\TransporteAccesoService::ESTADOS_ORGANICO[$state] }}</div>
+                                            <div>{{ \App\Services\TransporteAccesoService::ESTADOS_DELIVERY[$state] }}</div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -374,7 +374,7 @@
                         </div>
                     @endif
 
-                    @if ($solicitud->estado_solicitud === 'aceptada' && $solicitud->product_type !== 'organico')
+                    @if ($solicitud->estado_solicitud === 'aceptada' && !$solicitud->transporteAcceso?->estaActivo())
                         <div class="card-body border-top">
                             @if ($solicitud->transportista_id && $solicitud->estado_transporte_actual !== 'asignado')
                                 <div class="alert alert-light border mb-0">
@@ -520,9 +520,9 @@
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
-                                @if ($solicitud->product_type !== 'organico' && !$solicitud->transportista_id)
+                                @if (!$solicitud->transporteAcceso)
                                     <small class="text-muted d-block mt-2">
-                                        Para continuar, primero asigna un transportista.
+                                        Para continuar, primero genera el acceso de transporte.
                                     </small>
                                 @elseif (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
                                     <small class="text-muted d-block mt-2">
@@ -828,7 +828,7 @@
             });
         </script>
     @endif
-    @if ($solicitud->product_type === 'organico' && $solicitud->transporteAcceso?->estaActivo())
+    @if ($solicitud->transporteAcceso?->estaActivo())
         @vite('resources/js/transport-qr-seller.js')
     @endif
 

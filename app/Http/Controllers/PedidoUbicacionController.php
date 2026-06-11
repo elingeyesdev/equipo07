@@ -117,7 +117,6 @@ class PedidoUbicacionController extends Controller
         }
 
         $detalles = $pedido->detalles()
-            ->where('product_type', 'organico')
             ->get()
             ->map(fn (PedidoDetalle $detalle) => [
                 'detalle_id' => $detalle->id,
