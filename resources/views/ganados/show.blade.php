@@ -3,7 +3,7 @@
 @section('title', 'Detalle de Ganado')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid product-detail-page">
 
         {{-- ESTILOS OPTIMIZADOS Y PROFESIONALES --}}
         <style>
@@ -291,9 +291,10 @@
                 }
             }
         </style>
+        <link rel="stylesheet" href="{{ asset('css/product-detail.css') }}">
 
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 product-detail-toolbar">
             <div>
                 <h1 class="h4 mb-0 text-dark">
                     <i class="fas fa-cow text-success"></i> Detalle del Ganado
@@ -309,7 +310,7 @@
             <!-- Columna Izquierda: Galería y Contenido Principal -->
             <div class="col-lg-8">
                 <!-- Galería de Imágenes -->
-                <div class="card shadow-sm border-0 mb-3">
+                <div class="card shadow-sm border-0 mb-3 product-gallery-card">
                     <div class="card-body p-0">
                         @if ($ganado->imagenes && $ganado->imagenes->count() > 0)
                             <div class="position-relative bg-white d-flex justify-content-center align-items-center"
@@ -361,7 +362,7 @@
                 </div>
 
                 <!-- Información Básica -->
-                <div class="card shadow-sm border-0 mb-3">
+                <div class="card shadow-sm border-0 mb-3 product-information-card">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="fas fa-cow"></i> Información Básica
@@ -763,12 +764,14 @@
                         </div>
                     </div>
                 @endif
+
+                @include('components.product-reviews', ['producto' => $ganado])
             </div>
 
             <!-- Columna Derecha: Panel de Precio/Carrito, Fechas, Vendedor -->
             <div class="col-lg-4">
                 <!-- Panel de Precio y Carrito -->
-                <div class="card shadow-sm border-0 mb-3 border-left border-success"
+                <div class="card shadow-sm border-0 mb-3 border-left border-success product-purchase-card"
                     style="border-left-width: 4px !important;">
                     <div class="card-body p-3">
                         <h2 class="h5 mb-2 text-dark">{{ $ganado->nombre }}</h2>
@@ -790,7 +793,7 @@
                         </div>
 
                         @if ($ganado->precio)
-                            <div class="bg-success-light p-2 rounded mb-2 border-left border-success"
+                            <div class="bg-success-light p-2 rounded mb-2 border-left border-success product-price-box"
                                 style="border-left-width: 4px !important;">
                                 <small class="text-muted d-block mb-0">Precio</small>
                                 <h3 class="h5 mb-0 text-success font-weight-bold">
@@ -1102,8 +1105,6 @@
 
     <!-- Modal del Mapa -->
     @if ($ganado->latitud && $ganado->longitud)
-    @include('components.product-reviews', ['producto' => $ganado])
-
     <div class="modal fade" id="mapModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">

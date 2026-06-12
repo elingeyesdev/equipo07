@@ -3,7 +3,7 @@
 @section('title', 'Detalle de Orgánico')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid product-detail-page">
 
         <style>
             :root {
@@ -144,9 +144,10 @@
                 }
             }
         </style>
+        <link rel="stylesheet" href="{{ asset('css/product-detail.css') }}">
 
         {{-- CABECERA --}}
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 product-detail-toolbar">
             <div>
                 <h1 class="h3 mb-1 text-dark">
                     <i class="fas fa-leaf text-success"></i>
@@ -165,7 +166,7 @@
 
             {{-- COLUMNA IZQUIERDA: IMÁGENES --}}
             <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm border-0 mb-3">
+                <div class="card shadow-sm border-0 mb-3 product-gallery-card">
                     <div class="card-body p-0">
 
                         <div class="position-relative bg-white d-flex justify-content-center align-items-center"
@@ -191,7 +192,7 @@
 
                 {{-- MINIATURAS --}}
                 @if ($organico->imagenes->count() > 1)
-                    <div class="row">
+                    <div class="row product-thumbnails">
                         @foreach ($organico->imagenes as $img)
                             <div class="col-4 mb-2">
                                 <div class="bg-white border rounded d-flex align-items-center justify-content-center"
@@ -211,7 +212,7 @@
             {{-- COLUMNA DERECHA: INFO PRINCIPAL --}}
             <div class="col-lg-6">
 
-                <div class="card shadow-sm border-0 mb-4 panel-info-card">
+                <div class="card shadow-sm border-0 mb-4 panel-info-card product-purchase-card">
                     <div class="card-body">
 
                         {{-- NOMBRE + META --}}
@@ -248,7 +249,7 @@
                         </div>
 
                         {{-- PRECIO / STOCK --}}
-                        <div class="p-3 mb-3 rounded" style="background:#e8f5e9;">
+                        <div class="p-3 mb-3 rounded product-price-box">
                             <small class="text-muted d-block mb-1">Precio</small>
                             <h3 class="h4 text-success font-weight-bold mb-1">
                                 Bs {{ number_format($organico->precio, 2) }}
@@ -563,7 +564,7 @@
             </div>
         </div>
 
-        <section class="card detail-card mb-4">
+        <section class="card detail-card mb-4 product-detail-reviews">
             <div class="detail-card-header detail-card-header-success">
                 <h5 class="mb-0"><i class="fas fa-star mr-2"></i>Calificaciones verificadas</h5>
             </div>

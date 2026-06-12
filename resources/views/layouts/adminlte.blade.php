@@ -80,19 +80,25 @@
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
                 @auth
-                    <li class="nav-item dropdown">
-                        <a class="nav-link" data-toggle="dropdown" href="#">
-                            <i class="fas fa-user-circle"></i>
-                            <span class="d-none d-md-inline ml-1">{{ auth()->user()->name }}</span>
-                            <span class="badge badge-info ml-1">{{ auth()->user()->role_name }}</span>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                            <span class="dropdown-item dropdown-header">
-                                {{ auth()->user()->name }}
-                                <br>
-                                <small>{{ auth()->user()->email }}</small>
+                    <li class="nav-item dropdown account-menu">
+                        <a class="nav-link account-menu__trigger" data-toggle="dropdown" href="#" aria-haspopup="true">
+                            <span class="account-menu__avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                            <span class="d-none d-md-flex account-menu__identity">
+                                <strong>{{ auth()->user()->name }}</strong>
+                                <small>{{ auth()->user()->role_name }}</small>
                             </span>
-                            <div class="dropdown-divider"></div>
+                            <i class="fas fa-chevron-down account-menu__chevron"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right account-menu__panel">
+                            <div class="account-menu__header">
+                                <span class="account-menu__avatar account-menu__avatar--large">
+                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                </span>
+                                <span>
+                                    <strong>{{ auth()->user()->name }}</strong>
+                                    <small>{{ auth()->user()->email }}</small>
+                                </span>
+                            </div>
                             <a href="{{ route('home') }}" class="dropdown-item">
                                 <i class="fas fa-home mr-2"></i> Ir al Inicio
                             </a>
@@ -109,7 +115,7 @@
                             <div class="dropdown-divider"></div>
                             <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                 @csrf
-                                <button type="submit" class="dropdown-item dropdown-footer">
+                                <button type="submit" class="dropdown-item dropdown-footer account-menu__logout">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
                                 </button>
                             </form>
@@ -137,7 +143,7 @@
         <!-- Sidebar -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
-            <a href="{{ url('/') }}" class="brand-link">
+            <a href="{{ auth()->check() ? route('home') : url('/') }}" class="brand-link">
                 <span class="brand-text font-weight-light">Mercado Agrícola</span>
             </a>
 
@@ -185,14 +191,10 @@
                                         <i class="nav-icon fas fa-shopping-cart"></i>
                                         <p>
                                             Carrito
-                                            @php
-                                                $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->sum(
-                                                    'cantidad',
-                                                );
-                                            @endphp
-                                            @if ($cartCount > 0)
-                                                <span
-                                                    class="badge badge-danger badge-sm float-right">{{ $cartCount }}</span>
+                                            @if ($navCartCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navCartCount > 99 ? '99+' : $navCartCount }}
+                                                </span>
                                             @endif
                                         </p>
                                     </a>
@@ -205,6 +207,11 @@
                                         <i class="nav-icon fas fa-receipt"></i>
                                         <p>
                                             Mis Pedidos
+                                            @if ($navOrderAlertsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navOrderAlertsCount > 99 ? '99+' : $navOrderAlertsCount }}
+                                                </span>
+                                            @endif
                                         </p>
                                     </a>
                                 </li>
@@ -384,7 +391,14 @@
                                 <li class="nav-item">
                                     <a href="{{ route('admin.pedidos.index') }}" class="nav-link">
                                         <i class="nav-icon fas fa-receipt"></i>
-                                        <p>Pedidos</p>
+                                        <p>
+                                            Pedidos
+                                            @if ($navPendingRequestsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navPendingRequestsCount > 99 ? '99+' : $navPendingRequestsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
                                     </a>
                                 </li>
 
@@ -409,7 +423,14 @@
                                     <a href="{{ route('admin.solicitudes-vendedor.index') }}"
                                         class="nav-link {{ request()->routeIs('admin.solicitudes-vendedor.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-clipboard-list"></i>
-                                        <p>Solicitudes de Vendedor</p>
+                                        <p>
+                                            Solicitudes de Vendedor
+                                            @if ($navSellerApplicationsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navSellerApplicationsCount > 99 ? '99+' : $navSellerApplicationsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
                                     </a>
                                 </li>
                             @endif
@@ -428,7 +449,14 @@
                                     <a href="{{ route('vendedor.solicitudes.index') }}"
                                         class="nav-link {{ request()->routeIs('vendedor.solicitudes.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-clipboard-list"></i>
-                                        <p>Solicitudes de productos</p>
+                                        <p>
+                                            Solicitudes de productos
+                                            @if ($navPendingRequestsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navPendingRequestsCount > 99 ? '99+' : $navPendingRequestsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -840,7 +868,7 @@
                         showCancelButton: true,
                         confirmButtonText: form.dataset.confirmButton || 'Sí, continuar',
                         cancelButtonText: form.dataset.cancelButton || 'Aún no',
-                        confirmButtonColor: '#2f7d24',
+                        confirmButtonColor: '#238647',
                         cancelButtonColor: '#6c757d',
                         reverseButtons: true,
                         focusCancel: true,

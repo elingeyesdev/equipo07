@@ -336,10 +336,16 @@
                                         </small>
                                     </div>
                                     <div class="col-md-5 text-center mb-3">
-                                        <div class="border rounded bg-white p-2 d-inline-block">
+                                        <div class="transport-qr-frame">
                                             <canvas id="transport-qr-canvas" width="220" height="220"
                                                 aria-label="Codigo QR de transporte"></canvas>
+                                            <span class="transport-qr-loader" aria-hidden="true">
+                                                <i class="fas fa-circle-notch fa-spin"></i>
+                                            </span>
                                         </div>
+                                        <small class="transport-qr-status" id="transport-qr-status" aria-live="polite">
+                                            Generando codigo QR...
+                                        </small>
                                         <button type="button" class="btn btn-sm btn-outline-success d-block mx-auto mt-2"
                                             id="transport-qr-download">
                                             <i class="fas fa-download mr-1"></i>Descargar QR
@@ -734,8 +740,7 @@
         </script>
     @endif
     @if ($usaTransporteExterno && $solicitud->transporteAcceso?->estaActivo())
-        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-        <script src="{{ asset('js/transport-qr-seller.js') }}?v={{ filemtime(public_path('js/transport-qr-seller.js')) }}"></script>
+        @vite('resources/js/transport-qr-seller.js')
     @endif
 
     <script>

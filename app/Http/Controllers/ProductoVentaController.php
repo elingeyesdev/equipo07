@@ -13,11 +13,20 @@ class ProductoVentaController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $tipo = $request->string('tipo')->toString();
+        $tiposPermitidos = ['ganado', 'maquinaria', 'organico'];
+        $tipos = collect($request->input('tipos', []))
+            ->when(
+                $request->filled('tipo'),
+                fn ($seleccionados) => $seleccionados->push($request->string('tipo')->toString())
+            )
+            ->filter(fn ($tipo) => in_array($tipo, $tiposPermitidos, true))
+            ->unique()
+            ->values()
+            ->all();
         $q = trim($request->string('q')->toString());
         $productos = collect();
 
-        if (!$tipo || $tipo === 'ganado') {
+        if ($tipos === [] || in_array('ganado', $tipos, true)) {
             $query = Ganado::with(['user', 'imagenes', 'datoComercial', 'tipoAnimal']);
             $this->aplicarPropietario($query, $user);
             $this->aplicarBusqueda($query, $q);
@@ -39,7 +48,7 @@ class ProductoVentaController extends Controller
             ]));
         }
 
-        if (!$tipo || $tipo === 'maquinaria') {
+        if ($tipos === [] || in_array('maquinaria', $tipos, true)) {
             $query = Maquinaria::with(['user', 'imagenes', 'estadoMaquinaria']);
             $this->aplicarPropietario($query, $user);
             $this->aplicarBusqueda($query, $q);
@@ -61,7 +70,7 @@ class ProductoVentaController extends Controller
             ]));
         }
 
-        if (!$tipo || $tipo === 'organico') {
+        if ($tipos === [] || in_array('organico', $tipos, true)) {
             $query = Organico::with(['user', 'imagenes', 'datoComercial']);
             $this->aplicarPropietario($query, $user);
             $this->aplicarBusqueda($query, $q);
@@ -96,7 +105,7 @@ class ProductoVentaController extends Controller
 
         return view('productos_venta.index', [
             'productos' => $paginados,
-            'tipo' => $tipo,
+            'tipos' => $tipos,
             'q' => $q,
             'esAdmin' => $user->isAdmin(),
         ]);

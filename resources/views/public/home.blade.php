@@ -5,14 +5,14 @@
     <style>
         .ganado-card {
             transition: all 0.3s ease;
-            border: 3px solid #28a745 !important;
+            border: 3px solid #2eab5b !important;
             background: #ffffff;
         }
 
         .ganado-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 12px 24px rgba(40, 167, 69, 0.3) !important;
-            border-color: #1e7e34 !important;
+            border-color: #238647 !important;
         }
 
         .ganado-img {
@@ -38,7 +38,7 @@
         }
 
         .border-success {
-            border-color: #28a745 !important;
+            border-color: #2eab5b !important;
         }
 
         /* Evitar zoom y recorte en maquinaria y orgánicos */
@@ -102,15 +102,15 @@
 
         /* Colores según estado */
         .status-ribbon.disponible {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #2eab5b 0%, #20c997 100%);
         }
 
         .status-ribbon.disponible::before {
-            border-right-color: #1e7e34;
+            border-right-color: #238647;
         }
 
         .status-ribbon.disponible::after {
-            border-left-color: #1e7e34;
+            border-left-color: #238647;
         }
 
         .status-ribbon.en_mantenimiento,
@@ -221,10 +221,10 @@
             gap: 6px;
             min-height: 38px;
             padding: 0 13px;
-            border: 1px solid rgba(47, 98, 31, 0.28);
+            border: 1px solid rgba(35, 134, 71, 0.28);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.5);
-            color: #2f621f;
+            color: #238647;
             font-weight: 700;
             font-size: 0.92rem;
             text-decoration: none;
@@ -460,7 +460,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-image fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -576,7 +576,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center position-relative"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 @if ($maquinaria->estadoMaquinaria)
                                                     @php
                                                         $estadoNombre = strtolower($maquinaria->estadoMaquinaria->nombre);
@@ -702,7 +702,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-leaf fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -859,7 +859,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-image fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -985,7 +985,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center position-relative"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 @if ($maquinaria->estadoMaquinaria)
                                                     @php
                                                         $estadoNombre = strtolower($maquinaria->estadoMaquinaria->nombre);
@@ -1104,7 +1104,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-leaf fa-4x text-muted"></i>
                                             </div>
                                         @endif

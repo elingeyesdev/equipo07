@@ -66,15 +66,23 @@
             @csrf
             <label class="font-weight-bold d-block">Califica tu {{ $esMaquinaria ? 'alquiler' : 'compra' }}</label>
             <div class="form-row">
-                <div class="col-md-3 mb-2">
-                    <select name="estrellas" class="form-control" required>
-                        <option value="">Estrellas</option>
+                <div class="col-md-4 mb-2">
+                    <fieldset class="star-rating">
+                        <legend class="sr-only">Selecciona una calificacion de una a cinco estrellas</legend>
                         @for($i = 5; $i >= 1; $i--)
-                            <option value="{{ $i }}">{{ $i }} {{ $i === 1 ? 'estrella' : 'estrellas' }}</option>
+                            <input type="radio" name="estrellas" value="{{ $i }}"
+                                id="rating-{{ $detalle->id }}-{{ $i }}"
+                                {{ (int) old('estrellas') === $i ? 'checked' : '' }} required>
+                            <label for="rating-{{ $detalle->id }}-{{ $i }}"
+                                title="{{ $i }} {{ $i === 1 ? 'estrella' : 'estrellas' }}">
+                                <i class="fas fa-star" aria-hidden="true"></i>
+                                <span class="sr-only">{{ $i }} {{ $i === 1 ? 'estrella' : 'estrellas' }}</span>
+                            </label>
                         @endfor
-                    </select>
+                    </fieldset>
+                    <small class="star-rating-help">Toca una estrella para calificar</small>
                 </div>
-                <div class="col-md-9 mb-2">
+                <div class="col-md-8 mb-2">
                     <textarea name="comentario" class="form-control" rows="2" minlength="10" maxlength="1200"
                         placeholder="{{ $esMaquinaria ? 'Cuenta cómo fue la maquinaria, el alquiler y la atención' : 'Cuenta cómo fue el producto y la atención del vendedor' }}" required></textarea>
                 </div>

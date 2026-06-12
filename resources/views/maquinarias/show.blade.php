@@ -3,7 +3,7 @@
 @section('title', 'Detalle de Maquinaria')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid product-detail-page">
         {{-- ESTILOS PROFESIONALES Y MODERNOS --}}
         <style>
             :root {
@@ -516,6 +516,7 @@
                 }
             }
         </style>
+        <link rel="stylesheet" href="{{ asset('css/product-detail.css') }}">
 
         <!-- Header Mejorado -->
         <div class="page-header fade-in">
@@ -635,7 +636,7 @@
 
             <!-- Información Principal -->
             <div class="col-lg-7">
-                <div class="info-card mb-4">
+                <div class="info-card mb-4 product-purchase-card">
                     <div class="card-body p-4">
                         <h2 class="h3 mb-3 text-dark font-weight-bold">{{ $maquinaria->nombre }}</h2>
 
@@ -1016,12 +1017,12 @@
                 @endif
             </div>
         </div>
+
+        @include('components.product-reviews', ['producto' => $maquinaria])
     </div>
 
     <!-- Modal del Mapa -->
     @if ($maquinaria->latitud && $maquinaria->longitud)
-    @include('components.product-reviews', ['producto' => $maquinaria])
-
     <div class="modal fade" id="mapModal" tabindex="-1" role="dialog" aria-labelledby="mapModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">

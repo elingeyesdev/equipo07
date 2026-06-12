@@ -1,12 +1,16 @@
 :root {
-  --agro: #3f7e2a;     
-  --agro-700: #2f621f;
+  --agro: #2eab5b;
+  --agro-700: #238647;
+  --agro-100: #eaf8ef;
+  --agro-accent: #f4a261;
+  --app-background: #f8fbf8;
+  --app-card: #ffffff;
   --app-font: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --app-text: #1f2a1f;
-  --app-muted: #6c757d;
+  --app-text: #2c4033;
+  --app-muted: #66766c;
   --app-radius: .75rem;
-  --app-shadow-sm: 0 2px 8px rgba(31, 42, 27, 0.06);
-  --app-shadow-md: 0 8px 24px rgba(31, 42, 27, 0.08);
+  --app-shadow-sm: 0 2px 8px rgba(44, 64, 51, 0.06);
+  --app-shadow-md: 0 8px 24px rgba(44, 64, 51, 0.09);
 }
 
 body,
@@ -30,10 +34,359 @@ textarea {
   max-height: 74px;
 }
 
+.star-rating {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: .18rem;
+  margin: 0;
+  padding: .35rem .55rem;
+  border: 0;
+  border-radius: .7rem;
+  background: #fff9ef;
+}
+
+.star-rating input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.star-rating label {
+  margin: 0;
+  color: #d9d3c5;
+  cursor: pointer;
+  font-size: 1.8rem;
+  line-height: 1;
+  transition: color .16s ease, transform .16s ease;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+  color: #f5b301;
+}
+
+.star-rating input:focus-visible + label {
+  border-radius: .25rem;
+  outline: 3px solid rgba(46, 171, 91, .25);
+  outline-offset: 2px;
+}
+
+.star-rating label:hover {
+  transform: scale(1.12);
+}
+
+.star-rating-help {
+  display: block;
+  margin-top: .35rem;
+  color: var(--app-muted);
+}
+
+.transport-qr-frame {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 238px;
+  min-height: 238px;
+  padding: .5rem;
+  overflow: hidden;
+  border: 1px solid #dce8df;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(44, 64, 51, .08);
+}
+
+.transport-qr-frame canvas {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  height: auto;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.transport-qr-frame canvas.is-ready {
+  opacity: 1;
+}
+
+.transport-qr-loader {
+  position: absolute;
+  color: var(--agro);
+  font-size: 1.65rem;
+}
+
+.transport-qr-frame:has(canvas.is-ready) .transport-qr-loader,
+.transport-qr-frame:has(canvas.is-error) .transport-qr-loader {
+  display: none;
+}
+
+.transport-qr-status {
+  display: block;
+  min-height: 1.25rem;
+  margin-top: .45rem;
+  color: var(--app-muted);
+}
+
+.transport-qr-status.is-ready {
+  color: var(--agro-700);
+}
+
+.transport-qr-status.is-error {
+  color: #b42332;
+}
+
+.account-menu__trigger {
+  display: inline-flex !important;
+  align-items: center;
+  gap: .55rem;
+  min-height: 46px;
+  border-radius: 999px;
+  padding: .3rem .65rem !important;
+}
+
+.account-menu.show .account-menu__trigger,
+.account-menu__trigger:hover {
+  background: rgba(255, 255, 255, .16) !important;
+}
+
+.main-header.navbar-white .account-menu__trigger:hover,
+.main-header.navbar-white .account-menu.show .account-menu__trigger {
+  background: var(--agro-100) !important;
+}
+
+.account-menu__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--agro-700);
+  font-size: .85rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(44, 64, 51, .12);
+}
+
+.account-menu__avatar--large {
+  width: 46px;
+  height: 46px;
+  flex-basis: 46px;
+  background: var(--agro-100);
+}
+
+.account-menu__identity {
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+}
+
+.account-menu__identity strong {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .83rem;
+}
+
+.account-menu__identity small {
+  margin-top: .2rem;
+  opacity: .8;
+  font-size: .67rem;
+  text-transform: capitalize;
+}
+
+.account-menu__chevron {
+  font-size: .65rem;
+  transition: transform .25s ease;
+}
+
+.account-menu.show .account-menu__chevron {
+  transform: rotate(180deg);
+}
+
+.account-menu__panel {
+  min-width: 285px !important;
+  margin-top: .65rem !important;
+  padding: .55rem !important;
+  overflow: hidden;
+  border: 1px solid rgba(46, 171, 91, .2) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 18px 45px rgba(44, 64, 51, .18) !important;
+  transform-origin: top right;
+  animation: accountMenuIn .24s ease-out;
+}
+
+.account-menu__header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .35rem;
+  padding: .7rem;
+  border-radius: .75rem;
+  background: linear-gradient(135deg, var(--agro-100), #fff4eb);
+}
+
+.account-menu__header > span:last-child {
+  min-width: 0;
+}
+
+.account-menu__header strong,
+.account-menu__header small {
+  display: block;
+}
+
+.account-menu__header strong {
+  color: var(--app-text);
+}
+
+.account-menu__header small {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: .75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__panel .dropdown-item {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  margin: .12rem 0;
+  border-radius: .65rem;
+  color: var(--app-text);
+  font-weight: 600;
+}
+
+.account-menu__panel .dropdown-item i {
+  width: 22px;
+  color: var(--agro);
+  text-align: center;
+}
+
+.account-menu__panel .dropdown-item:hover,
+.account-menu__panel .dropdown-item:focus {
+  background: var(--agro-100);
+  color: var(--agro-700);
+  transform: translateX(3px);
+}
+
+.account-menu__logout {
+  color: #a33c35 !important;
+}
+
+.account-menu__logout i {
+  color: #d7655b !important;
+}
+
+.account-menu__logout:hover {
+  background: #fff0ed !important;
+}
+
+@keyframes accountMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu__panel {
+    animation: none;
+  }
+}
+
 body {
+  background: var(--app-background);
   color: var(--app-text);
   font-size: .95rem;
   line-height: 1.5;
+}
+
+/* Interaccion consistente para botones y controles accionables */
+.btn,
+button,
+[role="button"],
+.nav-link,
+.dropdown-item,
+.selectable-action {
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    color .18s ease,
+    transform .18s ease;
+}
+
+.btn:not(:disabled):not(.disabled):hover,
+button:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(31, 42, 27, .14);
+  transform: translateY(-1px);
+}
+
+.btn:not(:disabled):not(.disabled):active,
+.btn:not(:disabled):not(.disabled).active,
+button:not(:disabled):active,
+[role="button"][aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px rgba(31, 42, 27, .18);
+  transform: translateY(0);
+}
+
+.btn:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible,
+.selectable-action:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, .28) !important;
+}
+
+.selectable-action {
+  border: 2px solid transparent;
+  border-radius: var(--app-radius);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.selectable-action:hover,
+.selectable-action:focus-visible {
+  background: var(--agro-100);
+  border-color: var(--agro);
+  box-shadow: 0 10px 24px rgba(35, 134, 71, .16) !important;
+  color: var(--app-text) !important;
+  transform: translateY(-3px);
+}
+
+.selectable-action:active,
+.selectable-action.active,
+.selectable-action[aria-current="true"],
+.selectable-action[aria-pressed="true"] {
+  background: var(--agro-100);
+  border-color: var(--agro-700);
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, .18) !important;
+  transform: translateY(0);
+}
+
+.selectable-action .fas,
+.selectable-action .far {
+  transition: transform .18s ease;
+}
+
+.selectable-action:hover .fas,
+.selectable-action:hover .far,
+.selectable-action:focus-visible .fas,
+.selectable-action:focus-visible .far {
+  transform: scale(1.08);
 }
 
 .content-header h1,
@@ -52,6 +405,8 @@ body {
 /* Barra superior */
 .project-topbar {
   background: var(--agro) !important;
+  min-height: 64px;
+  box-shadow: 0 5px 18px rgba(35, 134, 71, .16);
 }
 
 html,
@@ -72,8 +427,21 @@ body {
 }
 .project-topbar .navbar-brand {
   flex-shrink: 0;
-  min-height: 52px;
+  min-height: 64px;
   min-width: 0;
+  font-size: 1.3rem;
+  letter-spacing: -.01em;
+}
+
+.project-topbar__logo {
+  width: 42px;
+  height: 42px;
+  padding: 3px;
+  border: 2px solid rgba(255, 255, 255, .72);
+  border-radius: 50%;
+  background: #fff;
+  object-fit: contain;
+  box-shadow: 0 5px 14px rgba(44, 64, 51, .16);
 }
 .project-topbar .navbar-collapse {
   min-width: 0;
@@ -95,9 +463,11 @@ body {
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  min-height: 42px;
-  padding: .45rem .6rem !important;
+  min-height: 46px;
+  padding: .5rem .68rem !important;
   color: #fff !important;
+  font-size: 1.06rem;
+  font-weight: 500;
   line-height: 1.15;
   white-space: nowrap;
 }
@@ -247,9 +617,13 @@ body {
 
 /* === THEME AGROVIDA para panel (AdminLTE) === */
 :root{
-  --agro:#3f7e2a;     
-  --agro-700:#2f621f;  
-  --agro-100:#e9f4ea;
+  --agro:#2eab5b;
+  --agro-700:#238647;
+  --agro-100:#eaf8ef;
+  --agro-accent:#f4a261;
+  --app-background:#f8fbf8;
+  --app-card:#ffffff;
+  --app-text:#2c4033;
 }
 
 /* Navbar superior del panel */
@@ -270,7 +644,7 @@ body {
 .theme-agro .nav-sidebar .nav-link{ color:#cfe6d0; }
 .theme-agro .nav-sidebar .nav-link:hover{ color:#fff; }
 .theme-agro .nav-sidebar .nav-link.active{
-  background: rgba(63,126,42,.28)!important;
+  background: rgba(46,171,91,.28)!important;
   color:#fff!important;
 }
 .theme-agro .nav-icon{ color:#cfe6d0!important; }
@@ -292,7 +666,7 @@ body {
 /* Cards y tablas más “limpias” */
 .theme-agro .card{ border-radius:.75rem; }
 .theme-agro .card-header{ background:var(--agro-100); border-bottom:1px solid #dbe9dc; font-weight:600; }
-.theme-agro .table thead th{ background:#eef7ef; border-bottom:1px solid #dbe9dc; }
+.theme-agro .table thead th{ background:#eaf8ef; border-bottom:1px solid #dbe9dc; }
 /* Corregir color de encabezados de tabla en el tema Agro */
 .theme-agro .table thead th {
     color: #000 !important;
@@ -307,7 +681,7 @@ body {
 .theme-agro .page-item.active .page-link{
   background:var(--agro)!important; border-color:var(--agro)!important;
 }
-.theme-agro .page-link:focus{ box-shadow:0 0 0 .2rem rgba(63,126,42,.2); }
+.theme-agro .page-link:focus{ box-shadow:0 0 0 .2rem rgba(46,171,91,.2); }
 
 /* Paginacion global consistente con el estilo AgroVida */
 .pagination {
@@ -321,7 +695,7 @@ body {
 }
 
 .pagination .page-link {
-  border: 1px solid rgba(63, 126, 42, 0.16);
+  border: 1px solid rgba(46, 171, 91, 0.16);
   color: var(--agro);
   background: linear-gradient(180deg, #ffffff 0%, #f7fbf4 100%);
   border-radius: .8rem !important;
@@ -342,24 +716,24 @@ body {
   background: linear-gradient(135deg, var(--agro) 0%, var(--agro-700) 100%);
   border-color: var(--agro);
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.18);
+  box-shadow: 0 10px 22px rgba(46, 171, 91, 0.18);
 }
 
 .pagination .page-link:focus {
-  box-shadow: 0 0 0 .2rem rgba(63,126,42,.18);
+  box-shadow: 0 0 0 .2rem rgba(46,171,91,.18);
 }
 
 .pagination .page-item.active .page-link {
   color: #fff;
   background: linear-gradient(135deg, var(--agro) 0%, var(--agro-700) 100%);
   border-color: var(--agro);
-  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.22);
+  box-shadow: 0 10px 22px rgba(46, 171, 91, 0.22);
 }
 
 .pagination .page-item.disabled .page-link {
   color: #9aa7a0;
   background: #f3f6f1;
-  border-color: rgba(63, 126, 42, 0.08);
+  border-color: rgba(46, 171, 91, 0.08);
   box-shadow: none;
 }
 
@@ -452,7 +826,7 @@ body.no-topbar .wrapper{
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(135deg, rgba(63,126,42,.08) 0%, rgba(255,255,255,.92) 42%, rgba(233,244,234,.92) 100%);
+    linear-gradient(135deg, rgba(46,171,91,.08) 0%, rgba(255,255,255,.92) 42%, rgba(233,244,234,.92) 100%);
 }
 
 body.no-topbar .content-wrapper{
@@ -593,6 +967,12 @@ body.no-topbar .content-wrapper{
   line-height: 1.06;
 }
 
+.auth-page .auth-hero-copy h1,
+.auth-page .auth-hero-brand,
+.auth-page .auth-hero-brand span {
+  color: #fff !important;
+}
+
 .auth-hero-copy p{
   max-width: 500px;
   margin: 18px 0 0;
@@ -635,7 +1015,7 @@ body.no-topbar .content-wrapper{
   max-width: 440px;
   margin: 0 auto;
   padding: 42px;
-  border: 1px solid rgba(47,98,31,.1);
+  border: 1px solid rgba(35,134,71,.1);
   border-radius: 28px;
   background: #fff;
   box-shadow: 0 22px 58px rgba(25,55,24,.13);
@@ -752,7 +1132,7 @@ body.no-topbar .content-wrapper{
   padding: 12px 16px 12px 44px;
   border: 1px solid #dfe8dc;
   border-radius: 16px;
-  background: #fbfdf9;
+  background: #f8fbf8;
   color: #162316;
   font-size: 16px;
   line-height: 1.35;
@@ -767,7 +1147,7 @@ body.no-topbar .content-wrapper{
 .auth-page .form-control.auth-input:focus{
   border-color: var(--agro);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(63,126,42,.13);
+  box-shadow: 0 0 0 4px rgba(46,171,91,.13);
 }
 
 .auth-help{
@@ -817,13 +1197,13 @@ body.no-topbar .content-wrapper{
   border-radius: 16px;
   font-weight: 900;
   letter-spacing: .01em;
-  box-shadow: 0 15px 28px rgba(63,126,42,.22);
+  box-shadow: 0 15px 28px rgba(46,171,91,.22);
   transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
 }
 
 .auth-page .btn.auth-button:hover{
   transform: translateY(-1px);
-  box-shadow: 0 19px 32px rgba(47,98,31,.28);
+  box-shadow: 0 19px 32px rgba(35,134,71,.28);
 }
 
 .auth-login-footer{
@@ -837,7 +1217,7 @@ body.no-topbar .content-wrapper{
 
 body.no-topbar .main-footer{
   flex: 0 0 auto;
-  border-top: 1px solid rgba(47,98,31,.1);
+  border-top: 1px solid rgba(35,134,71,.1);
   background: rgba(255,255,255,.72);
   color: #687269;
 }
@@ -1025,7 +1405,7 @@ body.no-topbar .main-footer .float-right{
 .search-panel .form-control,
 .search-panel .input-group-text {
   border-radius: 0.85rem;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
 }
 
 .search-panel .form-control {
@@ -1040,19 +1420,19 @@ body.no-topbar .main-footer .float-right{
 
 .search-panel .form-control:focus {
   background: rgba(255, 255, 255, 0.68);
-  border-color: rgba(63, 126, 42, 0.35);
-  box-shadow: 0 0 0 0.2rem rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.35);
+  box-shadow: 0 0 0 0.2rem rgba(46, 171, 91, 0.12);
 }
 
 .search-panel .input-group-text {
-  background: linear-gradient(135deg, rgba(63, 126, 42, 0.95), rgba(47, 98, 31, 0.95)) !important;
+  background: linear-gradient(135deg, rgba(46, 171, 91, 0.95), rgba(35, 134, 71, 0.95)) !important;
   color: #fff !important;
-  border-color: rgba(63, 126, 42, 0.2);
+  border-color: rgba(46, 171, 91, 0.2);
 }
 
 .search-panel .btn-success {
   border-radius: 0.9rem;
-  box-shadow: 0 10px 20px rgba(63, 126, 42, 0.18);
+  box-shadow: 0 10px 20px rgba(46, 171, 91, 0.18);
 }
 
 .search-panel .btn-outline-secondary {
@@ -1069,7 +1449,7 @@ body.no-topbar .main-footer .float-right{
 
 /* === Wizard de maquinaria agricola === */
 .maquinaria-wizard {
-  --wizard-border: rgba(63, 126, 42, 0.14);
+  --wizard-border: rgba(46, 171, 91, 0.14);
   --wizard-soft: #f5fbf2;
   --wizard-text: #24311f;
   color: var(--wizard-text);
@@ -1140,14 +1520,14 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard__step-indicator:hover {
   transform: translateY(-1px);
-  border-color: rgba(63, 126, 42, 0.32);
-  box-shadow: 0 14px 26px rgba(63, 126, 42, 0.1);
+  border-color: rgba(46, 171, 91, 0.32);
+  box-shadow: 0 14px 26px rgba(46, 171, 91, 0.1);
 }
 
 .maquinaria-wizard__step-indicator.is-active {
-  border-color: rgba(63, 126, 42, 0.5);
+  border-color: rgba(46, 171, 91, 0.5);
   background: linear-gradient(135deg, #ffffff 0%, var(--wizard-soft) 100%);
-  box-shadow: 0 16px 30px rgba(63, 126, 42, 0.14);
+  box-shadow: 0 16px 30px rgba(46, 171, 91, 0.14);
 }
 
 .maquinaria-wizard__step-indicator.is-complete .maquinaria-wizard__step-number {
@@ -1222,7 +1602,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard__location-detail {
   padding: 1rem;
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .75rem;
   background: #fff;
   box-shadow: 0 8px 18px rgba(31, 42, 27, 0.05);
@@ -1239,7 +1619,7 @@ body.no-topbar .main-footer .float-right{
   padding: 1rem;
   margin-bottom: .5rem;
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .85rem;
   box-shadow: 0 -8px 24px rgba(31, 42, 27, 0.08);
 }
@@ -1304,7 +1684,7 @@ body.no-topbar .main-footer .float-right{
 
 /* === Wizard maquinaria: refinamiento visual de produccion === */
 .maquinaria-wizard {
-  --wizard-border: rgba(44, 91, 31, 0.14);
+  --wizard-border: rgba(46, 171, 91, 0.14);
   --wizard-panel: #ffffff;
   --wizard-muted: #69766b;
   --wizard-soft: #f6faf4;
@@ -1357,7 +1737,7 @@ body.no-topbar .main-footer .float-right{
   color: #fff;
   background: linear-gradient(135deg, var(--agro), var(--agro-700));
   border-radius: .8rem;
-  box-shadow: 0 12px 24px rgba(63, 126, 42, 0.22);
+  box-shadow: 0 12px 24px rgba(46, 171, 91, 0.22);
 }
 
 .maquinaria-wizard__subtitle {
@@ -1369,7 +1749,7 @@ body.no-topbar .main-footer .float-right{
   padding: .55rem .8rem;
   border-radius: 999px;
   font-weight: 700;
-  box-shadow: 0 10px 20px rgba(63, 126, 42, 0.14);
+  box-shadow: 0 10px 20px rgba(46, 171, 91, 0.14);
 }
 
 .maquinaria-wizard__progress {
@@ -1382,8 +1762,8 @@ body.no-topbar .main-footer .float-right{
   min-height: 96px;
   padding: .85rem;
   border-radius: .85rem;
-  border-color: rgba(44, 91, 31, 0.12);
-  background: #fbfdf9;
+  border-color: rgba(46, 171, 91, 0.12);
+  background: #f8fbf8;
   box-shadow: none;
 }
 
@@ -1405,17 +1785,17 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard__step-indicator.is-active {
   background: #fff;
-  border-color: rgba(63, 126, 42, 0.34);
-  box-shadow: 0 16px 32px rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.34);
+  box-shadow: 0 16px 32px rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-wizard__step-indicator.is-active::after {
-  background: linear-gradient(90deg, var(--agro), #79b65f);
+  background: linear-gradient(90deg, var(--agro), #55c77c);
 }
 
 .maquinaria-wizard__step-indicator.is-complete {
   background: #f5fbf2;
-  border-color: rgba(63, 126, 42, 0.22);
+  border-color: rgba(46, 171, 91, 0.22);
 }
 
 .maquinaria-wizard__step-number {
@@ -1433,7 +1813,7 @@ body.no-topbar .main-footer .float-right{
   width: 2.25rem;
   height: 2.25rem;
   color: var(--agro);
-  background: rgba(63, 126, 42, 0.09);
+  background: rgba(46, 171, 91, 0.09);
   border-radius: .75rem;
 }
 
@@ -1467,7 +1847,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard__step-indicator.is-active .maquinaria-wizard__step-status {
   color: var(--agro-700);
-  background: rgba(63, 126, 42, 0.12);
+  background: rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-wizard__step-indicator.is-complete .maquinaria-wizard__step-status {
@@ -1486,9 +1866,9 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-wizard__progressbar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--agro), #82bd5f);
+  background: linear-gradient(90deg, var(--agro), #62ca86);
   border-radius: inherit;
-  box-shadow: 0 8px 18px rgba(63, 126, 42, 0.22);
+  box-shadow: 0 8px 18px rgba(46, 171, 91, 0.22);
   transition: width .32s ease;
 }
 
@@ -1504,7 +1884,7 @@ body.no-topbar .main-footer .float-right{
   position: relative;
   overflow: hidden;
   background: var(--wizard-panel);
-  border: 1px solid rgba(44, 91, 31, 0.1);
+  border: 1px solid rgba(46, 171, 91, 0.1);
   border-radius: 1rem;
 }
 
@@ -1528,8 +1908,8 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-wizard-step > .card-header {
   align-items: flex-start !important;
   padding: 1.1rem 1.25rem;
-  background: linear-gradient(180deg, #f9fcf7, #eef7ef) !important;
-  border-bottom: 1px solid rgba(44, 91, 31, 0.12);
+  background: linear-gradient(180deg, #f8fbf8, #eaf8ef) !important;
+  border-bottom: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: 1rem 1rem 0 0 !important;
 }
 
@@ -1560,8 +1940,8 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-wizard-step > .card > .card-header {
   align-items: flex-start !important;
   padding: 1.1rem 1.25rem;
-  background: linear-gradient(180deg, #f9fcf7, #eef7ef) !important;
-  border-bottom: 1px solid rgba(44, 91, 31, 0.12);
+  background: linear-gradient(180deg, #f8fbf8, #eaf8ef) !important;
+  border-bottom: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: 1rem 1rem 0 0 !important;
 }
 
@@ -1593,7 +1973,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard .form-control {
   min-height: 2.55rem;
-  border-color: rgba(44, 91, 31, 0.16);
+  border-color: rgba(46, 171, 91, 0.16);
   border-radius: .65rem;
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
@@ -1607,12 +1987,12 @@ body.no-topbar .main-footer .float-right{
 }
 
 .maquinaria-wizard .form-control:focus {
-  border-color: rgba(63, 126, 42, 0.55);
-  box-shadow: 0 0 0 .2rem rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.55);
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-wizard .input-group-text {
-  border-color: rgba(44, 91, 31, 0.16);
+  border-color: rgba(46, 171, 91, 0.16);
   border-radius: .65rem 0 0 .65rem;
   background: #f2f7ef;
   color: var(--agro-700);
@@ -1629,10 +2009,10 @@ body.no-topbar .main-footer .float-right{
   align-items: flex-start;
   gap: .75rem;
   padding: .75rem;
-  border: 1px solid rgba(63, 126, 42, 0.24);
+  border: 1px solid rgba(46, 171, 91, 0.24);
   border-radius: .85rem;
   background: #fff;
-  box-shadow: 0 10px 24px rgba(63, 126, 42, 0.08);
+  box-shadow: 0 10px 24px rgba(46, 171, 91, 0.08);
 }
 
 .maquinaria-price-info__icon {
@@ -1643,9 +2023,9 @@ body.no-topbar .main-footer .float-right{
   width: 2rem;
   height: 2rem;
   color: var(--agro-700);
-  background: rgba(63, 126, 42, 0.1);
+  background: rgba(46, 171, 91, 0.1);
   border-radius: .75rem;
-  border: 1px solid rgba(63, 126, 42, 0.18);
+  border: 1px solid rgba(46, 171, 91, 0.18);
   font-size: .85rem;
 }
 
@@ -1711,7 +2091,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard__map {
   min-height: 400px;
-  border-color: rgba(44, 91, 31, 0.14) !important;
+  border-color: rgba(46, 171, 91, 0.14) !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
 }
 
@@ -1730,7 +2110,7 @@ body.no-topbar .main-footer .float-right{
   min-height: 3rem;
   padding: .25rem .3rem .25rem .85rem;
   background: #fff;
-  border: 1px solid rgba(63, 126, 42, 0.22);
+  border: 1px solid rgba(46, 171, 91, 0.22);
   border-radius: .85rem;
   box-shadow: 0 10px 26px rgba(31, 42, 27, 0.08);
 }
@@ -1771,7 +2151,7 @@ body.no-topbar .main-footer .float-right{
   padding: .45rem .9rem;
   color: #fff;
   background: var(--agro);
-  box-shadow: 0 8px 18px rgba(63, 126, 42, 0.18);
+  box-shadow: 0 8px 18px rgba(46, 171, 91, 0.18);
 }
 
 .maquinaria-location-search__submit:hover {
@@ -1782,7 +2162,7 @@ body.no-topbar .main-footer .float-right{
   padding: .45rem .8rem;
   color: var(--agro-700);
   background: #f2f7ef;
-  border: 1px solid rgba(63, 126, 42, 0.16);
+  border: 1px solid rgba(46, 171, 91, 0.16);
 }
 
 .maquinaria-location-search__current:hover {
@@ -1798,7 +2178,7 @@ body.no-topbar .main-footer .float-right{
   max-height: 250px;
   overflow-y: auto;
   background: #fff;
-  border: 1px solid rgba(44, 91, 31, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: .85rem;
   box-shadow: 0 18px 40px rgba(31, 42, 27, 0.14);
 }
@@ -1812,7 +2192,7 @@ body.no-topbar .main-footer .float-right{
   text-align: left;
   background: #fff;
   border: 0;
-  border-bottom: 1px solid rgba(44, 91, 31, 0.08);
+  border-bottom: 1px solid rgba(46, 171, 91, 0.08);
 }
 
 .maquinaria-location-suggestions__item:last-child {
@@ -1833,7 +2213,7 @@ body.no-topbar .main-footer .float-right{
   width: 2rem;
   height: 2rem;
   color: var(--agro-700);
-  background: rgba(63, 126, 42, 0.1);
+  background: rgba(46, 171, 91, 0.1);
   border-radius: 999px;
 }
 
@@ -1875,7 +2255,7 @@ body.no-topbar .main-footer .float-right{
   padding: .45rem .75rem;
   color: var(--agro-700);
   background: #fff;
-  border: 1px solid rgba(63, 126, 42, 0.22);
+  border: 1px solid rgba(46, 171, 91, 0.22);
   border-radius: .65rem;
   box-shadow: 0 10px 24px rgba(31, 42, 27, 0.14);
   font-weight: 800;
@@ -1899,7 +2279,7 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-map-modal .modal-header {
   align-items: flex-start;
   background: #f7fbf4;
-  border-bottom: 1px solid rgba(63, 126, 42, 0.14);
+  border-bottom: 1px solid rgba(46, 171, 91, 0.14);
 }
 
 .maquinaria-map-modal .modal-title {
@@ -1922,7 +2302,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-map-modal .modal-footer {
   background: #fff;
-  border-top: 1px solid rgba(63, 126, 42, 0.12);
+  border-top: 1px solid rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-publication-preview .modal-dialog {
@@ -1939,7 +2319,7 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-publication-preview .modal-header {
   align-items: flex-start;
   background: #f7fbf4;
-  border-bottom: 1px solid rgba(63, 126, 42, 0.14);
+  border-bottom: 1px solid rgba(46, 171, 91, 0.14);
 }
 
 .maquinaria-publication-preview__eyebrow {
@@ -1977,7 +2357,7 @@ body.no-topbar .main-footer .float-right{
   min-height: 360px;
   overflow: hidden;
   background: #eef4ea;
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .9rem;
 }
 
@@ -2025,7 +2405,7 @@ body.no-topbar .main-footer .float-right{
   padding: .32rem .65rem;
   color: var(--agro-700);
   background: #f2f7ef;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: 999px;
   font-size: .82rem;
   font-weight: 800;
@@ -2064,7 +2444,7 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-publication-preview__details div {
   padding: .85rem;
   background: #fff;
-  border: 1px solid rgba(44, 91, 31, 0.12);
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .8rem;
 }
 
@@ -2086,7 +2466,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-publication-preview__description {
   padding-top: 1rem;
-  border-top: 1px solid rgba(44, 91, 31, 0.12);
+  border-top: 1px solid rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-publication-preview__description p {
@@ -2097,7 +2477,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-publication-preview .modal-footer {
   background: #fff;
-  border-top: 1px solid rgba(63, 126, 42, 0.12);
+  border-top: 1px solid rgba(46, 171, 91, 0.12);
 }
 
 .owner-product-notice {
@@ -2134,7 +2514,7 @@ body.no-topbar .main-footer .float-right{
   padding: .75rem .9rem;
   color: #263522;
   background: #fff;
-  border: 1px solid rgba(63, 126, 42, 0.18);
+  border: 1px solid rgba(46, 171, 91, 0.18);
   border-radius: .8rem;
   cursor: pointer;
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
@@ -2153,13 +2533,13 @@ body.no-topbar .main-footer .float-right{
 
 .rental-choice__options input:checked + span {
   background: #f7fbf4;
-  border-color: rgba(63, 126, 42, 0.5);
-  box-shadow: 0 0 0 .18rem rgba(63, 126, 42, 0.1);
+  border-color: rgba(46, 171, 91, 0.5);
+  box-shadow: 0 0 0 .18rem rgba(46, 171, 91, 0.1);
 }
 
 .maquinaria-wizard__location-detail {
   background: #fafff8;
-  border-color: rgba(44, 91, 31, 0.12);
+  border-color: rgba(46, 171, 91, 0.12);
 }
 
 .maquinaria-wizard__actions {
@@ -2180,7 +2560,7 @@ body.no-topbar .main-footer .float-right{
 }
 
 .maquinaria-wizard__actions .btn-success {
-  box-shadow: 0 12px 22px rgba(63, 126, 42, 0.2);
+  box-shadow: 0 12px 22px rgba(46, 171, 91, 0.2);
 }
 
 .maquinaria-wizard__actions .btn-outline-secondary {
@@ -2397,8 +2777,8 @@ body.no-topbar .main-footer .float-right{
   padding: 1.25rem;
   margin: 0;
   color: #263522;
-  background: linear-gradient(180deg, #fbfdf9 0%, #f5fbf2 100%);
-  border: 2px dashed rgba(63, 126, 42, 0.28);
+  background: linear-gradient(180deg, #f8fbf8 0%, #f5fbf2 100%);
+  border: 2px dashed rgba(46, 171, 91, 0.28);
   border-radius: 1rem;
   cursor: pointer;
   transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
@@ -2407,8 +2787,8 @@ body.no-topbar .main-footer .float-right{
 .maquinaria-upload-zone:hover,
 .maquinaria-upload-zone.is-dragover {
   background: #fff;
-  border-color: rgba(63, 126, 42, 0.62);
-  box-shadow: 0 16px 32px rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.62);
+  box-shadow: 0 16px 32px rgba(46, 171, 91, 0.12);
   transform: translateY(-1px);
 }
 
@@ -2431,7 +2811,7 @@ body.no-topbar .main-footer .float-right{
   color: #fff;
   background: linear-gradient(135deg, var(--agro), var(--agro-700));
   border-radius: 1rem;
-  box-shadow: 0 14px 28px rgba(63, 126, 42, 0.2);
+  box-shadow: 0 14px 28px rgba(46, 171, 91, 0.2);
   font-size: 1.35rem;
 }
 
@@ -2460,7 +2840,7 @@ body.no-topbar .main-footer .float-right{
   padding: .62rem .85rem;
   color: var(--agro-700);
   background: #fff;
-  border: 1px solid rgba(63, 126, 42, 0.2);
+  border: 1px solid rgba(46, 171, 91, 0.2);
   border-radius: .7rem;
   font-size: .84rem;
   font-weight: 800;
@@ -2481,7 +2861,7 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard #preview-container .img-thumbnail,
 .maquinaria-wizard #imagenes-actuales .img-thumbnail {
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   box-shadow: 0 10px 20px rgba(31, 42, 27, 0.08);
 }
 
@@ -2649,7 +3029,7 @@ body.no-topbar .main-footer .float-right{
   margin-bottom: 1rem;
   color: #42513f;
   background: #f6fbf3;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: .85rem;
 }
 
@@ -2688,8 +3068,8 @@ body.no-topbar .main-footer .float-right{
   padding: .9rem;
   margin: 0;
   color: #263522;
-  background: #fbfdf9;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  background: #f8fbf8;
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: .85rem;
   cursor: pointer;
   transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease, background .2s ease;
@@ -2697,7 +3077,7 @@ body.no-topbar .main-footer .float-right{
 
 .sanitary-check-card:hover {
   background: #fff;
-  border-color: rgba(63, 126, 42, 0.35);
+  border-color: rgba(46, 171, 91, 0.35);
   box-shadow: 0 12px 24px rgba(31, 42, 27, 0.08);
   transform: translateY(-1px);
 }
@@ -2716,7 +3096,7 @@ body.no-topbar .main-footer .float-right{
   width: 2.25rem;
   height: 2.25rem;
   color: var(--agro);
-  background: rgba(63, 126, 42, 0.1);
+  background: rgba(46, 171, 91, 0.1);
   border-radius: .72rem;
 }
 
@@ -2726,8 +3106,8 @@ body.no-topbar .main-footer .float-right{
 
 .sanitary-check-card:has(input:checked) {
   background: #f3fbef;
-  border-color: rgba(63, 126, 42, 0.42);
-  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.1);
+  border-color: rgba(46, 171, 91, 0.42);
+  box-shadow: 0 10px 22px rgba(46, 171, 91, 0.1);
 }
 
 .sanitary-check-card:has(input:checked) span {
@@ -2738,8 +3118,8 @@ body.no-topbar .main-footer .float-right{
 .sanitary-achievement-group {
   padding: 1rem;
   margin-bottom: 1rem;
-  background: #fbfdf9;
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  background: #f8fbf8;
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .9rem;
 }
 
@@ -2764,7 +3144,7 @@ body.no-topbar .main-footer .float-right{
   padding: 1rem;
   margin-bottom: 1rem;
   background: #f8fbf6;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: .9rem;
 }
 
@@ -2799,7 +3179,7 @@ body.no-topbar .main-footer .float-right{
   width: min(100%, 320px);
   max-height: 240px;
   object-fit: cover;
-  border: 1px solid rgba(63, 126, 42, 0.14);
+  border: 1px solid rgba(46, 171, 91, 0.14);
   border-radius: .75rem;
   box-shadow: 0 12px 22px rgba(31, 42, 27, 0.1);
   cursor: pointer;
@@ -2951,7 +3331,7 @@ body.no-topbar .main-footer .float-right{
   height: 42px;
   color: #263522;
   background: #fff;
-  border: 1px solid rgba(63, 126, 42, 0.15);
+  border: 1px solid rgba(46, 171, 91, 0.15);
   border-radius: .8rem;
   box-shadow: 0 6px 18px rgba(31, 42, 27, 0.045);
   transition: border-color .2s ease, box-shadow .2s ease;
@@ -2962,8 +3342,8 @@ body.no-topbar .main-footer .float-right{
 }
 
 .orders-filter .form-control:focus {
-  border-color: rgba(63, 126, 42, 0.5);
-  box-shadow: 0 0 0 .2rem rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.5);
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, 0.12);
 }
 
 .orders-filter__actions {
@@ -2987,16 +3367,16 @@ body.no-topbar .main-footer .float-right{
 .orders-filter__actions .btn-light {
   color: #41503e;
   background: #f7fbf4;
-  border: 1px solid rgba(63, 126, 42, 0.16);
+  border: 1px solid rgba(46, 171, 91, 0.16);
 }
 
 .orders-filter__actions .btn-light:hover {
   color: var(--agro-700);
-  background: #eef7ef;
+  background: #eaf8ef;
 }
 
 .orders-table-wrap {
-  border: 1px solid rgba(63, 126, 42, 0.08);
+  border: 1px solid rgba(46, 171, 91, 0.08);
   border-radius: .85rem;
 }
 
@@ -3007,7 +3387,7 @@ body.no-topbar .main-footer .float-right{
 .orders-table thead th {
   padding: .95rem 1rem;
   color: #0f180d !important;
-  background: #eef7ef !important;
+  background: #eaf8ef !important;
   border-top: 0;
   border-bottom: 1px solid #dbe9dc;
   font-size: .86rem;
@@ -3028,8 +3408,8 @@ body.no-topbar .main-footer .float-right{
 }
 
 .orders-table tbody tr:hover {
-  background: #fbfdf9;
-  box-shadow: inset 4px 0 0 rgba(63, 126, 42, 0.45);
+  background: #f8fbf8;
+  box-shadow: inset 4px 0 0 rgba(46, 171, 91, 0.45);
 }
 
 .orders-table__id {
@@ -3132,7 +3512,7 @@ body.no-topbar .main-footer .float-right{
   padding: 1rem;
   color: #41503e;
   background: #f7fbf4;
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .85rem;
 }
 
@@ -3177,8 +3557,8 @@ body.no-topbar .main-footer .float-right{
   gap: .9rem;
   min-height: 96px;
   padding: 1rem;
-  background: #fbfdf9;
-  border: 1px solid rgba(63, 126, 42, 0.12);
+  background: #f8fbf8;
+  border: 1px solid rgba(46, 171, 91, 0.12);
   border-radius: .9rem;
   box-shadow: 0 10px 24px rgba(31, 42, 27, 0.055);
 }
@@ -3277,7 +3657,7 @@ body.no-topbar .main-footer .float-right{
   color: #fff;
   background: linear-gradient(135deg, var(--agro), var(--agro-700));
   border-radius: .85rem;
-  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.16);
+  box-shadow: 0 10px 22px rgba(46, 171, 91, 0.16);
 }
 
 .orders-detail-header h2 {
@@ -3312,7 +3692,7 @@ body.no-topbar .main-footer .float-right{
 .orders-status-form .form-control {
   width: 150px;
   height: 38px;
-  border-color: rgba(63, 126, 42, 0.18);
+  border-color: rgba(46, 171, 91, 0.18);
   border-radius: .55rem;
 }
 
@@ -3362,14 +3742,14 @@ body.no-topbar .main-footer .float-right{
   border: 0;
   border-radius: .65rem;
   font-weight: 700;
-  box-shadow: 0 10px 22px rgba(63, 126, 42, 0.18);
+  box-shadow: 0 10px 22px rgba(46, 171, 91, 0.18);
   transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
 .orders-back-btn:hover {
   color: #fff !important;
   background: linear-gradient(135deg, var(--agro-700), #244d18);
-  box-shadow: 0 12px 26px rgba(63, 126, 42, 0.24);
+  box-shadow: 0 12px 26px rgba(46, 171, 91, 0.24);
   transform: translateY(-1px);
 }
 
@@ -3411,13 +3791,13 @@ body.no-topbar .main-footer .float-right{
 
 .category-form-card .form-control {
   min-height: 38px;
-  border-color: rgba(63, 126, 42, 0.18);
+  border-color: rgba(46, 171, 91, 0.18);
   border-radius: .35rem;
 }
 
 .category-form-card .form-control:focus {
-  border-color: rgba(63, 126, 42, 0.5);
-  box-shadow: 0 0 0 .2rem rgba(63, 126, 42, 0.12);
+  border-color: rgba(46, 171, 91, 0.5);
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, 0.12);
 }
 
 .category-form-card textarea.form-control {
@@ -3547,5 +3927,346 @@ body.no-topbar .main-footer .float-right{
 
   .category-form-actions .btn {
     width: 100%;
+  }
+}
+
+/* === Paleta AgroVida 2026 === */
+html,
+body,
+.wrapper,
+.content-wrapper,
+.public-standalone-shell,
+.public-standalone-content {
+  background-color: var(--app-background);
+  color: var(--app-text);
+}
+
+.content-wrapper.bg-white {
+  background-color: var(--app-background) !important;
+}
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item,
+.maquinaria-wizard__shell,
+.agro-wizard__shell {
+  background-color: var(--app-card);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.card-title,
+.module-card-title,
+.text-dark {
+  color: var(--app-text) !important;
+}
+
+.text-success,
+.text-primary {
+  color: var(--agro) !important;
+}
+
+.text-muted {
+  color: var(--app-muted) !important;
+}
+
+.btn-success,
+.btn-primary,
+.badge-success,
+.badge-primary,
+.bg-success,
+.bg-primary {
+  background-color: var(--agro) !important;
+  border-color: var(--agro) !important;
+  color: #fff !important;
+}
+
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.show > .btn-success.dropdown-toggle,
+.show > .btn-primary.dropdown-toggle {
+  background-color: var(--agro-700) !important;
+  border-color: var(--agro-700) !important;
+  color: #fff !important;
+}
+
+.btn-outline-success,
+.btn-outline-primary {
+  background-color: #fff;
+  border-color: var(--agro) !important;
+  color: var(--agro-700) !important;
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active,
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--agro) !important;
+  border-color: var(--agro) !important;
+  color: #fff !important;
+}
+
+.form-control:focus,
+.custom-select:focus,
+.custom-control-input:focus ~ .custom-control-label::before {
+  border-color: var(--agro) !important;
+  box-shadow: 0 0 0 .2rem rgba(46, 171, 91, .18) !important;
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+  background-color: var(--agro) !important;
+  border-color: var(--agro) !important;
+}
+
+.page-item.active .page-link,
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+  background-color: var(--agro) !important;
+  border-color: var(--agro) !important;
+  color: #fff !important;
+}
+
+.page-link {
+  color: var(--agro-700);
+}
+
+.page-link:hover {
+  background-color: var(--agro-100);
+  border-color: rgba(46, 171, 91, .25);
+  color: var(--agro-700);
+}
+
+.project-topbar,
+.module-list-header,
+.theme-agro .brand-link {
+  background: var(--agro) !important;
+  color: #fff !important;
+}
+
+.theme-agro .main-sidebar {
+  background: var(--agro-700) !important;
+}
+
+.theme-agro .main-header.navbar {
+  background: var(--app-background);
+  border-bottom-color: #dcebe1;
+}
+
+.theme-agro .nav-sidebar .nav-link {
+  color: rgba(255, 255, 255, .78);
+}
+
+.theme-agro .nav-sidebar .nav-link:hover,
+.theme-agro .nav-sidebar .nav-link.active {
+  background: rgba(255, 255, 255, .14) !important;
+  color: #fff !important;
+}
+
+.theme-agro .nav-icon {
+  color: rgba(255, 255, 255, .72) !important;
+}
+
+.theme-agro .card-header,
+.theme-agro .table thead th,
+.orders-table thead th {
+  background: var(--agro-100) !important;
+  border-color: #dcebe1 !important;
+  color: var(--app-text) !important;
+}
+
+.selectable-action:hover,
+.selectable-action:focus-visible,
+.maquinaria-wizard__step-indicator.is-active,
+.agro-wizard__step-indicator.is-active {
+  border-color: var(--agro) !important;
+}
+
+.agro-accent,
+.landing-page .eyebrow,
+.module-accent {
+  color: var(--agro-accent) !important;
+}
+
+.agro-accent-bg {
+  background-color: var(--agro-accent) !important;
+  color: var(--app-text) !important;
+}
+
+::selection {
+  background: rgba(244, 162, 97, .35);
+  color: var(--app-text);
+}
+
+/* Contraste y avisos de navegacion */
+.project-topbar .account-menu__trigger:hover,
+.project-topbar .account-menu.show .account-menu__trigger {
+  background: rgba(255, 255, 255, .92) !important;
+}
+
+.project-topbar .account-menu__trigger:hover .account-menu__identity strong,
+.project-topbar .account-menu__trigger:hover .account-menu__identity small,
+.project-topbar .account-menu__trigger:hover .account-menu__chevron,
+.project-topbar .account-menu.show .account-menu__identity strong,
+.project-topbar .account-menu.show .account-menu__identity small,
+.project-topbar .account-menu.show .account-menu__chevron {
+  color: var(--app-text) !important;
+  opacity: 1;
+}
+
+.nav-notification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: .18rem;
+  padding: 0 .3rem;
+  border: 2px solid var(--agro);
+  border-radius: 999px;
+  background: #e63946;
+  color: #fff !important;
+  font-size: .65rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 3px 9px rgba(163, 30, 42, .3);
+  animation: notificationPulse 2.2s ease-in-out infinite;
+}
+
+.nav-link.active .nav-notification-badge,
+.nav-link:hover .nav-notification-badge {
+  border-color: rgba(255, 255, 255, .85);
+}
+
+.nav-notification-badge--sidebar {
+  float: right;
+  margin-top: .08rem;
+  margin-right: .2rem;
+  border-color: var(--agro-700);
+}
+
+.account-menu__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: #e63946;
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+@keyframes notificationPulse {
+  0%, 100% {
+    box-shadow: 0 3px 9px rgba(163, 30, 42, .25);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 3px 13px rgba(163, 30, 42, .42);
+    transform: scale(1.07);
+  }
+}
+
+.bg-success:not(.bg-success-light),
+.bg-primary,
+.module-list-header,
+.theme-agro .card-header.bg-success,
+.theme-agro .card-header.bg-primary,
+.modal-header.bg-success,
+.modal-header.bg-primary,
+.global-file-viewer .modal-header,
+.sanitary-image-modal__header,
+.seller-document-modal .modal-header,
+.maquinaria-map-modal .modal-header,
+.maquinaria-publication-preview .modal-header {
+  color: #fff !important;
+}
+
+.bg-success:not(.bg-success-light) h1,
+.bg-success:not(.bg-success-light) h2,
+.bg-success:not(.bg-success-light) h3,
+.bg-success:not(.bg-success-light) h4,
+.bg-success:not(.bg-success-light) h5,
+.bg-success:not(.bg-success-light) h6,
+.bg-primary h1,
+.bg-primary h2,
+.bg-primary h3,
+.bg-primary h4,
+.bg-primary h5,
+.bg-primary h6,
+.module-list-header h1,
+.module-list-header h2,
+.module-list-header h3,
+.module-list-header h4,
+.module-list-header h5,
+.module-list-header h6,
+.theme-agro .card-header.bg-success h1,
+.theme-agro .card-header.bg-success h2,
+.theme-agro .card-header.bg-success h3,
+.theme-agro .card-header.bg-success h4,
+.theme-agro .card-header.bg-success h5,
+.theme-agro .card-header.bg-success h6,
+.theme-agro .card-header.bg-primary h1,
+.theme-agro .card-header.bg-primary h2,
+.theme-agro .card-header.bg-primary h3,
+.theme-agro .card-header.bg-primary h4,
+.theme-agro .card-header.bg-primary h5,
+.theme-agro .card-header.bg-primary h6,
+.global-file-viewer .modal-header h1,
+.global-file-viewer .modal-header h2,
+.global-file-viewer .modal-header h3,
+.global-file-viewer .modal-header h4,
+.global-file-viewer .modal-header h5,
+.global-file-viewer .modal-header h6,
+.sanitary-image-modal__header h1,
+.sanitary-image-modal__header h2,
+.sanitary-image-modal__header h3,
+.sanitary-image-modal__header h4,
+.sanitary-image-modal__header h5,
+.sanitary-image-modal__header h6,
+.seller-document-modal .modal-header h1,
+.seller-document-modal .modal-header h2,
+.seller-document-modal .modal-header h3,
+.seller-document-modal .modal-header h4,
+.seller-document-modal .modal-header h5,
+.seller-document-modal .modal-header h6,
+.maquinaria-map-modal .modal-header h1,
+.maquinaria-map-modal .modal-header h2,
+.maquinaria-map-modal .modal-header h3,
+.maquinaria-map-modal .modal-header h4,
+.maquinaria-map-modal .modal-header h5,
+.maquinaria-map-modal .modal-header h6,
+.maquinaria-publication-preview .modal-header h1,
+.maquinaria-publication-preview .modal-header h2,
+.maquinaria-publication-preview .modal-header h3,
+.maquinaria-publication-preview .modal-header h4,
+.maquinaria-publication-preview .modal-header h5,
+.maquinaria-publication-preview .modal-header h6 {
+  color: #fff !important;
+}
+
+.theme-agro .card-header.bg-success,
+.theme-agro .card-header.bg-primary {
+  background: var(--agro) !important;
+  border-color: var(--agro) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-notification-badge {
+    animation: none;
   }
 }

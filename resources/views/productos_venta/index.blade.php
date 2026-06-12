@@ -4,6 +4,91 @@
 @section('page_title', $esAdmin ? 'Productos en venta' : 'Mis productos')
 
 @section('content')
+    <style>
+        .product-type-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: .4rem;
+        }
+
+        .product-type-filter {
+            position: relative;
+            margin: 0;
+        }
+
+        .product-type-filter input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .product-type-filter span {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            min-height: 36px;
+            padding: .45rem .8rem;
+            border: 1px solid var(--agro);
+            border-radius: .65rem;
+            background: #fff;
+            color: var(--agro-700);
+            cursor: pointer;
+            font-weight: 650;
+            transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+
+        .product-type-filter span::before {
+            content: '';
+            width: .7rem;
+            height: .7rem;
+            border: 2px solid currentColor;
+            border-radius: .2rem;
+            background: transparent;
+        }
+
+        .product-type-filter input:checked + span {
+            background: var(--agro);
+            color: #fff;
+            box-shadow: 0 7px 16px rgba(46, 171, 91, .2);
+        }
+
+        .product-type-filter input:checked + span::before {
+            border-color: #fff;
+            background: #fff;
+            box-shadow: inset 0 0 0 2px var(--agro);
+        }
+
+        .product-type-filter:hover span {
+            transform: translateY(-1px);
+        }
+
+        .product-type-filter input:focus-visible + span {
+            box-shadow: 0 0 0 .2rem rgba(46, 171, 91, .2);
+        }
+
+        .product-type-filter__hint {
+            width: 100%;
+            color: var(--app-muted);
+            font-size: .72rem;
+            text-align: right;
+        }
+
+        @media (max-width: 767.98px) {
+            .product-type-filters {
+                justify-content: flex-start;
+                margin-top: .75rem;
+            }
+
+            .product-type-filter__hint {
+                text-align: left;
+            }
+        }
+    </style>
+
     <div class="container-fluid">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between">
@@ -14,18 +99,27 @@
                     </h3>
                     <div class="text-muted small">{{ $productos->total() }} productos encontrados</div>
                 </div>
-                @unless($esAdmin)
-                    <div class="btn-group mt-2 mt-md-0">
-                        <a href="{{ route('ganados.create') }}" class="btn btn-sm btn-outline-success">Ganado</a>
-                        <a href="{{ route('maquinarias.create') }}" class="btn btn-sm btn-outline-success">Maquinaria</a>
-                        <a href="{{ route('organicos.create') }}" class="btn btn-sm btn-success">Organico</a>
-                    </div>
-                @endunless
+                <div class="product-type-filters">
+                    @foreach([
+                        'ganado' => ['Ganado', 'fa-horse'],
+                        'maquinaria' => ['Maquinaria', 'fa-tractor'],
+                        'organico' => ['Orgánico', 'fa-leaf'],
+                    ] as $typeValue => [$typeLabel, $typeIcon])
+                        <label class="product-type-filter">
+                            <input type="checkbox" name="tipos[]" value="{{ $typeValue }}"
+                                form="product-filter-form" @checked(in_array($typeValue, $tipos, true))
+                                onchange="document.getElementById('product-filter-form').requestSubmit()">
+                            <span><i class="fas {{ $typeIcon }}"></i>{{ $typeLabel }}</span>
+                        </label>
+                    @endforeach
+                    <small class="product-type-filter__hint">Sin selección se muestran todos</small>
+                </div>
             </div>
 
             <div class="card-body border-bottom">
-                <form method="GET" action="{{ route('productos-venta.index') }}" class="form-row align-items-end">
-                    <div class="col-md-5 mb-2">
+                <form id="product-filter-form" method="GET" action="{{ route('productos-venta.index') }}"
+                    class="form-row align-items-end">
+                    <div class="col-md-8 mb-2">
                         <label for="q" class="small text-muted">Buscar producto</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
@@ -35,18 +129,9 @@
                                 placeholder="Nombre del producto">
                         </div>
                     </div>
-                    <div class="col-md-4 mb-2">
-                        <label for="tipo" class="small text-muted">Categoria</label>
-                        <select id="tipo" name="tipo" class="form-control">
-                            <option value="">Todas</option>
-                            <option value="ganado" @selected($tipo === 'ganado')>Ganado</option>
-                            <option value="maquinaria" @selected($tipo === 'maquinaria')>Maquinaria</option>
-                            <option value="organico" @selected($tipo === 'organico')>Organicos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-2 d-flex">
+                    <div class="col-md-4 mb-2 d-flex">
                         <button class="btn btn-success flex-fill"><i class="fas fa-filter mr-1"></i>Filtrar</button>
-                        @if($q || $tipo)
+                        @if($q || $tipos !== [])
                             <a href="{{ route('productos-venta.index') }}" class="btn btn-light ml-2" title="Limpiar filtros">
                                 <i class="fas fa-times"></i>
                             </a>

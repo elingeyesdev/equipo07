@@ -2,7 +2,7 @@
     $resenas = $producto->resenas;
 @endphp
 
-<section class="card detail-card mb-4">
+<section class="card detail-card mb-4 product-detail-reviews">
     <div class="detail-card-header detail-card-header-success">
         <h5 class="mb-0"><i class="fas fa-star mr-2"></i>Calificaciones verificadas</h5>
     </div>
