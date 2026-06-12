@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Envio {{ $detalle->id }} | AgroVida</title>
+    <title>Envio {{ $detalle->grupo_envio }} | AgroVida</title>
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
@@ -161,15 +161,19 @@
 </head>
 <body>
     @php
-        $actual = $detalle->estado_transporte_actual === 'asignado' && $detalle->product_type === 'organico'
+        $actual = $detalle->estado_transporte_actual === 'asignado' && in_array($detalle->product_type, ['organico', 'ganado'], true)
             ? 'aceptado'
             : $detalle->estado_transporte_actual;
         $actualVisible = $estadoFases[$actual] ?? $actual;
         $actualIndex = array_search($actualVisible, $flujo, true);
-        $productoUbicacion = $detalle->product?->ubicacion
-            ?? $detalle->organico?->origen
+        $productoUbicacion = $detalle->origen_direccion_actual
             ?? 'Ubicacion no registrada';
-        $tipoEnvio = $detalle->es_alquiler_maquinaria ? 'maquinaria' : 'organico';
+        $tipoEnvio = match ($detalle->product_type) {
+            'ganado' => 'ganado',
+            'maquinaria' => 'maquinaria',
+            default => 'organicos',
+        };
+        $resumenProductos = $detallesEnvio->pluck('nombre_producto')->join(', ');
     @endphp
 
     <header class="topbar">
@@ -186,8 +190,8 @@
     <main class="page">
         <section class="status-band">
             <div>
-                <small>Envio de {{ $tipoEnvio }} #{{ $detalle->id }}</small>
-                <strong>{{ $detalle->nombre_producto }}</strong>
+                <small>Envio de {{ $tipoEnvio }} · {{ $detallesEnvio->count() }} producto(s)</small>
+                <strong>{{ $resumenProductos }}</strong>
             </div>
             <span class="status-pill" id="estado-label">{{ $detalle->estado_transporte_label }}</span>
         </section>
@@ -214,8 +218,20 @@
                 <div class="panel-header"><i class="fas fa-box-open"></i> Datos de la entrega</div>
                 <div class="panel-body">
                     <dl class="facts">
-                        <div><dt>Producto</dt><dd>{{ $detalle->nombre_producto }}</dd></div>
-                        <div><dt>Cantidad</dt><dd>{{ $detalle->cantidad_tiempo_texto }}</dd></div>
+                        <div>
+                            <dt>Productos</dt>
+                            <dd>
+                                @foreach ($detallesEnvio as $itemEnvio)
+                                    <div>
+                                        <strong>{{ $itemEnvio->nombre_producto }}</strong>
+                                        · {{ $itemEnvio->cantidad_tiempo_texto }}
+                                        @if ($itemEnvio->notas)
+                                            <small>({{ $itemEnvio->notas }})</small>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </dd>
+                        </div>
                         <div><dt>Recojo</dt><dd>{{ $productoUbicacion }}</dd></div>
                         <div><dt>Entrega</dt><dd>{{ $detalle->pedido->destino_entrega ?: 'Destino no registrado' }}</dd></div>
                         <div><dt>Comprador</dt><dd>{{ $detalle->pedido->user->name ?? 'No disponible' }}</dd></div>
@@ -334,14 +350,14 @@
                     popupAnchor: [0, -20]
                 });
             }
-            const originIcon = mapIcon('origin', 'fa-box', @json($detalle->nombre_producto));
+            const originIcon = mapIcon('origin', 'fa-box', @json($detallesEnvio->count() . ' producto(s)'));
             const targetIcon = mapIcon('target', 'fa-home', @json($detalle->pedido->user->name ?? 'Comprador'));
             const driverIcon = mapIcon('driver', 'fa-truck', 'Mi ubicacion');
 
             if (originLat && originLng) {
                 originMarker = L.marker([originLat, originLng], { icon: originIcon })
                     .addTo(map)
-                    .bindPopup('<strong>Punto de recojo</strong><br>' + @json($detalle->nombre_producto) +
+                    .bindPopup('<strong>Punto de recojo</strong><br>' + @json($resumenProductos) +
                         '<br>' + @json($productoUbicacion));
                 bounds.push([originLat, originLng]);
             }

@@ -1,7 +1,7 @@
 @extends('layouts.adminlte')
 
-@section('title', 'Solicitud #' . $solicitud->id)
-@section('page_title', 'Solicitud #' . $solicitud->id)
+@section('title', 'Pedido agrupado #' . $solicitud->pedido_id)
+@section('page_title', 'Pedido agrupado #' . $solicitud->pedido_id)
 
 @section('content')
     @php
@@ -21,13 +21,13 @@
         $cantidadLabel = $solicitud->cantidad_label;
         $precioLabel = $solicitud->precio_label;
         $totalLabel = $isMaquinaria ? 'Total del alquiler' : 'Subtotal';
-        $usaTransporteExterno = in_array($solicitud->product_type, ['organico', 'maquinaria'], true);
+        $usaTransporteExterno = in_array($solicitud->product_type, ['organico', 'ganado', 'maquinaria'], true);
         $deliveryLabels = $isMaquinaria
             ? \App\Models\PedidoDetalle::transporteFases()
             : \App\Services\TransporteAccesoService::ESTADOS_ORGANICO;
         $deliveryStatePhases = $isMaquinaria ? \App\Models\PedidoDetalle::transporteEstadoFases() : [];
         $deliveryFlow = array_keys($deliveryLabels);
-        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado' && $solicitud->product_type === 'organico'
+        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado' && in_array($solicitud->product_type, ['organico', 'ganado'], true)
             ? 'aceptado'
             : $solicitud->estado_transporte_actual;
         $deliveryCurrentVisible = $deliveryStatePhases[$deliveryCurrent] ?? $deliveryCurrent;
@@ -177,6 +177,136 @@
             </div>
         @endif
 
+        @php
+            $pendientesGrupo = $detallesGrupo->where('estado_solicitud', 'pendiente')->count();
+            $aceptadosGrupo = $detallesGrupo->where('estado_solicitud', 'aceptada')->count();
+            $rechazadosGrupo = $detallesGrupo->where('estado_solicitud', 'rechazada')->count();
+        @endphp
+
+        <div class="card">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-shopping-basket mr-1"></i>Productos solicitados
+                    </h3>
+                    <div class="small text-muted">
+                        Comprador: {{ $solicitud->pedido->user->name ?? 'No disponible' }}
+                        · {{ $detallesGrupo->count() }} producto(s) en este envío
+                    </div>
+                </div>
+                <div>
+                    @if ($pendientesGrupo)
+                        <span class="badge badge-warning">{{ $pendientesGrupo }} pendiente(s)</span>
+                    @endif
+                    @if ($aceptadosGrupo)
+                        <span class="badge badge-success">{{ $aceptadosGrupo }} aceptado(s)</span>
+                    @endif
+                    @if ($rechazadosGrupo)
+                        <span class="badge badge-secondary">{{ $rechazadosGrupo }} rechazado(s)</span>
+                    @endif
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Stock actual</th>
+                            <th>Subtotal</th>
+                            <th>Estado</th>
+                            <th class="text-right">Decisión</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($detallesGrupo as $itemGrupo)
+                            @php
+                                $estadoBadge = [
+                                    'pendiente' => 'warning',
+                                    'aceptada' => 'success',
+                                    'rechazada' => 'secondary',
+                                ][$itemGrupo->estado_solicitud] ?? 'secondary';
+                            @endphp
+                            <tr>
+                                <td>
+                                    <strong>{{ $itemGrupo->nombre_producto }}</strong>
+                                    @if ($itemGrupo->notas)
+                                        <br><small class="text-muted">{{ $itemGrupo->notas }}</small>
+                                    @endif
+                                </td>
+                                <td>{{ ucfirst($itemGrupo->product_type) }}</td>
+                                <td>{{ $itemGrupo->cantidad_tiempo_texto }}</td>
+                                <td>
+                                    @if (in_array($itemGrupo->product_type, ['organico', 'ganado'], true))
+                                        {{ $itemGrupo->product?->stock ?? 0 }}
+                                    @else
+                                        No aplica
+                                    @endif
+                                </td>
+                                <td><strong>Bs {{ number_format($itemGrupo->subtotal, 2) }}</strong></td>
+                                <td>
+                                    <span class="badge badge-{{ $estadoBadge }}">
+                                        {{ $estados[$itemGrupo->estado_solicitud] ?? ucfirst($itemGrupo->estado_solicitud) }}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    @if ($itemGrupo->estado_solicitud === 'pendiente')
+                                        <div class="d-flex flex-wrap justify-content-end">
+                                            <form action="{{ route('vendedor.solicitudes.aceptar', $itemGrupo) }}"
+                                                method="POST" class="mr-2 mb-1 question-confirm-form"
+                                                data-confirm-title="¿Aceptar este producto?"
+                                                data-confirm-text="Se descontará la cantidad solicitada del inventario."
+                                                data-confirm-button="Sí, aceptar producto"
+                                                data-cancel-button="Revisar"
+                                                data-loading-text="Aceptando producto...">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check mr-1"></i>Aceptar este producto
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('vendedor.solicitudes.cancelar', $itemGrupo) }}"
+                                                method="POST" class="mb-1"
+                                                onsubmit="return confirm('¿Rechazar únicamente este producto?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-times mr-1"></i>Rechazar este producto
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @elseif ($itemGrupo->estado_solicitud === 'aceptada')
+                                        <span class="text-success"><i class="fas fa-check-circle mr-1"></i>Aceptado</span>
+                                    @else
+                                        <span class="text-muted"><i class="fas fa-times-circle mr-1"></i>Rechazado</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-right">Total solicitado</th>
+                            <th>Bs {{ number_format($detallesGrupo->sum('subtotal'), 2) }}</th>
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @if ($pendientesGrupo)
+                <div class="card-footer text-muted">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Responde todos los productos. Después podrás habilitar un solo transporte para los aceptados.
+                </div>
+            @elseif ($aceptadosGrupo && $rechazadosGrupo)
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        Se aceptaron {{ $aceptadosGrupo }} producto(s) y se rechazaron {{ $rechazadosGrupo }}.
+                        El envío incluirá únicamente los productos aceptados.
+                    </div>
+                </div>
+            @endif
+        </div>
+
         <div class="row">
             <div class="col-lg-5">
                 <div class="card">
@@ -226,6 +356,21 @@
                             @if ($solicitud->notas)
                                 <dt class="col-sm-5">Notas</dt>
                                 <dd class="col-sm-7">{{ $solicitud->notas }}</dd>
+                            @endif
+
+                            @if ($solicitud->detallesEnvio->count() > 1)
+                                <dt class="col-sm-5">Mismo envio</dt>
+                                <dd class="col-sm-7">
+                                    @foreach ($solicitud->detallesEnvio as $itemEnvio)
+                                        <div>
+                                            {{ $itemEnvio->nombre_producto }}
+                                            · {{ $itemEnvio->cantidad_tiempo_texto }}
+                                            <span class="badge badge-{{ $itemEnvio->estado_solicitud === 'aceptada' ? 'success' : 'warning' }}">
+                                                {{ $estados[$itemEnvio->estado_solicitud] ?? $itemEnvio->estado_solicitud }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </dd>
                             @endif
 
                             @if ($solicitud->estado_solicitud === 'aceptada' && $usaTransporteExterno)
@@ -281,7 +426,7 @@
                                 </div>
                             </div>
 
-                            @if (!$isMaquinaria && in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
+                            @if (!$pendientesGrupo && !$isMaquinaria && in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
                                 <form method="POST"
                                     action="{{ route('vendedor.solicitudes.transporte.preparado', $solicitud) }}"
                                     class="mb-3 question-confirm-form"
@@ -381,7 +526,7 @@
                         </div>
                     @endif
 
-                    @if(in_array($solicitud->product_type, ['organico', 'maquinaria'], true)
+                    @if(in_array($solicitud->product_type, ['organico', 'ganado', 'maquinaria'], true)
                         && $solicitud->estado_solicitud === 'aceptada'
                         && (
                             $solicitud->recepcion_confirmada_at
@@ -393,7 +538,7 @@
                         </div>
                     @endif
 
-                    @if ($solicitud->estado_solicitud === 'pendiente')
+                    @if (false)
                         <div class="card-footer d-flex flex-wrap">
                             <form action="{{ route('vendedor.solicitudes.aceptar', $solicitud) }}" method="POST"
                                 class="mr-2 mb-2 question-confirm-form"

@@ -17,13 +17,15 @@ class TransporteAccesoExterno
                 'detalle.pedido.user',
                 'detalle.vendedor',
                 'detalle.organico',
+                'detalle.ganado',
                 'detalle.maquinaria',
+                'detalles',
             ])
                 ->find($accesoId)
             : null;
 
         if (!$acceso || !$acceso->estaActivo()
-            || !in_array($acceso->detalle?->product_type, ['organico', 'maquinaria'], true)
+            || !in_array($acceso->detalle?->product_type, ['organico', 'ganado', 'maquinaria'], true)
             || $acceso->detalle?->estado_solicitud !== 'aceptada') {
             $request->session()->forget('transporte_acceso_id');
 

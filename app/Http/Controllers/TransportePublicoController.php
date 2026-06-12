@@ -27,7 +27,7 @@ class TransportePublicoController extends Controller
 
         $acceso = $service->buscarActivo($data['codigo']);
 
-        if (!$acceso) {
+        if (! $acceso) {
             return back()
                 ->withInput()
                 ->withErrors(['codigo' => 'El codigo no es valido, vencio o fue revocado.']);
@@ -47,12 +47,18 @@ class TransportePublicoController extends Controller
             'detalle.pedido.user',
             'detalle.vendedor',
             'detalle.organico',
+            'detalle.ganado',
             'detalle.maquinaria',
             'detalle.ultimaUbicacion',
             'detalle.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(12),
+            'detalles' => fn ($query) => $query
+                ->where('estado_solicitud', 'aceptada')
+                ->with(['organico', 'ganado', 'maquinaria'])
+                ->orderBy('id'),
         ]);
 
         $detalle = $acceso->detalle;
+        $detallesEnvio = $acceso->detalles;
         $siguienteEstado = $service->siguienteEstado($detalle);
         $estadoLabels = $service->estadosPara($detalle);
         $faseLabels = $service->fasesPara($detalle);
@@ -70,6 +76,7 @@ class TransportePublicoController extends Controller
         return view('transporte.envio', compact(
             'acceso',
             'detalle',
+            'detallesEnvio',
             'siguienteEstado',
             'estadoLabels',
             'faseLabels',
@@ -85,7 +92,7 @@ class TransportePublicoController extends Controller
         $acceso = $request->attributes->get('transporteAcceso');
         $detalle = $acceso->detalle;
 
-        if (!$service->puedeActivarGps($detalle)) {
+        if (! $service->puedeActivarGps($detalle)) {
             return response()->json([
                 'ok' => false,
                 'message' => 'El transporte todavia no esta habilitado para compartir ubicacion.',
@@ -100,18 +107,25 @@ class TransportePublicoController extends Controller
             'rumbo_grados' => ['nullable', 'numeric', 'min:0', 'max:360'],
         ]);
 
-        $ubicacion = PedidoUbicacion::create([
-            'pedido_id' => $detalle->pedido_id,
-            'pedido_detalle_id' => $detalle->id,
-            'user_id' => null,
-            'transporte_acceso_id' => $acceso->id,
-            'latitud' => $data['latitud'],
-            'longitud' => $data['longitud'],
-            'precision_metros' => $data['precision_metros'] ?? null,
-            'velocidad_m_s' => $data['velocidad_m_s'] ?? null,
-            'rumbo_grados' => $data['rumbo_grados'] ?? null,
-            'tipo_recorrido' => $service->tipoRecorrido($detalle),
-        ]);
+        $ubicacion = null;
+        $detallesEnvio = $acceso->detalles()
+            ->where('estado_solicitud', 'aceptada')
+            ->get();
+
+        foreach ($detallesEnvio as $detalleEnvio) {
+            $ubicacion = PedidoUbicacion::create([
+                'pedido_id' => $detalleEnvio->pedido_id,
+                'pedido_detalle_id' => $detalleEnvio->id,
+                'user_id' => null,
+                'transporte_acceso_id' => $acceso->id,
+                'latitud' => $data['latitud'],
+                'longitud' => $data['longitud'],
+                'precision_metros' => $data['precision_metros'] ?? null,
+                'velocidad_m_s' => $data['velocidad_m_s'] ?? null,
+                'rumbo_grados' => $data['rumbo_grados'] ?? null,
+                'tipo_recorrido' => $service->tipoRecorrido($detalleEnvio),
+            ]);
+        }
 
         return response()->json([
             'ok' => true,
@@ -185,7 +199,7 @@ class TransportePublicoController extends Controller
     {
         $siguiente = $service->siguienteEstado($detalle);
 
-        if (!$siguiente) {
+        if (! $siguiente) {
             return null;
         }
 

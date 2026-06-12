@@ -172,6 +172,11 @@
             padding: 1.15rem !important;
         }
 
+        .hero-heading {
+            color: #fff !important;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+        }
+
         .hero-filter-form.form-row {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -286,8 +291,8 @@
     <section class="hero"
         style="background:url('{{ asset('img/bg-agrovida.jpg') }}') center/cover no-repeat; min-height:400px; position:relative;">
         <div class="container py-5 text-white" style="position:relative; z-index:2;">
-            <h5 class="mb-2">Bienvenido a Agrovida</h5>
-            <h1 class="display-5 font-weight-bold">
+            <h5 class="hero-heading mb-2">Bienvenido a Agrovida</h5>
+            <h1 class="hero-heading display-5 font-weight-bold">
                 Tu mercado de animales, maquinaria y<br>orgánicos en un solo lugar
             </h1>
 

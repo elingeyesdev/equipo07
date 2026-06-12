@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CartItem;
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
-use App\Models\CartItem;
+use App\Models\TransporteAcceso;
+use App\Models\TransporteEvento;
+use App\Services\EnvioAgrupacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\TransporteAcceso;
-use App\Models\TransporteEvento;
 
 class PedidoController extends Controller
 {
@@ -68,7 +69,6 @@ class PedidoController extends Controller
         return view('pedidos.index', compact('pedidos', 'modoHistorial'));
     }
 
-
     public function show(Pedido $pedido)
     {
         if ($pedido->user_id !== Auth::id()) {
@@ -89,7 +89,7 @@ class PedidoController extends Controller
         return view('pedidos.show', compact('pedido'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EnvioAgrupacionService $agrupacionService)
     {
         $request->validate([
             'destino_entrega' => 'required|string|min:5|max:500',
@@ -121,11 +121,12 @@ class PedidoController extends Controller
 
         try {
             $total = $cartItems->sum('subtotal');
+            $gruposEnvio = $agrupacionService->agrupar($cartItems);
 
             $pedido = Pedido::create([
-                'user_id'         => $userId,
-                'total'           => $total,
-                'estado'          => 'pendiente',
+                'user_id' => $userId,
+                'total' => $total,
+                'estado' => 'pendiente',
                 'destino_entrega' => $request->destino_entrega,
                 'telefono_contacto' => $request->telefono_contacto,
                 'destino_latitud' => $request->destino_latitud,
@@ -134,19 +135,24 @@ class PedidoController extends Controller
 
             foreach ($cartItems as $item) {
                 $product = $item->product;
+                $datosEnvio = $gruposEnvio[$item->id];
 
                 PedidoDetalle::create([
-                    'pedido_id'       => $pedido->id,
-                    'vendedor_id'     => $product?->user_id,
+                    'pedido_id' => $pedido->id,
+                    'grupo_envio' => $datosEnvio['grupo_envio'],
+                    'origen_direccion' => $datosEnvio['origen_direccion'],
+                    'origen_latitud' => $datosEnvio['origen_latitud'],
+                    'origen_longitud' => $datosEnvio['origen_longitud'],
+                    'vendedor_id' => $product?->user_id,
                     'estado_solicitud' => 'pendiente',
-                    'product_id'      => $item->product_id,
-                    'product_type'    => $item->product_type,
+                    'product_id' => $item->product_id,
+                    'product_type' => $item->product_type,
                     'nombre_producto' => $product ? $product->nombre : 'Producto eliminado',
-                    'cantidad'        => $item->cantidad,
+                    'cantidad' => $item->cantidad,
                     'alquiler_unidad' => $item->product_type === 'maquinaria' ? $item->alquiler_unidad : null,
                     'precio_unitario' => $item->precio_unitario,
-                    'subtotal'        => $item->subtotal,
-                    'notas'           => $item->notas,
+                    'subtotal' => $item->subtotal,
+                    'notas' => $item->notas,
                 ]);
 
                 // (Opcional) descontar stock si quieres
@@ -165,6 +171,7 @@ class PedidoController extends Controller
                 ->with('success', 'Pedido creado correctamente.');
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return redirect()->route('cart.index')->with('error', 'Ocurrió un error al crear el pedido.');
         }
     }
@@ -185,15 +192,22 @@ class PedidoController extends Controller
             return back()->with('error', 'El transportista aun no marco la llegada al destino.');
         }
 
-        $detalle->update([
-            'estado_transporte' => 'entregado',
-            'recepcion_confirmada_at' => now(),
-            'estado_alquiler' => $detalle->es_alquiler_maquinaria ? 'en_uso' : $detalle->estado_alquiler,
-        ]);
+        $detallesEnvio = $detalle->detallesEnvio()
+            ->where('estado_solicitud', 'aceptada')
+            ->where('estado_transporte', 'esperando_confirmacion')
+            ->get();
 
-        if (in_array($detalle->product_type, ['organico', 'maquinaria'], true)) {
+        foreach ($detallesEnvio as $detalleEnvio) {
+            $detalleEnvio->update([
+                'estado_transporte' => 'entregado',
+                'recepcion_confirmada_at' => now(),
+                'estado_alquiler' => $detalleEnvio->es_alquiler_maquinaria
+                    ? 'en_uso'
+                    : $detalleEnvio->estado_alquiler,
+            ]);
+
             TransporteEvento::create([
-                'pedido_detalle_id' => $detalle->id,
+                'pedido_detalle_id' => $detalleEnvio->id,
                 'transporte_acceso_id' => $detalle->transporteAcceso?->id,
                 'user_id' => Auth::id(),
                 'actor' => 'comprador',
@@ -202,7 +216,7 @@ class PedidoController extends Controller
             ]);
         }
 
-        if ($detalle->product_type === 'organico') {
+        if (! $detalle->es_alquiler_maquinaria) {
             $detalle->transporteAcceso?->update([
                 'estado' => TransporteAcceso::ESTADO_REVOCADO,
             ]);
@@ -210,6 +224,7 @@ class PedidoController extends Controller
 
         if ($detalle->es_alquiler_maquinaria) {
             $detalle->pedido()->update(['estado' => 'en_uso']);
+
             return back()->with('success', 'Recepcion confirmada. La maquinaria queda en uso hasta la devolucion.');
         }
 

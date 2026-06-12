@@ -7,13 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class TransporteAcceso extends Model
 {
     public const ESTADO_ACTIVO = 'activo';
+
     public const ESTADO_REVOCADO = 'revocado';
+
     public const ESTADO_EXPIRADO = 'expirado';
 
     protected $table = 'transporte_accesos';
 
     protected $fillable = [
         'pedido_detalle_id',
+        'grupo_envio',
         'created_by',
         'codigo_hash',
         'codigo_cifrado',
@@ -38,6 +41,11 @@ class TransporteAcceso extends Model
         return $this->belongsTo(PedidoDetalle::class, 'pedido_detalle_id');
     }
 
+    public function detalles()
+    {
+        return $this->hasMany(PedidoDetalle::class, 'grupo_envio', 'grupo_envio');
+    }
+
     public function creador()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -56,7 +64,7 @@ class TransporteAcceso extends Model
     public function estaActivo(): bool
     {
         return $this->estado === self::ESTADO_ACTIVO
-            && (!$this->expires_at || $this->expires_at->isFuture());
+            && (! $this->expires_at || $this->expires_at->isFuture());
     }
 
     public function getCodigoAttribute(): string

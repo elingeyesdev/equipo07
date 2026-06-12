@@ -4,19 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
+use App\Services\TransporteAccesoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Services\TransporteAccesoService;
 
 class VendedorSolicitudController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PedidoDetalle::with(['pedido.user', 'transporteAcceso'])
+        $query = PedidoDetalle::query()
             ->where('vendedor_id', Auth::id())
-            ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
-            ->orderByDesc('created_at');
+            ->where('estado_solicitud', '!=', 'cancelada_producto_vendido');
 
         if ($request->filled('estado')) {
             $query->where('estado_solicitud', $request->estado);
@@ -32,7 +31,30 @@ class VendedorSolicitudController extends Controller
             });
         }
 
-        $solicitudes = $query->paginate(12)->withQueryString();
+        $solicitudes = $query
+            ->selectRaw('MIN(id) as id, grupo_envio, MAX(created_at) as ultima_solicitud_at')
+            ->groupBy('grupo_envio')
+            ->orderByDesc('ultima_solicitud_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        $representantes = PedidoDetalle::with([
+            'pedido.user',
+            'transporteAcceso',
+            'detallesEnvio' => fn ($detalle) => $detalle
+                ->where('vendedor_id', Auth::id())
+                ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
+                ->orderBy('id'),
+        ])->whereIn('id', $solicitudes->getCollection()->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $solicitudes->setCollection(
+            $solicitudes->getCollection()
+                ->map(fn ($fila) => $representantes->get($fila->id))
+                ->filter()
+                ->values()
+        );
         $estados = $this->estados();
 
         return view('vendedor.solicitudes.index', compact('solicitudes', 'estados'));
@@ -42,17 +64,26 @@ class VendedorSolicitudController extends Controller
     {
         $this->authorizeSeller($solicitud);
 
-        $solicitud->load([
+        $detallesGrupo = PedidoDetalle::with([
             'pedido.user',
             'ultimaUbicacion',
             'transporteAcceso',
             'transporteEventos' => fn ($query) => $query->latest('created_at')->limit(10),
             'resenaProducto.comprador',
             'reclamos.creador',
-        ]);
+        ])
+            ->where('grupo_envio', $solicitud->grupo_envio)
+            ->where('vendedor_id', Auth::id())
+            ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
+            ->orderBy('id')
+            ->get();
+
+        $solicitud = $detallesGrupo->firstWhere('estado_solicitud', 'aceptada')
+            ?? $detallesGrupo->firstOrFail();
+        $solicitud->setRelation('detallesEnvio', $detallesGrupo);
         $estados = $this->estados();
 
-        return view('vendedor.solicitudes.show', compact('solicitud', 'estados'));
+        return view('vendedor.solicitudes.show', compact('solicitud', 'detallesGrupo', 'estados'));
     }
 
     public function aceptar(PedidoDetalle $solicitud, TransporteAccesoService $transporteService)
@@ -67,14 +98,21 @@ class VendedorSolicitudController extends Controller
             DB::transaction(function () use ($solicitud, $transporteService) {
                 $this->descontarStockDisponible($solicitud);
 
+                $accesoGrupo = \App\Models\TransporteAcceso::where(
+                    'grupo_envio',
+                    $solicitud->grupo_envio
+                )->first();
+                $estadoGrupo = $accesoGrupo?->detalle?->estado_transporte_actual;
+
                 $solicitud->update([
                     'estado_solicitud' => 'aceptada',
                     'estado_alquiler' => $solicitud->product_type === 'maquinaria' ? 'aceptado' : null,
-                    'estado_transporte' => $solicitud->product_type === 'organico' ? 'aceptado' : 'asignado',
+                    'estado_transporte' => $estadoGrupo
+                        ?: ($solicitud->product_type === 'maquinaria' ? 'asignado' : 'aceptado'),
                     'respondido_at' => now(),
                 ]);
 
-                if (in_array($solicitud->product_type, ['organico', 'maquinaria'], true)) {
+                if (in_array($solicitud->product_type, ['organico', 'ganado', 'maquinaria'], true)) {
                     $transporteService->generar($solicitud->fresh(), Auth::id());
                 }
 
@@ -96,12 +134,10 @@ class VendedorSolicitudController extends Controller
         }
 
         return redirect()
-            ->route('vendedor.solicitudes.show', $solicitud)
+            ->route('vendedor.solicitudes.show', $this->representanteGrupo($solicitud))
             ->with(
                 'success',
-                in_array($solicitud->product_type, ['organico', 'maquinaria'], true)
-                    ? 'Solicitud aceptada. Se genero el codigo para el transportista externo.'
-                    : 'Solicitud aceptada. Las demas solicitudes pendientes de este producto fueron canceladas.'
+                'Producto aceptado. El inventario y el estado del pedido fueron actualizados.'
             );
     }
 
@@ -118,7 +154,11 @@ class VendedorSolicitudController extends Controller
             'respondido_at' => now(),
         ]);
 
-        return back()->with('success', 'Solicitud rechazada.');
+        $this->actualizarEstadoPedidoTrasRespuesta($solicitud);
+
+        return redirect()
+            ->route('vendedor.solicitudes.show', $this->representanteGrupo($solicitud))
+            ->with('success', 'Producto rechazado. Los demas productos del pedido mantienen su estado.');
     }
 
     public function finalizarPedido(PedidoDetalle $solicitud)
@@ -129,7 +169,7 @@ class VendedorSolicitudController extends Controller
             return back()->with('error', 'Solo puedes finalizar pedidos con una solicitud aceptada.');
         }
 
-        if (!$solicitud->puede_finalizar_desde_vendedor) {
+        if (! $solicitud->puede_finalizar_desde_vendedor) {
             if ($solicitud->product_type === 'maquinaria') {
                 return back()->with('error', 'Primero el transportista debe devolver la maquinaria antes de finalizar el alquiler.');
             }
@@ -207,14 +247,14 @@ class VendedorSolicitudController extends Controller
 
     private function descontarStockDisponible(PedidoDetalle $solicitud): void
     {
-        if (!in_array($solicitud->product_type, ['ganado', 'organico'], true)) {
+        if (! in_array($solicitud->product_type, ['ganado', 'organico'], true)) {
             return;
         }
 
         $product = $solicitud->product;
         $stock = (int) ($product?->stock ?? 0);
 
-        if (!$product || $stock < $solicitud->cantidad) {
+        if (! $product || $stock < $solicitud->cantidad) {
             throw new \RuntimeException('El producto ya no tiene stock suficiente para aceptar esta solicitud.');
         }
 
@@ -222,9 +262,35 @@ class VendedorSolicitudController extends Controller
 
         if ($solicitud->product_type === 'ganado') {
             $product->datoComercial()->update(['stock' => $nuevoStock]);
+
             return;
         }
 
         $product->datoComercial()->update(['stock' => $nuevoStock]);
+    }
+
+    private function representanteGrupo(PedidoDetalle $solicitud): PedidoDetalle
+    {
+        return PedidoDetalle::where('grupo_envio', $solicitud->grupo_envio)
+            ->where('vendedor_id', Auth::id())
+            ->where('estado_solicitud', '!=', 'cancelada_producto_vendido')
+            ->orderBy('id')
+            ->firstOrFail();
+    }
+
+    private function actualizarEstadoPedidoTrasRespuesta(PedidoDetalle $solicitud): void
+    {
+        $detalles = PedidoDetalle::where('pedido_id', $solicitud->pedido_id)
+            ->where('estado_solicitud', '!=', 'cancelada_producto_vendido');
+
+        if ((clone $detalles)->where('estado_solicitud', 'pendiente')->exists()) {
+            return;
+        }
+
+        $estado = (clone $detalles)->where('estado_solicitud', 'aceptada')->exists()
+            ? 'en_proceso'
+            : 'rechazado';
+
+        Pedido::whereKey($solicitud->pedido_id)->update(['estado' => $estado]);
     }
 }

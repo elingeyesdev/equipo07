@@ -14,7 +14,7 @@
             default => 'secondary',
         };
         $detalleConUbicacion = $pedido->detalles->first(
-            fn($detalle) => in_array($detalle->product_type, ['organico', 'maquinaria'], true)
+            fn($detalle) => in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true)
                 && $detalle->estado_solicitud === 'aceptada'
                 && $detalle->product_latitud
                 && $detalle->product_longitud
@@ -216,6 +216,30 @@
                 </div>
 
                 <div class="table-responsive orders-table-wrap">
+                    @php
+                        $resumenesEnvio = $pedido->detalles
+                            ->groupBy('grupo_envio')
+                            ->map(function ($detalles) {
+                                return [
+                                    'total' => $detalles->count(),
+                                    'pendientes' => $detalles->where('estado_solicitud', 'pendiente')->count(),
+                                    'aceptados' => $detalles->where('estado_solicitud', 'aceptada')->count(),
+                                    'rechazados' => $detalles->where('estado_solicitud', 'rechazada')->count(),
+                                ];
+                            });
+                    @endphp
+                    @foreach ($resumenesEnvio as $resumenEnvio)
+                        @if (!$resumenEnvio['pendientes'] && $resumenEnvio['total'] > 1)
+                            <div class="alert {{ $resumenEnvio['rechazados'] ? 'alert-info' : 'alert-success' }} mx-3">
+                                @if ($resumenEnvio['rechazados'])
+                                    Se aceptaron {{ $resumenEnvio['aceptados'] }} producto(s) y se rechazaron
+                                    {{ $resumenEnvio['rechazados'] }}. El envío incluirá únicamente los aceptados.
+                                @else
+                                    Todos los productos de este envío fueron aceptados.
+                                @endif
+                            </div>
+                        @endif
+                    @endforeach
                     <table class="table table-hover orders-table mb-0">
                         <thead>
                             <tr>
@@ -243,7 +267,7 @@
                                     $cantidadTexto = $detalle->cantidad_tiempo_texto;
                                     $precioLabel = $detalle->precio_corto_label;
                                 @endphp
-                                <tr @if(in_array($detalle->product_type, ['organico', 'maquinaria'], true))
+                                <tr @if(in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true))
                                     data-buyer-delivery-detail="{{ $detalle->id }}"
                                     data-request-state="{{ $detalle->estado_solicitud }}"
                                     data-transport-state="{{ $detalle->estado_transporte_actual }}"
@@ -284,7 +308,7 @@
                                         <span class="badge badge-{{ $colorSolicitud }}">{{ $labelSolicitud }}</span>
                                     </td>
                                 </tr>
-                                @if (in_array($detalle->product_type, ['organico', 'maquinaria'], true) && $detalle->estado_solicitud === 'aceptada')
+                                @if (in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true) && $detalle->estado_solicitud === 'aceptada')
                                     @php
                                         $deliveryLabels = $detalle->es_alquiler_maquinaria
                                             ? \App\Models\PedidoDetalle::transporteFases()
@@ -293,7 +317,7 @@
                                             ? \App\Models\PedidoDetalle::transporteEstadoFases()
                                             : [];
                                         $deliveryFlow = array_keys($deliveryLabels);
-                                        $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado' && $detalle->product_type === 'organico'
+                                        $deliveryCurrent = $detalle->estado_transporte_actual === 'asignado' && in_array($detalle->product_type, ['organico', 'ganado'], true)
                                             ? 'aceptado'
                                             : $detalle->estado_transporte_actual;
                                         $deliveryCurrentVisible = $deliveryStatePhases[$deliveryCurrent] ?? $deliveryCurrent;

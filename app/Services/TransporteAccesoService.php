@@ -25,11 +25,11 @@ class TransporteAccesoService
         $this->validarDetalleTransportable($detalle);
 
         return DB::transaction(function () use ($detalle, $createdBy, $regenerar) {
-            $existente = TransporteAcceso::where('pedido_detalle_id', $detalle->id)
+            $existente = TransporteAcceso::where('grupo_envio', $detalle->grupo_envio)
                 ->lockForUpdate()
                 ->first();
 
-            if ($existente && !$regenerar && $existente->estaActivo()) {
+            if ($existente && ! $regenerar && $existente->estaActivo()) {
                 return $existente;
             }
 
@@ -51,6 +51,7 @@ class TransporteAccesoService
 
             return TransporteAcceso::create([
                 'pedido_detalle_id' => $detalle->id,
+                'grupo_envio' => $detalle->grupo_envio,
                 ...$data,
             ]);
         });
@@ -62,14 +63,18 @@ class TransporteAccesoService
             'detalle.pedido.user',
             'detalle.vendedor',
             'detalle.organico',
+            'detalle.ganado',
             'detalle.maquinaria',
+            'detalles.organico',
+            'detalles.ganado',
+            'detalles.maquinaria',
         ])->where('codigo_hash', self::hashCodigo($codigo))->first();
 
-        if (!$acceso || !$acceso->estaActivo()) {
+        if (! $acceso || ! $acceso->estaActivo()) {
             return null;
         }
 
-        if (!$this->esTransportable($acceso->detalle)) {
+        if (! $this->esTransportable($acceso->detalle)) {
             return null;
         }
 
@@ -135,7 +140,7 @@ class TransporteAccesoService
     public function puedeActivarGps(PedidoDetalle $detalle): bool
     {
         if ($detalle->es_alquiler_maquinaria) {
-            return !in_array($detalle->estado_transporte_actual, [
+            return ! in_array($detalle->estado_transporte_actual, [
                 null,
                 'esperando_confirmacion',
                 'entregado',
@@ -178,7 +183,17 @@ class TransporteAccesoService
                 abort(403);
             }
 
-            if (!in_array($detalle->estado_transporte_actual, ['aceptado', 'asignado'], true)) {
+            $pendientesGrupo = PedidoDetalle::where('grupo_envio', $detalle->grupo_envio)
+                ->where('estado_solicitud', 'pendiente')
+                ->exists();
+
+            if ($pendientesGrupo) {
+                throw ValidationException::withMessages([
+                    'transporte' => 'Responde primero todos los productos de este envio antes de habilitar el transporte.',
+                ]);
+            }
+
+            if (! in_array($detalle->estado_transporte_actual, ['aceptado', 'asignado'], true)) {
                 throw ValidationException::withMessages([
                     'transporte' => 'El transporte ya fue habilitado.',
                 ]);
@@ -186,17 +201,21 @@ class TransporteAccesoService
 
             $estadoAnterior = $detalle->estado_transporte_actual;
             $estadoNuevo = $detalle->es_alquiler_maquinaria ? 'asignado' : 'preparando';
-            $detalle->update(['estado_transporte' => $estadoNuevo]);
+            $detalles = $this->detallesActivosDelGrupo($detalle, true);
+            PedidoDetalle::whereIn('id', $detalles->pluck('id'))
+                ->update(['estado_transporte' => $estadoNuevo]);
             $detalle->pedido()->update(['estado' => 'en_proceso']);
 
-            TransporteEvento::create([
-                'pedido_detalle_id' => $detalle->id,
-                'transporte_acceso_id' => $detalle->transporteAcceso?->id,
-                'user_id' => $vendedorId,
-                'actor' => 'vendedor',
-                'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => $estadoNuevo,
-            ]);
+            foreach ($detalles as $detalleGrupo) {
+                TransporteEvento::create([
+                    'pedido_detalle_id' => $detalleGrupo->id,
+                    'transporte_acceso_id' => $detalle->transporteAcceso?->id,
+                    'user_id' => $vendedorId,
+                    'actor' => 'vendedor',
+                    'estado_anterior' => $detalleGrupo->estado_transporte_actual,
+                    'estado_nuevo' => $estadoNuevo,
+                ]);
+            }
 
             return $detalle->fresh();
         });
@@ -211,9 +230,10 @@ class TransporteAccesoService
 
             $this->validarDetalleTransportable($detalle);
             $estadoAnterior = $detalle->estado_transporte_actual;
+            $detalles = $this->detallesActivosDelGrupo($detalle, true);
 
             if ($accion === 'cancelar') {
-                if (!in_array($estadoAnterior, ['preparando', 'en_camino_entrega', 'asignado', 'en_camino_recogida'], true)) {
+                if (! in_array($estadoAnterior, ['preparando', 'en_camino_entrega', 'asignado', 'en_camino_recogida'], true)) {
                     throw ValidationException::withMessages([
                         'estado' => 'El envio ya no puede cancelarse desde transporte.',
                     ]);
@@ -229,39 +249,43 @@ class TransporteAccesoService
             } else {
                 $estadoNuevo = $this->siguienteEstado($detalle);
 
-                if (!$estadoNuevo) {
+                if (! $estadoNuevo) {
                     throw ValidationException::withMessages([
                         'estado' => 'No hay un siguiente estado disponible.',
                     ]);
                 }
             }
 
-            $detalle->update([
+            PedidoDetalle::whereIn('id', $detalles->pluck('id'))->update([
                 'estado_transporte' => $estadoNuevo,
-                'cancelacion_motivo' => $estadoNuevo === 'cancelado' ? trim($motivoCancelacion) : $detalle->cancelacion_motivo,
-                'cancelado_at' => $estadoNuevo === 'cancelado' ? now() : $detalle->cancelado_at,
+                'cancelacion_motivo' => $estadoNuevo === 'cancelado' ? trim($motivoCancelacion) : null,
+                'cancelado_at' => $estadoNuevo === 'cancelado' ? now() : null,
             ]);
 
             $estadoPedido = $this->estadoPedidoPara($detalle, $estadoNuevo);
-            $estadoAlquiler = $this->estadoAlquilerPara($detalle, $estadoNuevo);
+            foreach ($detalles as $detalleGrupo) {
+                $estadoAlquiler = $this->estadoAlquilerPara($detalleGrupo, $estadoNuevo);
 
-            if ($estadoAlquiler) {
-                $detalle->update(['estado_alquiler' => $estadoAlquiler]);
+                if ($estadoAlquiler) {
+                    $detalleGrupo->update(['estado_alquiler' => $estadoAlquiler]);
+                }
             }
 
             $detalle->pedido()->update(['estado' => $estadoPedido]);
 
-            TransporteEvento::create([
-                'pedido_detalle_id' => $detalle->id,
-                'transporte_acceso_id' => $acceso->id,
-                'actor' => 'externo',
-                'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => $estadoNuevo,
-                'metadata' => array_filter([
-                    'ip' => request()->ip(),
-                    'motivo_cancelacion' => $estadoNuevo === 'cancelado' ? trim($motivoCancelacion) : null,
-                ]),
-            ]);
+            foreach ($detalles as $detalleGrupo) {
+                TransporteEvento::create([
+                    'pedido_detalle_id' => $detalleGrupo->id,
+                    'transporte_acceso_id' => $acceso->id,
+                    'actor' => 'externo',
+                    'estado_anterior' => $detalleGrupo->estado_transporte_actual,
+                    'estado_nuevo' => $estadoNuevo,
+                    'metadata' => array_filter([
+                        'ip' => request()->ip(),
+                        'motivo_cancelacion' => $estadoNuevo === 'cancelado' ? trim($motivoCancelacion) : null,
+                    ]),
+                ]);
+            }
 
             if ($estadoNuevo === 'cancelado') {
                 $acceso->update(['estado' => TransporteAcceso::ESTADO_REVOCADO]);
@@ -295,23 +319,23 @@ class TransporteAccesoService
         }
 
         return match ($estadoNuevo) {
-                'preparando' => 'en_proceso',
-                'en_camino_entrega' => 'en_camino_entrega',
-                'esperando_confirmacion' => 'esperando_confirmacion',
-                'cancelado' => $detalle->pedido->detalles()
-                    ->where('id', '!=', $detalle->id)
-                    ->where('estado_solicitud', 'aceptada')
-                    ->whereNotIn('estado_transporte', ['cancelado', 'rechazado'])
-                    ->exists()
-                        ? 'en_proceso'
-                        : 'cancelado',
+            'preparando' => 'en_proceso',
+            'en_camino_entrega' => 'en_camino_entrega',
+            'esperando_confirmacion' => 'esperando_confirmacion',
+            'cancelado' => $detalle->pedido->detalles()
+                ->where('id', '!=', $detalle->id)
+                ->where('estado_solicitud', 'aceptada')
+                ->whereNotIn('estado_transporte', ['cancelado', 'rechazado'])
+                ->exists()
+                    ? 'en_proceso'
+                    : 'cancelado',
             default => $detalle->pedido->estado,
         };
     }
 
     private function estadoAlquilerPara(PedidoDetalle $detalle, string $estadoNuevo): ?string
     {
-        if (!$detalle->es_alquiler_maquinaria) {
+        if (! $detalle->es_alquiler_maquinaria) {
             return null;
         }
 
@@ -360,9 +384,9 @@ class TransporteAccesoService
 
     private function validarDetalleTransportable(PedidoDetalle $detalle): void
     {
-        if (!$this->esTransportable($detalle)) {
+        if (! $this->esTransportable($detalle)) {
             throw ValidationException::withMessages([
-                'transporte' => 'El acceso externo solo esta disponible para solicitudes de organicos o maquinaria aceptadas.',
+                'transporte' => 'El acceso externo solo esta disponible para solicitudes de organicos, ganado o maquinaria aceptadas.',
             ]);
         }
     }
@@ -370,7 +394,20 @@ class TransporteAccesoService
     private function esTransportable(?PedidoDetalle $detalle): bool
     {
         return $detalle
-            && in_array($detalle->product_type, ['organico', 'maquinaria'], true)
+            && in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true)
             && $detalle->estado_solicitud === 'aceptada';
+    }
+
+    private function detallesActivosDelGrupo(PedidoDetalle $detalle, bool $bloquear = false)
+    {
+        $query = PedidoDetalle::where('grupo_envio', $detalle->grupo_envio)
+            ->where('estado_solicitud', 'aceptada')
+            ->orderBy('id');
+
+        if ($bloquear) {
+            $query->lockForUpdate();
+        }
+
+        return $query->get();
     }
 }

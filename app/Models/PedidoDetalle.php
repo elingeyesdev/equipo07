@@ -66,6 +66,10 @@ class PedidoDetalle extends Model
 
     protected $fillable = [
         'pedido_id',
+        'grupo_envio',
+        'origen_direccion',
+        'origen_latitud',
+        'origen_longitud',
         'vendedor_id',
         'transportista_id',
         'estado_solicitud',
@@ -91,6 +95,8 @@ class PedidoDetalle extends Model
         'respondido_at' => 'datetime',
         'recepcion_confirmada_at' => 'datetime',
         'cancelado_at' => 'datetime',
+        'origen_latitud' => 'decimal:8',
+        'origen_longitud' => 'decimal:8',
     ];
 
     public static function alquilerEstados(): array
@@ -130,7 +136,12 @@ class PedidoDetalle extends Model
 
     public function transporteAcceso()
     {
-        return $this->hasOne(TransporteAcceso::class, 'pedido_detalle_id');
+        return $this->hasOne(TransporteAcceso::class, 'grupo_envio', 'grupo_envio');
+    }
+
+    public function detallesEnvio()
+    {
+        return $this->hasMany(self::class, 'grupo_envio', 'grupo_envio');
     }
 
     public function transporteEventos()
@@ -200,7 +211,7 @@ class PedidoDetalle extends Model
 
     public function getAlquilerUnidadNormalizadaAttribute(): ?string
     {
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return null;
         }
 
@@ -210,7 +221,7 @@ class PedidoDetalle extends Model
 
     public function getCantidadTiempoTextoAttribute(): string
     {
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return (string) $this->cantidad;
         }
 
@@ -218,12 +229,12 @@ class PedidoDetalle extends Model
         $singular = $unidad === 'dia' ? 'día' : 'hora';
         $plural = $unidad === 'dia' ? 'días' : 'horas';
 
-        return $this->cantidad . ' ' . ($this->cantidad == 1 ? $singular : $plural);
+        return $this->cantidad.' '.($this->cantidad == 1 ? $singular : $plural);
     }
 
     public function getCantidadLabelAttribute(): string
     {
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return 'Cantidad';
         }
 
@@ -234,7 +245,7 @@ class PedidoDetalle extends Model
 
     public function getPrecioLabelAttribute(): string
     {
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return 'Precio unitario';
         }
 
@@ -245,7 +256,7 @@ class PedidoDetalle extends Model
 
     public function getPrecioCortoLabelAttribute(): string
     {
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return 'unitario';
         }
 
@@ -254,7 +265,7 @@ class PedidoDetalle extends Model
 
     public function getEstadoAlquilerActualAttribute(): ?string
     {
-        if (!$this->es_alquiler_maquinaria || $this->estado_solicitud !== 'aceptada') {
+        if (! $this->es_alquiler_maquinaria || $this->estado_solicitud !== 'aceptada') {
             return null;
         }
 
@@ -295,7 +306,7 @@ class PedidoDetalle extends Model
             return false;
         }
 
-        if (!$this->es_alquiler_maquinaria) {
+        if (! $this->es_alquiler_maquinaria) {
             return $this->estado_transporte_actual === 'entregado';
         }
 
@@ -331,7 +342,7 @@ class PedidoDetalle extends Model
             return null;
         }
 
-        if (!$this->es_alquiler_maquinaria && in_array($this->estado_transporte_actual, [
+        if (! $this->es_alquiler_maquinaria && in_array($this->estado_transporte_actual, [
             'entregado',
             'devolucion_solicitada',
             'en_camino_recoger_devolucion',
@@ -371,6 +382,10 @@ class PedidoDetalle extends Model
 
     public function getProductLatitudAttribute()
     {
+        if ($this->origen_latitud !== null) {
+            return $this->origen_latitud;
+        }
+
         return match ($this->product_type) {
             'ganado', 'maquinaria' => $this->product?->latitud,
             'organico' => $this->product?->latitud_origen,
@@ -380,11 +395,21 @@ class PedidoDetalle extends Model
 
     public function getProductLongitudAttribute()
     {
+        if ($this->origen_longitud !== null) {
+            return $this->origen_longitud;
+        }
+
         return match ($this->product_type) {
             'ganado', 'maquinaria' => $this->product?->longitud,
             'organico' => $this->product?->longitud_origen,
             default => null,
         };
+    }
+
+    public function getOrigenDireccionActualAttribute(): ?string
+    {
+        return $this->origen_direccion
+            ?: ($this->product?->ubicacion ?? $this->organico?->origen);
     }
 
     public function getVendedorTelefonoAttribute(): ?string
@@ -395,7 +420,7 @@ class PedidoDetalle extends Model
             return $telefonoProducto;
         }
 
-        if (!$this->vendedor_id) {
+        if (! $this->vendedor_id) {
             return null;
         }
 
@@ -414,7 +439,7 @@ class PedidoDetalle extends Model
         $destinoLat = $pedido?->destino_latitud;
         $destinoLng = $pedido?->destino_longitud;
 
-        if (!$productLat || !$productLng || !$destinoLat || !$destinoLng) {
+        if (! $productLat || ! $productLng || ! $destinoLat || ! $destinoLng) {
             return null;
         }
 
