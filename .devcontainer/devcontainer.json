@@ -1,0 +1,17 @@
+{
+  "name": "AgroVida Codespace",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": "chmod +x ./setup-docker.sh && ./setup-docker.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "ms-azuretools.vscode-docker",
+        "vue.volar"
+      ]
+    }
+  }
+}
