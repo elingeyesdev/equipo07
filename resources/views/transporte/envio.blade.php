@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Envio {{ $detalle->grupo_envio }} | AgroVida</title>
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -52,6 +55,78 @@
         .facts dt { color: var(--muted); font-size: .86rem; font-weight: 700; }
         .facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
         .map { width: 100%; height: 390px; }
+        .map-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .map-panel-header__title { font-weight: 800; }
+        .map-expand-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 34px;
+            padding: 0 11px;
+            border: 1px solid #2f7d24;
+            border-radius: 6px;
+            color: #2f7d24;
+            background: #fff;
+            font-size: .82rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .map-expand-btn:hover { background: #edf7ea; }
+        .map-fullscreen {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            grid-template-rows: auto 1fr auto;
+            background: #101810;
+        }
+        body.map-fullscreen-open { overflow: hidden; }
+        body.map-fullscreen-open .map-fullscreen { display: grid; }
+        .map-fullscreen__header,
+        .map-fullscreen__footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            background: rgba(16, 24, 16, .96);
+        }
+        .map-fullscreen__header strong { display: block; font-size: 1rem; }
+        .map-fullscreen__header small { display: block; color: #d9e8d5; }
+        .map-fullscreen__close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255,255,255,.28);
+            border-radius: 999px;
+            color: #fff;
+            background: transparent;
+            cursor: pointer;
+        }
+        .map-fullscreen__map {
+            min-height: 0;
+        }
+        .map-fullscreen__map .map {
+            height: 100%;
+            min-height: 100%;
+            border-radius: 0;
+        }
+        .map-fullscreen__footer {
+            align-items: flex-start;
+            flex-direction: column;
+            font-size: .86rem;
+        }
+        .map-fullscreen__footer span {
+            color: #d9e8d5;
+        }
         .map-summary {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -156,6 +231,8 @@
             .status-band { align-items: flex-start; flex-direction: column; }
             .facts div { grid-template-columns: 105px 1fr; }
             .map-summary { grid-template-columns: 1fr; }
+            .map-panel-header { align-items: flex-start; flex-direction: column; }
+            .map-expand-btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -277,7 +354,12 @@
             </section>
 
             <section class="panel">
-                <div class="panel-header"><i class="fas fa-map-marked-alt"></i> Ruta de entrega</div>
+                <div class="panel-header map-panel-header">
+                    <span class="map-panel-header__title"><i class="fas fa-map-marked-alt"></i> Ruta de entrega</span>
+                    <button type="button" class="map-expand-btn" id="map-expand">
+                        <i class="fas fa-expand"></i> Ampliar mapa
+                    </button>
+                </div>
                 <div class="map-summary">
                     <div class="map-summary__item">
                         <small><i class="fas fa-route mr-1"></i>Ruta actual</small>
@@ -292,14 +374,43 @@
                         <strong>{{ $detalle->pedido->user->name ?? 'No disponible' }}</strong>
                     </div>
                 </div>
-                <div id="transport-map" class="map"></div>
+                <div id="transport-map-shell">
+                    <div id="transport-map" class="map"></div>
+                </div>
             </section>
         </div>
     </main>
 
+    <div class="map-fullscreen" id="map-fullscreen" aria-hidden="true">
+        <div class="map-fullscreen__header">
+            <div>
+                <strong><i class="fas fa-map-marked-alt"></i> Ruta de entrega</strong>
+                <small id="map-fullscreen-route">Esperando GPS</small>
+            </div>
+            <button type="button" class="map-fullscreen__close" id="map-close" aria-label="Cerrar mapa ampliado">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="map-fullscreen__map" id="map-fullscreen-map"></div>
+        <div class="map-fullscreen__footer">
+            <strong id="map-fullscreen-driver">Transportista: esperando GPS</strong>
+            <span>{{ $detalle->pedido->destino_entrega ?: 'Destino no registrado' }}</span>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ transporteEnvio: true }, document.title, @json(route('transporte.envio')));
+        }
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             const csrf = document.querySelector('meta[name="csrf-token"]').content;
             const originLat = @json($detalle->product_latitud ? (float) $detalle->product_latitud : null);
@@ -314,6 +425,11 @@
             const gpsStop = document.getElementById('gps-stop');
             const gpsStatus = document.getElementById('gps-status');
             const notice = document.getElementById('notice');
+            const mapShell = document.getElementById('transport-map-shell');
+            const mapFullscreen = document.getElementById('map-fullscreen');
+            const mapFullscreenTarget = document.getElementById('map-fullscreen-map');
+            const mapFullscreenRoute = document.getElementById('map-fullscreen-route');
+            const mapFullscreenDriver = document.getElementById('map-fullscreen-driver');
             let watchId = null;
             let lastSentAt = 0;
             let liveMarker = null;
@@ -415,7 +531,14 @@
 
             function updateRouteSummary() {
                 const target = routeTargetForState(currentState);
-                document.getElementById('map-route-target').textContent = target ? target.label : 'Ruta no disponible';
+                const label = target ? target.label : 'Ruta no disponible';
+                document.getElementById('map-route-target').textContent = label;
+                if (mapFullscreenRoute) mapFullscreenRoute.textContent = label;
+            }
+
+            function setDriverStatus(text) {
+                document.getElementById('map-driver-status').textContent = text;
+                if (mapFullscreenDriver) mapFullscreenDriver.textContent = 'Transportista: ' + text;
             }
 
             function setActiveTargetMarker() {
@@ -531,8 +654,7 @@
 
                 const coords = position.coords;
                 gpsStatus.textContent = 'GPS activo. Precision: ' + Math.round(coords.accuracy || 0) + ' m.';
-                document.getElementById('map-driver-status').textContent =
-                    'GPS activo · ' + Math.round(coords.accuracy || 0) + ' m';
+                setDriverStatus('GPS activo · ' + Math.round(coords.accuracy || 0) + ' m');
 
                 const latLng = [coords.latitude, coords.longitude];
                 if (!liveMarker) {
@@ -612,9 +734,35 @@
                         liveMarker.setLatLng(latLng);
                     }
                     updateRouteFromDriver(data.ubicacion.latitud, data.ubicacion.longitud);
-                    document.getElementById('map-driver-status').textContent =
-                        data.ubicacion.fecha_humana ? 'Actualizado ' + data.ubicacion.fecha_humana : 'GPS activo';
+                    setDriverStatus(data.ubicacion.fecha_humana ? 'Actualizado ' + data.ubicacion.fecha_humana : 'GPS activo');
                 }
+            }
+
+            function resizeMapSoon() {
+                setTimeout(function () {
+                    map.invalidateSize();
+                    if (routeLine) {
+                        map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 15 });
+                    } else if (bounds.length > 1) {
+                        map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15 });
+                    } else if (liveMarker) {
+                        map.setView(liveMarker.getLatLng(), 16);
+                    }
+                }, 80);
+            }
+
+            function openLargeMap() {
+                mapFullscreenTarget.appendChild(document.getElementById('transport-map'));
+                document.body.classList.add('map-fullscreen-open');
+                mapFullscreen.setAttribute('aria-hidden', 'false');
+                resizeMapSoon();
+            }
+
+            function closeLargeMap() {
+                mapShell.appendChild(document.getElementById('transport-map'));
+                document.body.classList.remove('map-fullscreen-open');
+                mapFullscreen.setAttribute('aria-hidden', 'true');
+                resizeMapSoon();
             }
 
             function refreshState() {
@@ -753,6 +901,15 @@
             document.getElementById('state-next')?.addEventListener('click', function () {
                 confirmStateAdvance();
             });
+
+            document.getElementById('map-expand')?.addEventListener('click', openLargeMap);
+            document.getElementById('map-close')?.addEventListener('click', closeLargeMap);
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && document.body.classList.contains('map-fullscreen-open')) {
+                    closeLargeMap();
+                }
+            });
+
             refreshState();
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden) {

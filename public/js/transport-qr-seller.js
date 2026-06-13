@@ -2,26 +2,38 @@ document.addEventListener('DOMContentLoaded', function () {
     var canvas = document.getElementById('transport-qr-canvas');
     var codeInput = document.getElementById('transport-code');
     var downloadButton = document.getElementById('transport-qr-download');
+    var status = document.getElementById('transport-qr-status');
 
-    if (!canvas || !codeInput || !window.QRCode) {
+    if (!canvas || !codeInput) {
         return;
     }
 
-    window.QRCode.toCanvas(canvas, codeInput.value, {
-        width: 220,
-        margin: 2,
-        errorCorrectionLevel: 'M',
-        color: {
-            dark: '#173f18',
-            light: '#ffffff',
-        },
-    }, function (error) {
-        if (error) {
-            var message = document.createElement('p');
-            message.className = 'text-danger mb-0';
-            message.textContent = 'No se pudo generar el QR.';
-            canvas.replaceWith(message);
-            return;
+    if (!window.QRious || !codeInput.value.trim()) {
+        canvas.classList.add('is-error');
+        if (status) {
+            status.textContent = 'No se pudo generar el QR. Regenera el codigo e intenta nuevamente.';
+            status.classList.add('is-error');
+        }
+        if (downloadButton) {
+            downloadButton.setAttribute('disabled', 'disabled');
+        }
+        return;
+    }
+
+    try {
+        new window.QRious({
+            element: canvas,
+            value: codeInput.value,
+            size: 220,
+            padding: 16,
+            level: 'M',
+            foreground: '#2c4033',
+            background: '#ffffff',
+        });
+        canvas.classList.add('is-ready');
+        if (status) {
+            status.textContent = 'QR listo para escanear';
+            status.classList.add('is-ready');
         }
 
         if (downloadButton) {
@@ -32,5 +44,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.click();
             });
         }
-    });
+    } catch (error) {
+        canvas.classList.add('is-error');
+        if (status) {
+            status.textContent = 'No se pudo generar el QR. Regenera el codigo e intenta nuevamente.';
+            status.classList.add('is-error');
+        }
+        if (downloadButton) {
+            downloadButton.setAttribute('disabled', 'disabled');
+        }
+        console.error('Error al generar el QR de transporte:', error);
+    }
 });

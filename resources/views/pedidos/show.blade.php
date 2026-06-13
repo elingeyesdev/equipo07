@@ -13,23 +13,34 @@
             'cancelado' => 'danger',
             default => 'secondary',
         };
-        $detalleConUbicacion = $pedido->detalles->first(
-            fn($detalle) => in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true)
+        $detallesConRuta = $pedido->detalles
+            ->filter(fn($detalle) => in_array($detalle->product_type, ['organico', 'ganado', 'maquinaria'], true)
                 && $detalle->estado_solicitud === 'aceptada'
                 && $detalle->product_latitud
-                && $detalle->product_longitud
-        ) ?: $pedido->detalles->first(fn($detalle) => $detalle->product_latitud && $detalle->product_longitud);
-        $mapsUrl = null;
+                && $detalle->product_longitud)
+            ->values();
+        $detalleConUbicacion = $detallesConRuta->first()
+            ?: $pedido->detalles->first(fn($detalle) => $detalle->product_latitud && $detalle->product_longitud);
+        $mapaDestinoUrl = $pedido->destino_latitud && $pedido->destino_longitud
+            ? 'https://www.google.com/maps/search/?api=1&query=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud
+            : null;
 
-        if ($pedido->destino_latitud && $pedido->destino_longitud) {
-            $mapsUrl = $detalleConUbicacion
-                ? 'https://www.google.com/maps/dir/?api=1&origin=' . $detalleConUbicacion->product_latitud . ',' . $detalleConUbicacion->product_longitud . '&destination=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud . '&travelmode=driving'
-                : 'https://www.google.com/maps/search/?api=1&query=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud;
-        }
-
-        $trackingUrl = $detalleConUbicacion
-            ? route('pedidos.detalles.tracking.latest', $detalleConUbicacion, false)
-            : route('pedidos.tracking.latest', $pedido, false);
+        $trackingOptions = $detallesConRuta
+            ->map(fn($detalle) => [
+                'id' => $detalle->id,
+                'name' => $detalle->nombre_producto,
+                'type' => ucfirst($detalle->product_type),
+                'originLabel' => $detalle->origen_direccion_actual ?: 'Origen no registrado',
+                'originLat' => (float) $detalle->product_latitud,
+                'originLng' => (float) $detalle->product_longitud,
+                'distanceKm' => $detalle->distancia_destino_km,
+                'estadoLabel' => $detalle->estado_transporte_label ?: 'Pendiente',
+                'trackingUrl' => route('pedidos.detalles.tracking.latest', $detalle, false),
+                'mapsUrl' => $pedido->destino_latitud && $pedido->destino_longitud
+                    ? 'https://www.google.com/maps/dir/?api=1&origin=' . $detalle->product_latitud . ',' . $detalle->product_longitud . '&destination=' . $pedido->destino_latitud . ',' . $pedido->destino_longitud . '&travelmode=driving'
+                    : null,
+            ])
+            ->values();
 
         $liveDetailStates = $pedido->detalles
             ->map(fn($detalle) => [
@@ -137,6 +148,24 @@
             .tracking-pin--origin {
                 background: #fd7e14;
             }
+
+            .order-route-picker {
+                display: flex;
+                flex-wrap: wrap;
+                gap: .5rem;
+                margin-top: .75rem;
+            }
+
+            .order-route-picker__btn {
+                text-align: left;
+                white-space: normal;
+            }
+
+            .order-route-picker__btn small {
+                display: block;
+                font-weight: 600;
+                opacity: .78;
+            }
         </style>
         <div class="orders-card orders-detail-card">
             <div class="orders-detail-header">
@@ -190,27 +219,39 @@
                         {{ $pedido->telefono_contacto ?: 'No especificado' }}
                     </div>
                     @if ($pedido->destino_latitud && $pedido->destino_longitud)
+                        @if ($trackingOptions->count() > 1)
+                            <div class="order-route-picker" role="tablist" aria-label="Rutas por producto">
+                                @foreach ($trackingOptions as $index => $option)
+                                    <button type="button"
+                                        class="btn btn-sm {{ $index === 0 ? 'btn-success' : 'btn-outline-success' }} order-route-picker__btn"
+                                        data-route-option="{{ $option['id'] }}">
+                                        <i class="fas fa-route mr-1"></i>{{ $option['name'] }}
+                                        <small>{{ $option['type'] }} · {{ $option['estadoLabel'] }}</small>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
                         <div id="pedido-destino-map" class="mt-3"
                             style="height: 320px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
                         <div id="pedido-live-tracking" class="alert alert-light border mt-3 mb-0">
                             <strong><i class="fas fa-location-arrow mr-1"></i>Seguimiento en vivo:</strong>
                             <span id="pedido-live-status">Esperando ubicacion del transportista.</span>
                         </div>
-                        @if ($detalleConUbicacion && !is_null($detalleConUbicacion->distancia_destino_km))
-                            <div class="small text-muted mt-2">
-                                <i class="fas fa-route mr-1"></i>
-                                Distancia aproximada desde {{ $detalleConUbicacion->nombre_producto }}:
-                                {{ number_format($detalleConUbicacion->distancia_destino_km, 1) }} km.
-                            </div>
-                        @elseif (!$detalleConUbicacion)
+                        <div class="small text-muted mt-2" id="pedido-route-summary"
+                            style="{{ $trackingOptions->isNotEmpty() ? '' : 'display: none;' }}">
+                            <i class="fas fa-route mr-1"></i>
+                            <span id="pedido-route-summary-text"></span>
+                        </div>
+                        @if ($trackingOptions->isEmpty())
                             <div class="small text-muted mt-2">
                                 <i class="fas fa-info-circle mr-1"></i>
                                 No se pudo dibujar la ruta porque el producto no tiene coordenadas registradas.
                             </div>
                         @endif
                         <a class="btn btn-sm btn-outline-success mt-2" target="_blank"
-                            href="{{ $mapsUrl }}">
-                            <i class="fas fa-external-link-alt mr-1"></i>{{ $detalleConUbicacion ? 'Abrir ruta en Google Maps' : 'Abrir mapa' }}
+                            href="{{ $trackingOptions->first()['mapsUrl'] ?? $mapaDestinoUrl }}"
+                            id="pedido-google-maps-link">
+                            <i class="fas fa-external-link-alt mr-1"></i>{{ $trackingOptions->isNotEmpty() ? 'Abrir ruta en Google Maps' : 'Abrir mapa' }}
                         </a>
                     @endif
                 </div>
@@ -516,19 +557,22 @@
             document.addEventListener('DOMContentLoaded', function() {
                 var destinoLat = {{ $pedido->destino_latitud }};
                 var destinoLng = {{ $pedido->destino_longitud }};
-                var productoLat = @json($detalleConUbicacion?->product_latitud);
-                var productoLng = @json($detalleConUbicacion?->product_longitud);
-                var googleMapsUrl = @json($mapsUrl);
-                var trackingUrl = @json($trackingUrl);
-                var trackingDetailId = @json($detalleConUbicacion?->id);
+                var routeOptions = @json($trackingOptions);
+                var selectedRoute = routeOptions[0] || null;
                 var liveStatus = document.getElementById('pedido-live-status');
+                var routeSummary = document.getElementById('pedido-route-summary');
+                var routeSummaryText = document.getElementById('pedido-route-summary-text');
+                var mapsLink = document.getElementById('pedido-google-maps-link');
                 var liveMarker = null;
                 var liveLine = null;
                 var livePoints = [];
                 var lastLiveKey = null;
                 var trackingBusy = false;
                 var trackingTimer = null;
+                var routeRequestId = 0;
                 var map = L.map('pedido-destino-map').setView([destinoLat, destinoLng], 16);
+                var routeLayer = L.layerGroup().addTo(map);
+                var liveLayer = L.layerGroup().addTo(map);
                 var currentIcon = L.divIcon({
                     className: '',
                     html: '<span class="tracking-pin tracking-pin--current"><i class="fas fa-location-arrow"></i></span>',
@@ -555,41 +599,103 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                L.marker([destinoLat, destinoLng], {
+                var targetMarker = L.marker([destinoLat, destinoLng], {
                     icon: targetIcon
-                })
+                });
+
+                targetMarker
                     .addTo(map)
                     .bindPopup('<strong>Destino del comprador</strong><br>' + @json($pedido->destino_entrega))
                     .openPopup();
 
-                if (productoLat && productoLng) {
-                    L.marker([productoLat, productoLng], {
-                        icon: originIcon
-                    })
-                        .addTo(map)
-                        .bindPopup('<strong>Producto</strong><br>' + @json($detalleConUbicacion?->nombre_producto));
+                function resetLiveTracking() {
+                    clearTimeout(trackingTimer);
+                    liveLayer.clearLayers();
+                    liveMarker = null;
+                    liveLine = null;
+                    livePoints = [];
+                    lastLiveKey = null;
+                    trackingBusy = false;
+                }
 
-                    function drawFallbackLine() {
-                        var fallbackLine = L.polyline([
-                            [productoLat, productoLng],
-                            [destinoLat, destinoLng]
-                        ], {
-                            color: '#28a745',
-                            weight: 4,
-                            opacity: 0.85,
-                            dashArray: '8, 8'
-                        }).addTo(map);
-
-                        fallbackLine.bindPopup('Distancia aproximada: {{ number_format($detalleConUbicacion?->distancia_destino_km ?? 0, 1) }} km');
-
-                        map.fitBounds(fallbackLine.getBounds(), {
-                            padding: [40, 40],
-                            maxZoom: 14
-                        });
+                function updateRouteSummary(option) {
+                    if (!routeSummary || !routeSummaryText) {
+                        return;
                     }
 
+                    if (!option) {
+                        routeSummary.style.display = 'none';
+                        return;
+                    }
+
+                    var text = 'Ruta seleccionada: ' + option.name + '.';
+
+                    if (option.distanceKm !== null && option.distanceKm !== undefined) {
+                        text += ' Distancia aproximada: ' + Number(option.distanceKm).toFixed(1) + ' km.';
+                    }
+
+                    routeSummaryText.textContent = text;
+                    routeSummary.style.display = '';
+                }
+
+                function updateRouteButtons(option) {
+                    document.querySelectorAll('[data-route-option]').forEach(function(button) {
+                        var active = option && String(button.dataset.routeOption) === String(option.id);
+                        button.classList.toggle('btn-success', active);
+                        button.classList.toggle('btn-outline-success', !active);
+                    });
+                }
+
+                function drawFallbackLine(option) {
+                    var fallbackLine = L.polyline([
+                        [option.originLat, option.originLng],
+                        [destinoLat, destinoLng]
+                    ], {
+                        color: '#28a745',
+                        weight: 4,
+                        opacity: 0.85,
+                        dashArray: '8, 8'
+                    }).addTo(routeLayer);
+
+                    fallbackLine.bindPopup('Distancia aproximada: ' + (
+                        option.distanceKm !== null && option.distanceKm !== undefined
+                            ? Number(option.distanceKm).toFixed(1)
+                            : '0.0'
+                    ) + ' km');
+
+                    map.fitBounds(fallbackLine.getBounds(), {
+                        padding: [40, 40],
+                        maxZoom: 14
+                    });
+                }
+
+                function drawSelectedRoute(option) {
+                    routeRequestId++;
+                    var currentRequest = routeRequestId;
+                    routeLayer.clearLayers();
+                    targetMarker.addTo(routeLayer);
+                    updateRouteSummary(option);
+                    updateRouteButtons(option);
+
+                    if (mapsLink && option && option.mapsUrl) {
+                        mapsLink.href = option.mapsUrl;
+                        mapsLink.innerHTML = '<i class="fas fa-external-link-alt mr-1"></i>Abrir ruta en Google Maps';
+                    }
+
+                    if (!option) {
+                        setLiveStatus('Selecciona un producto para ver su ruta.');
+                        map.setView([destinoLat, destinoLng], 16);
+                        return;
+                    }
+
+                    L.marker([option.originLat, option.originLng], {
+                        icon: originIcon
+                    })
+                        .addTo(routeLayer)
+                        .bindPopup('<strong>Producto</strong><br>' + option.name + '<br>' + option.originLabel);
+
                     var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
-                        productoLng + ',' + productoLat + ';' + destinoLng + ',' + destinoLat +
+                        option.originLng + ',' + option.originLat + ';' + destinoLng + ',' + destinoLat +
                         '?overview=full&geometries=geojson';
 
                     fetch(osrmUrl)
@@ -601,10 +707,14 @@
                             return response.json();
                         })
                         .then(function(data) {
+                            if (currentRequest !== routeRequestId) {
+                                return;
+                            }
+
                             var route = data.routes && data.routes[0];
 
                             if (!route || !route.geometry || !route.geometry.coordinates) {
-                                drawFallbackLine();
+                                drawFallbackLine(option);
                                 return;
                             }
 
@@ -616,7 +726,7 @@
                                 color: '#28a745',
                                 weight: 5,
                                 opacity: 0.9
-                            }).addTo(map);
+                            }).addTo(routeLayer);
 
                             var distanceKm = route.distance ? (route.distance / 1000).toFixed(1) : null;
                             var durationMin = route.duration ? Math.round(route.duration / 60) : null;
@@ -630,8 +740,8 @@
                                 popup += '<br>Tiempo aprox.: ' + durationMin + ' min';
                             }
 
-                            if (googleMapsUrl) {
-                                popup += '<br><a href="' + googleMapsUrl + '" target="_blank" rel="noopener">Abrir en Google Maps</a>';
+                            if (option.mapsUrl) {
+                                popup += '<br><a href="' + option.mapsUrl + '" target="_blank" rel="noopener">Abrir en Google Maps</a>';
                             }
 
                             routeLine.bindPopup(popup);
@@ -641,7 +751,11 @@
                                 maxZoom: 14
                             });
                         })
-                        .catch(drawFallbackLine);
+                        .catch(function() {
+                            if (currentRequest === routeRequestId) {
+                                drawFallbackLine(option);
+                            }
+                        });
                 }
 
                 function setLiveStatus(text) {
@@ -667,7 +781,7 @@
                     if (!liveMarker) {
                         liveMarker = L.marker(latLng, {
                             icon: currentIcon
-                        }).addTo(map);
+                        }).addTo(liveLayer);
                     } else {
                         liveMarker.setLatLng(latLng);
                     }
@@ -692,7 +806,7 @@
                             color: '#007bff',
                             weight: 5,
                             opacity: .85
-                        }).addTo(map);
+                        }).addTo(liveLayer);
                     } else {
                         liveLine.setLatLngs(livePoints);
                     }
@@ -707,8 +821,14 @@
                         return;
                     }
 
+                    if (!selectedRoute || !selectedRoute.trackingUrl) {
+                        setLiveStatus('Este producto todavia no tiene seguimiento activo.');
+                        scheduleTracking();
+                        return;
+                    }
+
                     trackingBusy = true;
-                    fetch(trackingUrl, {
+                    fetch(selectedRoute.trackingUrl, {
                         headers: {
                             'Accept': 'application/json'
                         }
@@ -744,6 +864,20 @@
                     }
                 });
 
+                document.querySelectorAll('[data-route-option]').forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        var nextRoute = routeOptions.find(function(option) {
+                            return String(option.id) === String(button.dataset.routeOption);
+                        });
+
+                        selectedRoute = nextRoute || null;
+                        resetLiveTracking();
+                        drawSelectedRoute(selectedRoute);
+                        refreshLiveLocation();
+                    });
+                });
+
+                drawSelectedRoute(selectedRoute);
                 refreshLiveLocation();
             });
         </script>

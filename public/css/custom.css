@@ -2865,6 +2865,29 @@ body.no-topbar .main-footer .float-right{
   box-shadow: 0 10px 20px rgba(31, 42, 27, 0.08);
 }
 
+.maquinaria-wizard .maquinaria-image-card {
+  overflow: hidden;
+  border-color: rgba(46, 171, 91, 0.18);
+  box-shadow: 0 8px 18px rgba(31, 42, 27, 0.06);
+}
+
+.maquinaria-wizard .maquinaria-image-card__image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  background: #f8fbf8;
+}
+
+.maquinaria-wizard .maquinaria-image-card .card-footer {
+  min-height: 48px;
+  border-top-color: rgba(46, 171, 91, 0.12);
+}
+
+.maquinaria-wizard .maquinaria-image-card .custom-control-label {
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .maquinaria-wizard #preview-container > [class*="col-"],
 .maquinaria-wizard #imagenes-actuales > [class*="col-"] {
   position: relative;
@@ -2880,18 +2903,11 @@ body.no-topbar .main-footer .float-right{
 
 .maquinaria-wizard .eliminar-preview,
 .maquinaria-wizard .eliminar-imagen {
-  top: .45rem !important;
-  right: .45rem !important;
-  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 2px solid #fff;
-  border-radius: .6rem;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  min-width: 92px;
+  box-shadow: none;
 }
 
 @media (min-width: 1400px) {

@@ -885,7 +885,8 @@
         </script>
     @endif
     @if ($usaTransporteExterno && $solicitud->transporteAcceso?->estaActivo())
-        @vite('resources/js/transport-qr-seller.js')
+        <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+        <script src="{{ asset('js/transport-qr-seller.js') }}?v={{ filemtime(public_path('js/transport-qr-seller.js')) }}"></script>
     @endif
 
     <script>

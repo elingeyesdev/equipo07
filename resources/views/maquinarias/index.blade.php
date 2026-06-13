@@ -55,12 +55,12 @@
     {{-- Tarjetas de maquinarias --}}
     <div class="row">
         @forelse($maquinarias as $m)
-            <div class="col-md-6 col-xl-4 mb-4">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
                 <div class="card h-100 shadow-sm project-card">
 
-                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 230px;">
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
                         @if ($m->imagenes && $m->imagenes->count() > 0)
-                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 230px;">
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
                                 <img src="{{ $m->imagenes->count() ? asset('storage/' . $m->imagenes->first()->ruta) : asset('img/maquinaria-placeholder.jpg') }}"
                                     style="max-height: 100%; max-width: 100%; object-fit: contain;"
                                     alt="{{ $m->nombre }}">
@@ -122,31 +122,27 @@
                             </p>
                         @endif
 
-                        @if ($m->precio_dia)
-                            <div class="mt-auto">
+                        <div class="mt-auto">
+                            @if ($m->precio_dia)
                                 <div class="font-weight-bold mb-1">
                                     Bs {{ number_format($m->precio_dia, 2) }}/{{ ($m->tarifa_unidad ?? 'dia') === 'hora' ? 'hora' : 'día' }}
                                 </div>
 
-                                <div class="progress" style="height: 18px;">
+                                <div class="progress mb-3" style="height: 18px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
                                         Precio
                                     </div>
                                 </div>
-                            </div>
-                        @endif
-                    </div>
+                            @endif
 
-                    <div class="card-footer bg-white">
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('maquinarias.show', $m) }}" class="btn btn-outline-success btn-block mb-1">
+                            <a href="{{ route('maquinarias.show', $m) }}" class="btn btn-sm btn-outline-agro w-100 mb-1">
                                 <i class="fas fa-eye"></i> Ver
                             </a>
 
                             @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
                                 @if (auth()->user()->isAdmin() || $m->user_id == auth()->id())
                                     <a href="{{ route('maquinarias.edit', $m) }}"
-                                        class="btn btn-outline-primary btn-block mb-1">
+                                        class="btn btn-sm btn-outline-primary w-100 mb-1">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
 
@@ -154,13 +150,12 @@
                                         class="delete-form" data-message="¿Está seguro de eliminar esta maquinaria?">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger btn-block">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">
                                             <i class="fas fa-trash-alt"></i> Eliminar
                                         </button>
                                     </form>
                                 @endif
                             @endif
-
                         </div>
                     </div>
                 </div>

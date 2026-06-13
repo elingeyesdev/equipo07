@@ -14,7 +14,11 @@ class TransportePublicoController extends Controller
             return redirect()->route('transporte.envio');
         }
 
-        return view('transporte.index');
+        return response()
+            ->view('transporte.index')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function acceder(Request $request, TransporteAccesoService $service)
@@ -73,18 +77,22 @@ class TransportePublicoController extends Controller
             : null;
         $puedeActivarGps = $service->puedeActivarGps($detalle);
 
-        return view('transporte.envio', compact(
-            'acceso',
-            'detalle',
-            'detallesEnvio',
-            'siguienteEstado',
-            'estadoLabels',
-            'faseLabels',
-            'flujo',
-            'estadoFases',
-            'siguienteEstadoLabel',
-            'puedeActivarGps'
-        ));
+        return response()
+            ->view('transporte.envio', compact(
+                'acceso',
+                'detalle',
+                'detallesEnvio',
+                'siguienteEstado',
+                'estadoLabels',
+                'faseLabels',
+                'flujo',
+                'estadoFases',
+                'siguienteEstadoLabel',
+                'puedeActivarGps'
+            ))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function ubicacion(Request $request, TransporteAccesoService $service)
