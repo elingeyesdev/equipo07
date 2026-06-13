@@ -1,17 +1,14 @@
 {
-  "name": "AgroVida Codespace",
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
-  "postCreateCommand": "chmod +x ./setup-docker.sh && ./setup-docker.sh",
+  "name": "AgroVida Estabilizado",
+  "image": "mcr.microsoft.com/devcontainers/php:8.2-bullseye",
   "customizations": {
     "vscode": {
       "extensions": [
         "bmewburn.vscode-intelephense-client",
-        "ms-azuretools.vscode-docker",
-        "vue.volar"
+        "amiralizadeh94.laravel-extra-intellisense",
+        "onecentlin.laravel-blade"
       ]
     }
-  }
+  },
+  "forwardPorts": [8081, 9000, 5432]
 }
