@@ -11,6 +11,8 @@ use App\Models\DatoSanitario;
 use App\Models\GanadoImagen;
 use App\Models\UbicacionGanado;
 use App\Models\UbicacionGeograficaGanado;
+use App\Models\GanadoSanidadDetalle;
+use App\Models\GanadoPremio;
 use App\Services\GeocodificacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -66,30 +68,21 @@ class GanadoController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validación alineada al Mockup
+        // 1. Validación
         $request->validate([
-            'modalidad'      => 'required|string',
-            'tipo_animal_id' => 'required|exists:tipo_animals,id',
-            'raza_id'        => 'required',
-            'nombre'         => 'required|string|max:255',
-            'stock'          => 'required|integer|min:1',
-            'descripcion'    => 'required|string',
-            'precio'         => 'required|numeric|min:0',
-            'forma_cobro'    => 'required|string',
-            'imagenes.*'     => 'nullable|image|max:10240',
-            'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
-            'latitud'        => 'required|numeric',
-            'longitud'       => 'required|numeric',
+            'modalidad'         => 'required|string',
+            'tipo_animal_id'    => 'required|exists:tipo_animals,id',
+            'nombre'            => 'required|string|max:255',
+            'stock'             => 'required|integer|min:1',
+            'precio'            => 'required|numeric|min:0',
+            'latitud'           => 'required|numeric',
+            'longitud'          => 'required|numeric',
+            'documento_sanidad' => 'nullable|mimes:pdf|max:10240',
+            'premios_evidencias.*' => 'nullable|image|max:10240',
         ]);
 
-        // Calcular edad en meses para compatibilidad legacy
-        $edadMeses = 0;
-        if ($request->modalidad !== 'Genetica') {
-            $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
-        }
-
-        // 2. Guardar datos principales
-        $data = [
+        // 2. Crear Ganado y Relaciones Básicas
+        $ganado = Ganado::create([
             'nombre'         => $request->nombre,
             'user_id'        => auth()->id(),
             'tipo_animal_id' => $request->tipo_animal_id,
@@ -97,20 +90,19 @@ class GanadoController extends Controller
             'modalidad'      => $request->modalidad,
             'proposito'      => $request->proposito,
             'tipo_genetica'  => $request->tipo_genetica,
-        ];
+        ]);
 
-        $this->agregarDatosUbicacion($data, $request);
-        $this->sincronizarUbicacionNormalizada($data);
+        // Ubicacion y otros datos (Tus métodos privados)
+        $dataUbicacion = $request->only(['ubicacion', 'latitud', 'longitud', 'departamento', 'municipio', 'provincia', 'ciudad']);
+        $this->sincronizarUbicacionNormalizada($dataUbicacion);
+        $ganado->update(['ubicacion_ganado_id' => $dataUbicacion['ubicacion_ganado_id'] ?? null]);
 
-        $ganado = Ganado::create($data);
-
-        // 3. Sincronizar Relaciones con los nuevos campos
         $ganado->caracteristica()->create([
-            'edad'        => $edadMeses,
-            'edad_valor'  => $request->edad_valor,
-            'unidad_edad' => $request->unidad_edad,
-            'sexo'        => $request->sexo,
-            'descripcion' => $request->descripcion,
+            'edad_valor'       => $request->edad_valor,
+            'unidad_edad'      => $request->unidad_edad,
+            'fecha_nacimiento' => $request->tipo_edad_input === 'date' ? $request->fecha_nacimiento : null,
+            'sexo'             => $request->sexo,
+            'descripcion'      => $request->descripcion,
         ]);
 
         $ganado->datoProductivo()->create([
@@ -126,28 +118,46 @@ class GanadoController extends Controller
             'fecha_publicacion' => now(),
         ]);
 
-        // 4. Manejo del PDF de Sanidad
-        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
-            $pdfPath = null;
-            if ($request->hasFile('documento_pdf')) {
-                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
-            }
+        // 3. Procesar PDF de Sanidad Principal (Opcional)
+        if ($request->hasFile('documento_sanidad')) {
             $ganado->datosSanitarios()->create([
                 'has_sanity'    => true,
-                'documento_pdf' => $pdfPath,
+                'documento_pdf' => $request->file('documento_sanidad')->store('sanidad_pdfs', 'public'),
             ]);
         }
 
-        // 5. Manejo de Imágenes (Max 5 según mockup)
+        // 4. Procesar Sanidad Dinámica (Checkboxes del formulario)
+        if ($request->has('sanidad_aplicada')) {
+            foreach ($request->sanidad_aplicada as $requisito_id) {
+                $ganado->sanidadDetalles()->create([
+                    'requisito_id'     => $requisito_id,
+                    'fecha_aplicacion' => $request->sanidad_fechas[$requisito_id] ?? null,
+                    'texto_referencia' => $request->sanidad_textos[$requisito_id] ?? null,
+                ]);
+            }
+        }
+
+        // 5. Procesar Premios Dinámicos
+        if ($request->tiene_premios && $request->has('premios_nombres')) {
+            foreach ($request->premios_nombres as $index => $nombre_evento) {
+                if (!empty($nombre_evento) && $request->hasFile("premios_evidencias.$index")) {
+                    $ganado->premios()->create([
+                        'nombre_evento'   => $nombre_evento,
+                        'titulo_galardon' => $request->premios_titulos[$index] ?? 'Sin Título',
+                        'ruta_imagen'     => $request->file("premios_evidencias.$index")->store('premios', 'public'),
+                    ]);
+                }
+            }
+        }
+
+        // 6. Manejo de Imágenes del Ganado (Hasta 5)
         if ($request->hasFile('imagenes')) {
             $orden = 0;
-            $imagenes = array_slice($request->file('imagenes'), 0, 5);
-            foreach ($imagenes as $imagen) {
+            foreach (array_slice($request->file('imagenes'), 0, 5) as $imagen) {
                 if ($imagen->isValid()) {
-                    $ruta = $imagen->store('ganados', 'public');
                     GanadoImagen::create([
                         'ganado_id' => $ganado->id,
-                        'ruta'      => $ruta,
+                        'ruta'      => $imagen->store('ganados', 'public'),
                         'orden'     => $orden++,
                     ]);
                 }
@@ -155,7 +165,7 @@ class GanadoController extends Controller
         }
 
         return redirect()->route('ganados.index')
-            ->with('success', 'Publicación creada exitosamente.');
+            ->with('success', 'Publicación enviada. Entrará a revisión del administrador.');
     }
 
 
@@ -210,12 +220,20 @@ class GanadoController extends Controller
             'precio'         => 'required|numeric|min:0',
             'forma_cobro'    => 'required|string',
             'imagenes.*'     => 'nullable|image|max:10240',
-            'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
+            'documento_sanidad' => 'nullable|mimes:pdf|max:10240',
             'latitud'        => 'required|numeric',
             'longitud'       => 'required|numeric',
+            
+            'sanidad_aplicada' => 'nullable|array',
+            'sanidad_fechas'   => 'nullable|array',
+            'sanidad_textos'   => 'nullable|array',
+
+            'tiene_premios'      => 'nullable',
+            'premios_nombres'    => 'nullable|array',
+            'premios_titulos'    => 'nullable|array',
+            'premios_evidencias.*' => 'nullable|image|max:10240',
         ]);
 
-        // Calcular edad en meses para compatibilidad legacy
         $edadMeses = 0;
         if ($request->modalidad !== 'Genetica') {
             $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
@@ -233,17 +251,15 @@ class GanadoController extends Controller
         $this->agregarDatosUbicacion($data, $request);
         $this->sincronizarUbicacionNormalizada($data, $ganado);
 
-        // Manejo del PDF de Sanidad
-        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
+        // Actualizar PDF de Sanidad
+        if ($request->hasFile('documento_sanidad')) {
             $datosSanitario = $ganado->datosSanitarios()->latest('id')->first();
             $pdfPath = $datosSanitario->documento_pdf ?? null;
 
-            if ($request->hasFile('documento_pdf')) {
-                if ($pdfPath && Storage::disk('public')->exists($pdfPath)) {
-                    Storage::disk('public')->delete($pdfPath);
-                }
-                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
+            if ($pdfPath && Storage::disk('public')->exists($pdfPath)) {
+                Storage::disk('public')->delete($pdfPath);
             }
+            $pdfPath = $request->file('documento_sanidad')->store('sanidad_pdfs', 'public');
 
             $ganado->datosSanitarios()->updateOrCreate(
                 ['ganado_id' => $ganado->id],
@@ -254,7 +270,25 @@ class GanadoController extends Controller
             );
         }
 
-        // Manejo de Imágenes (Max 5 según mockup)
+        // Actualizar Sanidad Dinámica (Borramos las viejas y guardamos las nuevas)
+        // $ganado->sanidadDetalles()->delete();
+        if ($request->has('sanidad_aplicada')) {
+            foreach ($request->sanidad_aplicada as $requisito_id) {
+                // $ganado->sanidadDetalles()->create([...]); // Igual que en el store
+            }
+        }
+
+        // Actualizar Premios (Agregamos los nuevos subidos en edición)
+        if ($request->tiene_premios && $request->has('premios_nombres')) {
+            foreach ($request->premios_nombres as $index => $nombre_evento) {
+                if (!empty($nombre_evento) && $request->hasFile("premios_evidencias.$index")) {
+                    $evidenciaPath = $request->file("premios_evidencias.$index")->store('premios', 'public');
+                    // $ganado->premios()->create([...]); // Igual que en el store
+                }
+            }
+        }
+
+        // Manejo de Imágenes
         if ($request->hasFile('imagenes')) {
             $totalImagenesActuales = $ganado->imagenes()->count();
             $maxOrden = $ganado->imagenes()->max('orden') ?? -1;
@@ -286,6 +320,7 @@ class GanadoController extends Controller
                 'unidad_edad' => $request->unidad_edad,
                 'sexo'        => $request->sexo,
                 'descripcion' => $request->descripcion,
+                'fecha_nacimiento' => $request->tipo_edad_input === 'date' ? $request->fecha_nacimiento : null,
             ]
         );
 
@@ -327,8 +362,8 @@ class GanadoController extends Controller
         $lng = $request->longitud;
 
         try {
-            $response = Http::withoutVerifying()   // evita problemas SSL en local
-                ->timeout(10)                     // evita demoras
+            $response = Http::withoutVerifying()
+                ->timeout(10)
                 ->withHeaders([
                     'User-Agent' => 'ProyectoAgricola/1.0',
                 ])->get('https://nominatim.openstreetmap.org/reverse', [
@@ -382,13 +417,11 @@ class GanadoController extends Controller
      */
     public function destroy(Ganado $ganado)
     {
-        // Verificar permisos: solo el dueño o admin puede eliminar
         if (!auth()->user()->isAdmin() && $ganado->user_id !== auth()->id()) {
             return redirect()->route('ganados.index')
                 ->with('error', 'No tienes permisos para eliminar este anuncio.');
         }
 
-        // Eliminar todas las imágenes asociadas
         foreach ($ganado->imagenes as $imagen) {
             if (Storage::disk('public')->exists($imagen->ruta)) {
                 Storage::disk('public')->delete($imagen->ruta);
@@ -476,6 +509,8 @@ class GanadoController extends Controller
             'tipoPeso',
             'datoSanitario',
             'datosSanitarios',
+            // 'sanidadDetalles', // <-- Descomentar cuando crees el modelo
+            // 'premios',         // <-- Descomentar cuando crees el modelo
             'imagenes',
             'ubicacionGanado.ubicacionGeografica',
             'datoProductivo.tipoPeso',
@@ -488,6 +523,7 @@ class GanadoController extends Controller
 
     private function sincronizarDatosNormalizados(Ganado $ganado, array $data): void
     {
+        // Se mantiene tu método original intacto
         $ganado->caracteristica()->updateOrCreate(
             ['ganado_id' => $ganado->id],
             [

@@ -78,6 +78,22 @@ protected $fillable = [
         return $this->hasMany(DatoSanitario::class);
     }
 
+    /**
+     * Relación: detalles de sanidad personalizados (vacunas, análisis, etc.)
+     */
+    public function sanidadDetalles()
+    {
+        return $this->hasMany(GanadoSanidadDetalle::class);
+    }
+
+    /**
+     * Relación: premios y galardones del ganado
+     */
+    public function premios()
+    {
+        return $this->hasMany(GanadoPremio::class);
+    }
+
     public function datoSanitario()
     {
         return $this->hasOne(DatoSanitario::class)->latestOfMany();
