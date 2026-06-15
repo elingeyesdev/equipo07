@@ -65,9 +65,22 @@ class OrganicoController extends Controller
 
     public function show(Organico $organico)
     {
-        $organico->load($this->relacionesOrganico());
+        $organico->load(array_merge($this->relacionesOrganico(), ['resenas.comprador']));
 
-        return view('organicos.show', compact('organico'));
+        $puedeGestionarCertificados = auth()->user()?->isAdmin()
+            || $organico->user_id === auth()->id();
+
+        if (!$puedeGestionarCertificados) {
+            $organico->setRelation(
+                'certificadoRegistros',
+                $organico->certificadoRegistros
+                    ->where('estado', OrganicoCertificado::ESTADO_VERIFICADO)
+                    ->filter(fn (OrganicoCertificado $registro) => filled($registro->archivo))
+                    ->values()
+            );
+        }
+
+        return view('organicos.show', compact('organico', 'puedeGestionarCertificados'));
     }
 
     public function edit(Organico $organico)
@@ -146,6 +159,18 @@ class OrganicoController extends Controller
         return back()->with('ok', 'Estado del certificado actualizado.');
     }
 
+    public function certificadosPendientes()
+    {
+        $certificados = OrganicoCertificado::query()
+            ->with(['organico.user', 'certificado'])
+            ->whereNotNull('archivo')
+            ->where('estado', OrganicoCertificado::ESTADO_PENDIENTE)
+            ->latest()
+            ->paginate(15);
+
+        return view('admin.organicos.certificados-pendientes', compact('certificados'));
+    }
+
     private function catalogosFormulario(): array
     {
         return [
@@ -174,7 +199,7 @@ class OrganicoController extends Controller
 
     private function puedeModificarProducto(Organico $organico): bool
     {
-        return $organico->user_id === auth()->id();
+        return auth()->user()?->isAdmin() || $organico->user_id === auth()->id();
     }
 
     private function extraerDatosComerciales(array &$data): array

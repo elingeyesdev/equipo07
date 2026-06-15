@@ -21,10 +21,10 @@
     <div class="wrapper">
 
         @if (!View::hasSection('standalone_public') && !request()->routeIs('login', 'register'))
-            <nav class="main-header navbar navbar-expand navbar-white navbar-light border-0 project-topbar">
+            <nav class="main-header navbar navbar-expand-lg navbar-white navbar-light border-0 project-topbar">
                 <div class="container">
                     <a href="{{ route('home') }}" class="navbar-brand d-flex align-items-center">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" style="height:34px">
+                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="project-topbar__logo">
                         <span class="brand-text font-weight-bold ml-2 text-white">AgroVida Bolivia</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topnav">
@@ -48,9 +48,21 @@
                             @auth
                                 @if (auth()->user()->isVendedor() || auth()->user()->isAdmin())
                                     <li class="nav-item">
-                                        <a class="nav-link text-white {{ request()->routeIs('admin.datos-sanitarios.*') ? 'active' : '' }}"
-                                            href="{{ route('admin.datos-sanitarios.index') }}">
-                                            <i class="fas fa-syringe"></i> Datos Sanitarios
+                                        <a class="nav-link text-white {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}"
+                                            href="{{ route('productos-venta.index') }}">
+                                            <i class="fas fa-store"></i> {{ auth()->user()->isAdmin() ? 'Productos' : 'Mis productos' }}
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link text-white"
+                                            href="{{ auth()->user()->isAdmin() ? route('admin.pedidos.index') : route('vendedor.solicitudes.index') }}">
+                                            <i class="fas fa-clipboard-list"></i> Solicitudes
+                                            @if ($navPendingRequestsCount > 0)
+                                                <span class="nav-notification-badge"
+                                                    aria-label="{{ $navPendingRequestsCount }} solicitudes pendientes">
+                                                    {{ $navPendingRequestsCount > 99 ? '99+' : $navPendingRequestsCount }}
+                                                </span>
+                                            @endif
                                         </a>
                                     </li>
                                 @endif
@@ -66,21 +78,25 @@
                                     <a class="nav-link text-white {{ request()->routeIs('cart.*') ? 'active' : '' }}"
                                         href="{{ route('cart.index') }}">
                                         <i class="fas fa-shopping-cart"></i> Carrito
-                                        @php
-                                            $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->sum(
-                                                'cantidad',
-                                            );
-                                        @endphp
-                                        @if ($cartCount > 0)
-                                            <span class="badge badge-danger badge-sm"
-                                                id="cart-count">{{ $cartCount }}</span>
+                                        @if ($navCartCount > 0)
+                                            <span class="nav-notification-badge" id="cart-count"
+                                                aria-label="{{ $navCartCount }} productos en el carrito">
+                                                {{ $navCartCount > 99 ? '99+' : $navCartCount }}
+                                            </span>
                                         @endif
                                     </a>
                                 </li>
 
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('pedidos.index') }}">
+                                    <a class="nav-link text-white {{ request()->routeIs('pedidos.*') ? 'active' : '' }}"
+                                        href="{{ route('pedidos.index') }}">
                                         <i class="fas fa-receipt"></i> Mis Pedidos
+                                        @if ($navOrderAlertsCount > 0)
+                                            <span class="nav-notification-badge"
+                                                aria-label="{{ $navOrderAlertsCount }} entregas por confirmar">
+                                                {{ $navOrderAlertsCount > 99 ? '99+' : $navOrderAlertsCount }}
+                                            </span>
+                                        @endif
                                     </a>
                                 </li>
                             @else
@@ -91,12 +107,26 @@
                                 </li>
                             @endauth
                             @auth
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link text-white dropdown-toggle" href="#" data-toggle="dropdown">
-                                        <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
-                                        <span class="badge badge-light ml-1">{{ auth()->user()->role_name }}</span>
+                                <li class="nav-item dropdown account-menu">
+                                    <a class="nav-link text-white account-menu__trigger" href="#" data-toggle="dropdown"
+                                        aria-haspopup="true">
+                                        <span class="account-menu__avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                                        <span class="d-none d-lg-flex account-menu__identity">
+                                            <strong>{{ auth()->user()->name }}</strong>
+                                            <small>{{ auth()->user()->role_name }}</small>
+                                        </span>
+                                        <i class="fas fa-chevron-down account-menu__chevron"></i>
                                     </a>
-                                    <div class="dropdown-menu dropdown-menu-right">
+                                    <div class="dropdown-menu dropdown-menu-right account-menu__panel">
+                                        <div class="account-menu__header">
+                                            <span class="account-menu__avatar account-menu__avatar--large">
+                                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                            </span>
+                                            <span>
+                                                <strong>{{ auth()->user()->name }}</strong>
+                                                <small>{{ auth()->user()->email }}</small>
+                                            </span>
+                                        </div>
                                         <a href="{{ route('home') }}" class="dropdown-item">
                                             <i class="fas fa-home mr-2"></i> Inicio
                                         </a>
@@ -109,12 +139,20 @@
                                             <a href="{{ route('admin.solicitudes-vendedor.index') }}"
                                                 class="dropdown-item">
                                                 <i class="fas fa-clipboard-list mr-2"></i> Panel Admin
+                                                @if ($navSellerApplicationsCount > 0)
+                                                    <span class="account-menu__count">
+                                                        {{ $navSellerApplicationsCount > 99 ? '99+' : $navSellerApplicationsCount }}
+                                                    </span>
+                                                @endif
                                             </a>
                                         @endif
+                                        <a href="{{ route('reclamos.index') }}" class="dropdown-item">
+                                            <i class="fas fa-flag mr-2"></i> Reclamos
+                                        </a>
                                         <div class="dropdown-divider"></div>
                                         <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="dropdown-item">
+                                            <button type="submit" class="dropdown-item account-menu__logout">
                                                 <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
                                             </button>
                                         </form>

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CartItem;
 use App\Models\Pedido;
 use App\Models\PedidoDetalle;
-use App\Models\CartItem;
+use App\Models\TransporteAcceso;
+use App\Models\TransporteEvento;
+use App\Services\EnvioAgrupacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,10 +16,36 @@ class PedidoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pedido::where('user_id', Auth::id());
+        return $this->listado($request, false);
+    }
+
+    public function historial(Request $request)
+    {
+        return $this->listado($request, true);
+    }
+
+    private function listado(Request $request, bool $historial)
+    {
+        $query = Pedido::with('detalles')->where('user_id', Auth::id());
+
+        if ($historial) {
+            $query->where('estado', 'finalizado');
+        } else {
+            $query->where('estado', '!=', 'finalizado');
+        }
 
         if ($request->filled('pedido_id')) {
-            $query->where('id', $request->pedido_id);
+            $busqueda = $request->pedido_id;
+            $query->where(function ($sub) use ($busqueda) {
+                if (ctype_digit((string) $busqueda)) {
+                    $sub->where('id', $busqueda);
+                }
+
+                $sub->orWhereHas('detalles', function ($detalle) use ($busqueda) {
+                    $detalle->where('nombre_producto', 'like', "%{$busqueda}%")
+                        ->orWhere('product_type', 'like', "%{$busqueda}%");
+                });
+            });
         }
 
         if ($request->filled('estado')) {
@@ -35,9 +64,10 @@ class PedidoController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        return view('pedidos.index', compact('pedidos'));
-    }
+        $modoHistorial = $historial;
 
+        return view('pedidos.index', compact('pedidos', 'modoHistorial'));
+    }
 
     public function show(Pedido $pedido)
     {
@@ -45,12 +75,21 @@ class PedidoController extends Controller
             abort(403);
         }
 
-        $pedido->load('detalles');
+        $pedido->load([
+            'detalles.organico',
+            'detalles.ganado',
+            'detalles.maquinaria',
+            'detalles.vendedor',
+            'detalles.transporteAcceso',
+            'detalles.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(8),
+            'detalles.resenaProducto.comprador',
+            'detalles.reclamos.creador',
+        ]);
 
         return view('pedidos.show', compact('pedido'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EnvioAgrupacionService $agrupacionService)
     {
         $request->validate([
             'destino_entrega' => 'required|string|min:5|max:500',
@@ -82,11 +121,12 @@ class PedidoController extends Controller
 
         try {
             $total = $cartItems->sum('subtotal');
+            $gruposEnvio = $agrupacionService->agrupar($cartItems);
 
             $pedido = Pedido::create([
-                'user_id'         => $userId,
-                'total'           => $total,
-                'estado'          => 'pendiente',
+                'user_id' => $userId,
+                'total' => $total,
+                'estado' => 'pendiente',
                 'destino_entrega' => $request->destino_entrega,
                 'telefono_contacto' => $request->telefono_contacto,
                 'destino_latitud' => $request->destino_latitud,
@@ -95,19 +135,24 @@ class PedidoController extends Controller
 
             foreach ($cartItems as $item) {
                 $product = $item->product;
+                $datosEnvio = $gruposEnvio[$item->id];
 
                 PedidoDetalle::create([
-                    'pedido_id'       => $pedido->id,
-                    'vendedor_id'     => $product?->user_id,
+                    'pedido_id' => $pedido->id,
+                    'grupo_envio' => $datosEnvio['grupo_envio'],
+                    'origen_direccion' => $datosEnvio['origen_direccion'],
+                    'origen_latitud' => $datosEnvio['origen_latitud'],
+                    'origen_longitud' => $datosEnvio['origen_longitud'],
+                    'vendedor_id' => $product?->user_id,
                     'estado_solicitud' => 'pendiente',
-                    'product_id'      => $item->product_id,
-                    'product_type'    => $item->product_type,
+                    'product_id' => $item->product_id,
+                    'product_type' => $item->product_type,
                     'nombre_producto' => $product ? $product->nombre : 'Producto eliminado',
-                    'cantidad'        => $item->cantidad,
+                    'cantidad' => $item->cantidad,
                     'alquiler_unidad' => $item->product_type === 'maquinaria' ? $item->alquiler_unidad : null,
                     'precio_unitario' => $item->precio_unitario,
-                    'subtotal'        => $item->subtotal,
-                    'notas'           => $item->notas,
+                    'subtotal' => $item->subtotal,
+                    'notas' => $item->notas,
                 ]);
 
                 // (Opcional) descontar stock si quieres
@@ -126,7 +171,75 @@ class PedidoController extends Controller
                 ->with('success', 'Pedido creado correctamente.');
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return redirect()->route('cart.index')->with('error', 'Ocurrió un error al crear el pedido.');
         }
+    }
+
+    public function confirmarRecepcion(PedidoDetalle $detalle)
+    {
+        $detalle->load('pedido');
+
+        if ((int) $detalle->pedido->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        if ($detalle->estado_solicitud !== 'aceptada') {
+            return back()->with('error', 'Solo puedes confirmar productos aceptados por el vendedor.');
+        }
+
+        if ($detalle->estado_transporte_actual !== 'esperando_confirmacion') {
+            return back()->with('error', 'El transportista aun no marco la llegada al destino.');
+        }
+
+        $detallesEnvio = $detalle->detallesEnvio()
+            ->where('estado_solicitud', 'aceptada')
+            ->where('estado_transporte', 'esperando_confirmacion')
+            ->get();
+
+        foreach ($detallesEnvio as $detalleEnvio) {
+            $detalleEnvio->update([
+                'estado_transporte' => 'entregado',
+                'recepcion_confirmada_at' => now(),
+                'estado_alquiler' => $detalleEnvio->es_alquiler_maquinaria
+                    ? 'en_uso'
+                    : $detalleEnvio->estado_alquiler,
+            ]);
+
+            TransporteEvento::create([
+                'pedido_detalle_id' => $detalleEnvio->id,
+                'transporte_acceso_id' => $detalle->transporteAcceso?->id,
+                'user_id' => Auth::id(),
+                'actor' => 'comprador',
+                'estado_anterior' => 'esperando_confirmacion',
+                'estado_nuevo' => 'entregado',
+            ]);
+        }
+
+        if (! $detalle->es_alquiler_maquinaria) {
+            $detalle->transporteAcceso?->update([
+                'estado' => TransporteAcceso::ESTADO_REVOCADO,
+            ]);
+        }
+
+        if ($detalle->es_alquiler_maquinaria) {
+            $detalle->pedido()->update(['estado' => 'en_uso']);
+
+            return back()->with('success', 'Recepcion confirmada. La maquinaria queda en uso hasta la devolucion.');
+        }
+
+        $aceptadosPendientes = $detalle->pedido->detalles()
+            ->where('estado_solicitud', 'aceptada')
+            ->where(function ($query) {
+                $query->whereNull('estado_transporte')
+                    ->orWhere('estado_transporte', '!=', 'entregado');
+            })
+            ->exists();
+
+        $detalle->pedido()->update([
+            'estado' => $aceptadosPendientes ? 'entregado' : 'finalizado',
+        ]);
+
+        return back()->with('success', 'Recepcion confirmada. La venta fue finalizada correctamente.');
     }
 }

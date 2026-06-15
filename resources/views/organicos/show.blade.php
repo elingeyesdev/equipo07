@@ -3,7 +3,7 @@
 @section('title', 'Detalle de Orgánico')
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid product-detail-page">
 
         <style>
             :root {
@@ -144,9 +144,10 @@
                 }
             }
         </style>
+        <link rel="stylesheet" href="{{ asset('css/product-detail.css') }}">
 
         {{-- CABECERA --}}
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 product-detail-toolbar">
             <div>
                 <h1 class="h3 mb-1 text-dark">
                     <i class="fas fa-leaf text-success"></i>
@@ -165,7 +166,7 @@
 
             {{-- COLUMNA IZQUIERDA: IMÁGENES --}}
             <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm border-0 mb-3">
+                <div class="card shadow-sm border-0 mb-3 product-gallery-card">
                     <div class="card-body p-0">
 
                         <div class="position-relative bg-white d-flex justify-content-center align-items-center"
@@ -191,7 +192,7 @@
 
                 {{-- MINIATURAS --}}
                 @if ($organico->imagenes->count() > 1)
-                    <div class="row">
+                    <div class="row product-thumbnails">
                         @foreach ($organico->imagenes as $img)
                             <div class="col-4 mb-2">
                                 <div class="bg-white border rounded d-flex align-items-center justify-content-center"
@@ -211,7 +212,7 @@
             {{-- COLUMNA DERECHA: INFO PRINCIPAL --}}
             <div class="col-lg-6">
 
-                <div class="card shadow-sm border-0 mb-4 panel-info-card">
+                <div class="card shadow-sm border-0 mb-4 panel-info-card product-purchase-card">
                     <div class="card-body">
 
                         {{-- NOMBRE + META --}}
@@ -248,7 +249,7 @@
                         </div>
 
                         {{-- PRECIO / STOCK --}}
-                        <div class="p-3 mb-3 rounded" style="background:#e8f5e9;">
+                        <div class="p-3 mb-3 rounded product-price-box">
                             <small class="text-muted d-block mb-1">Precio</small>
                             <h3 class="h4 text-success font-weight-bold mb-1">
                                 Bs {{ number_format($organico->precio, 2) }}
@@ -480,8 +481,6 @@
                         @forelse ($organico->certificadoRegistros as $registro)
                             @php
                                 $archivoUrl = $registro->archivo ? asset('storage/' . $registro->archivo) : null;
-                                $extension = strtolower(pathinfo($registro->archivo ?? '', PATHINFO_EXTENSION));
-                                $esImagen = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                                 $esObligatorioSinArchivo = (bool) ($registro->certificado?->es_obligatorio && !$registro->archivo);
                                 $estadoClases = [
                                     'verificado' => 'success',
@@ -504,69 +503,112 @@
                                     @endif
                                     @if ($registro->archivo)
                                         <small class="d-block text-muted">Archivo: {{ basename($registro->archivo) }}</small>
-                                        @if ($esImagen)
-                                            <button type="button" class="btn btn-sm btn-outline-success mt-2"
-                                                data-toggle="modal" data-target="#certificadoModal"
-                                                data-certificado-url="{{ $archivoUrl }}"
-                                                data-certificado-titulo="{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}">
-                                                <i class="fas fa-eye mr-1"></i> Ver certificado
-                                            </button>
-                                        @else
-                                            <a href="{{ $archivoUrl }}" target="_blank" class="btn btn-sm btn-outline-success mt-2">
-                                                <i class="fas fa-eye mr-1"></i> Ver PDF
-                                            </a>
-                                        @endif
+                                        <button type="button" class="btn btn-sm btn-outline-success mt-2"
+                                            data-file-viewer data-file-url="{{ $archivoUrl }}"
+                                            data-file-title="{{ $registro->certificado?->nombre ?? $registro->nombre_adicional }}">
+                                            <i class="fas fa-eye mr-1"></i> Ver certificado
+                                        </button>
                                     @else
                                         <small class="d-block text-muted">Sin archivo cargado.</small>
                                     @endif
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge badge-{{ $badge }} mr-2">{{ $textoEstado }}</span>
+                                @if ($puedeGestionarCertificados)
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-{{ $badge }} mr-2">{{ $textoEstado }}</span>
 
-                                    @if (auth()->user()?->isAdmin())
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-light border" type="button"
-                                                id="certificadoMenu{{ $registro->id }}" data-toggle="dropdown"
-                                                aria-haspopup="true" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="certificadoMenu{{ $registro->id }}">
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="verificado">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-check text-success mr-2"></i>Aprobar
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="rechazado">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-times text-danger mr-2"></i>Desaprobar
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="estado" value="pendiente">
-                                                    <button class="dropdown-item" type="submit">
-                                                        <i class="fas fa-clock text-warning mr-2"></i>Marcar pendiente
-                                                    </button>
-                                                </form>
+                                        @if (auth()->user()?->isAdmin())
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-light border" type="button"
+                                                    id="certificadoMenu{{ $registro->id }}" data-toggle="dropdown"
+                                                    aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="certificadoMenu{{ $registro->id }}">
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="verificado">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-check text-success mr-2"></i>Aprobar
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="rechazado">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-times text-danger mr-2"></i>Desaprobar
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.organicos.certificados.estado', $registro) }}" method="post">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="estado" value="pendiente">
+                                                        <button class="dropdown-item" type="submit">
+                                                            <i class="fas fa-clock text-warning mr-2"></i>Marcar pendiente
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
-                                        </div>
-                                    @endif
-                                </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                         @empty
-                            <span class="text-muted">Sin certificados registrados.</span>
+                            <span class="text-muted">
+                                {{ $puedeGestionarCertificados ? 'Sin certificados registrados.' : 'Este producto no tiene certificados aprobados para mostrar.' }}
+                            </span>
                         @endforelse
                     </div>
                 </div>
             </div>
         </div>
+
+        <section class="card detail-card mb-4 product-detail-reviews">
+            <div class="detail-card-header detail-card-header-success">
+                <h5 class="mb-0"><i class="fas fa-star mr-2"></i>Calificaciones verificadas</h5>
+            </div>
+            <div class="card-body">
+                @if($organico->resenas->isNotEmpty())
+                    <div class="d-flex align-items-center mb-3">
+                        <strong class="h3 mb-0 mr-2">
+                            {{ number_format($organico->resenas->avg('estrellas'), 1) }}
+                        </strong>
+                        <div>
+                            <div class="text-warning">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="{{ $i <= round($organico->resenas->avg('estrellas')) ? 'fas' : 'far' }} fa-star"></i>
+                                @endfor
+                            </div>
+                            <small class="text-muted">{{ $organico->resenas->count() }} compra(s) calificadas</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        @foreach($organico->resenas->sortByDesc('created_at') as $resena)
+                            <div class="col-md-6 mb-3">
+                                <article class="border rounded p-3 h-100 bg-light">
+                                    <div class="text-warning mb-2">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="{{ $i <= $resena->estrellas ? 'fas' : 'far' }} fa-star"></i>
+                                        @endfor
+                                    </div>
+                                    <p class="mb-2">{{ $resena->comentario }}</p>
+                                    <small class="text-muted">
+                                        Compra verificada · {{ $resena->comprador?->name }} ·
+                                        {{ $resena->created_at->format('d/m/Y') }}
+                                    </small>
+                                </article>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-muted">
+                        <i class="far fa-comment-dots mr-1"></i>
+                        Este producto todavía no tiene calificaciones de compras verificadas.
+                    </div>
+                @endif
+            </div>
+        </section>
 
     </div>
 
@@ -658,34 +700,6 @@
             });
         </script>
     @endif
-
-    {{-- MODAL CERTIFICADO --}}
-    <div class="modal fade" id="certificadoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="certificadoModalTitulo">Certificado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-center bg-light">
-                    <img id="certificadoModalImg" src="" class="img-fluid rounded"
-                        style="max-height: 78vh; object-fit: contain;">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        window.addEventListener('load', function() {
-            $('#certificadoModal').on('show.bs.modal', function(event) {
-                const button = $(event.relatedTarget);
-                $('#certificadoModalTitulo').text(button.data('certificado-titulo') || 'Certificado');
-                $('#certificadoModalImg').attr('src', button.data('certificado-url') || '');
-            });
-        });
-    </script>
 
     {{-- MODAL IMAGEN --}}
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">

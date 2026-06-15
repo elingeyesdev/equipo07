@@ -187,10 +187,10 @@
                                 <div class="maquinaria-price-info__controls">
                                     <label for="horas-dia-estimadas" class="mb-0">Horas de trabajo al día</label>
                                     <input type="number" id="horas-dia-estimadas" class="form-control"
-                                        min="1" max="24" step="1" value="8" data-hours-per-day>
+                                        min="1" max="24" step="1" placeholder="Ej: 8" data-hours-per-day>
                                 </div>
                                 <small data-day-price-detail>
-                                    Calculado con Bs 0.00 por hora durante 8 horas.
+                                    Ingresa las horas de trabajo al día para calcular la estimación.
                                 </small>
                             </div>
                         </div>
@@ -359,21 +359,26 @@
                         <div class="row" id="imagenes-actuales">
                             @foreach ($maquinaria->imagenes as $imagen)
                                 <div class="col-md-3 mb-3 imagen-item" data-imagen-id="{{ $imagen->id }}">
-                                    <div class="mb-2">
+                                    <div class="card card-outline card-success h-100 mb-0 maquinaria-image-card">
                                         <img src="{{ asset('storage/' . $imagen->ruta) }}"
-                                            alt="Imagen {{ $loop->iteration }}" class="img-thumbnail"
-                                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                                    </div>
-                                    <div class="btn-group btn-group-sm d-flex" role="group">
-                                        <button type="button" class="btn btn-outline-danger eliminar-imagen"
-                                            data-imagen-id="{{ $imagen->id }}">
-                                            <i class="fas fa-trash mr-1"></i> Eliminar
-                                        </button>
-                                        <label class="btn btn-outline-success mb-0">
-                                            <input type="radio" name="imagen_portada" value="existing:{{ $imagen->id }}"
-                                                {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
-                                            Portada
-                                        </label>
+                                            alt="Imagen {{ $loop->iteration }}" class="card-img-top maquinaria-image-card__image">
+                                        <div class="card-footer bg-white p-2">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <button type="button" class="btn btn-sm btn-outline-danger eliminar-imagen"
+                                                    data-imagen-id="{{ $imagen->id }}">
+                                                    <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                                </button>
+                                                <div class="custom-control custom-radio mb-0">
+                                                    <input type="radio" id="portada-existing-{{ $imagen->id }}"
+                                                        class="custom-control-input" name="imagen_portada"
+                                                        value="existing:{{ $imagen->id }}"
+                                                        {{ old('imagen_portada', $loop->first ? 'existing:' . $imagen->id : '') === 'existing:' . $imagen->id ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="portada-existing-{{ $imagen->id }}">
+                                                        Portada
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="hidden" name="imagenes_eliminar[]" value=""
                                         class="imagen-eliminar-input">
@@ -412,21 +417,28 @@
         <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('maquinarias.index') }}"
             class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Volver
-        </a>
-        <div class="maquinaria-wizard__action-group">
-            <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
-                <i class="fas fa-chevron-left mr-1"></i> Anterior
-            </button>
+	        </a>
+	        <div class="maquinaria-wizard__action-group">
+	            <button type="button" class="btn btn-outline-secondary" data-draft-save>
+	                <i class="fas fa-save mr-1"></i> Guardar borrador
+	            </button>
+	            <button type="button" class="btn btn-outline-danger" data-draft-discard>
+	                <i class="fas fa-trash-alt mr-1"></i> Descartar borrador
+	            </button>
+	            <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
+	                <i class="fas fa-chevron-left mr-1"></i> Anterior
+	            </button>
             <button type="button" class="btn btn-success" data-wizard-next>
                 Siguiente <i class="fas fa-chevron-right ml-1"></i>
             </button>
             <button type="submit" class="btn btn-success d-none" data-wizard-submit>
                 <i class="fas fa-save mr-1"></i> Guardar
             </button>
-        </div>
-    </div>
-    </div>
-</div>
+	        </div>
+	    </div>
+	    <small class="text-success d-none mt-2 d-block" data-draft-status></small>
+	    </div>
+	</div>
 
 <div class="modal fade maquinaria-map-modal" id="maquinariaMapModal" tabindex="-1" role="dialog"
     aria-labelledby="maquinariaMapModalLabel" aria-hidden="true">
@@ -524,10 +536,6 @@
                             <div>
                                 <dt>Departamento</dt>
                                 <dd data-publication-preview-department>-</dd>
-                            </div>
-                            <div>
-                                <dt>Coordenadas</dt>
-                                <dd data-publication-preview-coordinates>-</dd>
                             </div>
                             <div>
                                 <dt>Imágenes</dt>
@@ -977,7 +985,15 @@
             if (!hourlyPriceInput || !hoursPerDayInput || !dayPriceResult || !dayPriceDetail) return;
 
             const hourlyPrice = Math.max(parseFloat(hourlyPriceInput.value) || 0, 0);
-            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput.value, 10) || 1, 1), 24);
+            const rawHours = hoursPerDayInput.value.trim();
+
+            if (rawHours === '') {
+                dayPriceResult.textContent = bolivianoAmount(0);
+                dayPriceDetail.textContent = 'Ingresa las horas de trabajo al día para calcular la estimación.';
+                return;
+            }
+
+            const hoursPerDay = Math.min(Math.max(parseInt(rawHours, 10) || 1, 1), 24);
             const dayPrice = hourlyPrice * hoursPerDay;
 
             if (String(hoursPerDayInput.value) !== String(hoursPerDay)) {
@@ -1231,8 +1247,11 @@
 
         function buildPublicationPreview() {
             const price = Math.max(parseFloat(fieldValue('precio_dia')) || 0, 0);
-            const hoursPerDay = Math.min(Math.max(parseInt(hoursPerDayInput?.value, 10) || 1, 1), 24);
-            const dayPrice = price * hoursPerDay;
+            const rawHoursPerDay = hoursPerDayInput?.value.trim() || '';
+            const hoursPerDay = rawHoursPerDay === ''
+                ? null
+                : Math.min(Math.max(parseInt(rawHoursPerDay, 10) || 1, 1), 24);
+            const dayPrice = hoursPerDay ? price * hoursPerDay : 0;
             const imageUrl = coverImageUrl();
             const previewImage = document.querySelector('[data-publication-preview-image]');
             const previewEmpty = document.querySelector('[data-publication-preview-empty]');
@@ -1254,14 +1273,15 @@
             setPreviewText('[data-publication-preview-phone]', fieldValue('telefono'), 'Sin teléfono');
             setPreviewText(
                 '[data-publication-preview-day-price]',
-                `${bolivianoAmount(dayPrice)} por ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}`,
+                hoursPerDay
+                    ? `${bolivianoAmount(dayPrice)} por ${hoursPerDay} ${hoursPerDay === 1 ? 'hora' : 'horas'}`
+                    : '',
                 '-'
             );
             setPreviewText('[data-publication-preview-location]', fieldValue('ubicacion'), 'Sin ubicación seleccionada');
             setPreviewText('[data-publication-preview-city]', fieldValue('ciudad') || fieldValue('municipio'), 'Sin ciudad o municipio');
             setPreviewText('[data-publication-preview-province]', fieldValue('provincia'), 'Sin provincia');
             setPreviewText('[data-publication-preview-department]', fieldValue('departamento'), 'Sin departamento');
-            setPreviewText('[data-publication-preview-coordinates]', lat && lng ? `${lat}, ${lng}` : '', 'Sin coordenadas');
             setPreviewText(
                 '[data-publication-preview-images-count]',
                 `${visibleImagesCount} ${visibleImagesCount === 1 ? 'imagen' : 'imágenes'} cargadas`,
@@ -1321,22 +1341,26 @@
                 col.className = 'col-md-3 mb-3';
                 col.setAttribute('data-file-id', item.id);
                 col.innerHTML = `
-                    <div class="mb-2">
+                    <div class="card card-outline card-success h-100 mb-0 maquinaria-image-card">
                         <img src="${item.url}"
                              alt="Preview ${index + 1}"
-                             class="img-thumbnail"
-                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
-                    </div>
-                    <div class="btn-group btn-group-sm d-flex" role="group">
-                        <button type="button"
-                                class="btn btn-outline-danger eliminar-preview"
-                                data-file-id="${item.id}">
-                            <i class="fas fa-trash mr-1"></i> Eliminar
-                        </button>
-                        <label class="btn btn-outline-success mb-0">
-                            <input type="radio" name="imagen_portada" value="new:${index}">
-                            Portada
-                        </label>
+                             class="card-img-top maquinaria-image-card__image">
+                        <div class="card-footer bg-white p-2">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger eliminar-preview"
+                                        data-file-id="${item.id}">
+                                    <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                </button>
+                                <div class="custom-control custom-radio mb-0">
+                                    <input type="radio" id="portada-new-${index}" class="custom-control-input"
+                                        name="imagen_portada" value="new:${index}">
+                                    <label class="custom-control-label" for="portada-new-${index}">
+                                        Portada
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 previewContainer.appendChild(col);
@@ -1446,3 +1470,6 @@
         updateCount();
     });
 </script>
+@include('components.form-draft', [
+    'draftKey' => isset($maquinaria) && $maquinaria ? 'maquinarias.edit.' . $maquinaria->id : 'maquinarias.create',
+])

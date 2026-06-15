@@ -107,6 +107,12 @@ protected $fillable = [
         return $this->hasMany(GanadoImagen::class)->orderBy('orden');
     }
 
+    public function resenas()
+    {
+        return $this->hasMany(ResenaProducto::class, 'product_id')
+            ->where('product_type', 'ganado');
+    }
+
     /**
      * Relación: un ganado tiene una madre
      */

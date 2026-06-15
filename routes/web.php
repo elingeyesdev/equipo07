@@ -18,11 +18,37 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
+use App\Http\Controllers\PedidoUbicacionController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\VendedorSolicitudController;
+use App\Http\Controllers\TransportePublicoController;
+use App\Http\Controllers\ProductoVentaController;
+use App\Http\Controllers\InteraccionOrganicoController;
+use App\Http\Controllers\ReclamoController;
 
 
 Route::view('/', 'public.landing')->name('landing');
+
+Route::get('/transporte', [TransportePublicoController::class, 'index'])
+    ->name('transporte.index');
+Route::post('/transporte/acceder', [TransportePublicoController::class, 'acceder'])
+    ->middleware('throttle:8,1')
+    ->name('transporte.acceder');
+Route::middleware('transporte.externo')->group(function () {
+    Route::get('/transporte/envio', [TransportePublicoController::class, 'envio'])
+        ->name('transporte.envio');
+    Route::post('/transporte/envio/ubicacion', [TransportePublicoController::class, 'ubicacion'])
+        ->middleware('throttle:120,1')
+        ->name('transporte.ubicacion');
+    Route::post('/transporte/envio/estado', [TransportePublicoController::class, 'estado'])
+        ->middleware('throttle:20,1')
+        ->name('transporte.estado');
+    Route::get('/transporte/envio/actualizacion', [TransportePublicoController::class, 'actualizacion'])
+        ->middleware('throttle:60,1')
+        ->name('transporte.actualizacion');
+    Route::post('/transporte/salir', [TransportePublicoController::class, 'salir'])
+        ->name('transporte.salir');
+});
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
@@ -32,9 +58,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::middleware('auth')->get('/pedidos/detalles/{detalle}/estado-transporte', [PedidoUbicacionController::class, 'estadoDetalle'])->name('pedidos.detalles.estadoTransporte');
 Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/anuncios', [App\Http\Controllers\HomeController::class, 'anuncios'])->name('ads.index');
-Route::view('/publicar', 'public.ads.create')->name('ads.create');
+Route::view('/publicar', 'public.ads.create')->middleware('not.transportista')->name('ads.create');
 
 // RUTAS POR ROLES
 
@@ -42,6 +69,7 @@ Route::view('/publicar', 'public.ads.create')->name('ads.create');
 Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/detalle-json', [AdminDashboardController::class, 'detalleJson'])->name('dashboard.detalleJson');
+    Route::patch('/reclamos/{reclamo}', [ReclamoController::class, 'actualizarEstado'])->name('reclamos.update');
 
     // Gestión de solicitudes de vendedor
     Route::get('/solicitudes-vendedor', [SolicitudVendedorController::class, 'index'])->name('solicitudes-vendedor.index');
@@ -61,6 +89,8 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('unidades_organicos', App\Http\Controllers\UnidadOrganicoController::class);
     Route::resource('tipo_cultivos', TipoCultivoController::class)->except(['show', 'create', 'edit']);
     Route::resource('certificados_organicos', CertificadoOrganicoController::class)->except(['show', 'create', 'edit']);
+    Route::get('/organicos/certificados-pendientes', [OrganicoController::class, 'certificadosPendientes'])
+        ->name('organicos.certificados.pendientes');
     Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
         ->name('organicos.certificados.estado');
 
@@ -99,6 +129,8 @@ Route::middleware(['auth', 'role.vendedor'])->prefix('admin')->name('admin.')->g
 });
 
 Route::middleware(['auth', 'role.vendedor'])->group(function () {
+    Route::get('/productos-en-venta', [ProductoVentaController::class, 'index'])->name('productos-venta.index');
+
     Route::resource('ganados', GanadoController::class)->except(['index', 'show']);
     Route::resource('maquinarias', MaquinariaController::class)->except(['index', 'show'])->names('maquinarias');
     Route::resource('organicos', OrganicoController::class)->except(['index', 'show'])->names('organicos');
@@ -109,10 +141,26 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::post('/vendedor/solicitudes/{solicitud}/cancelar', [VendedorSolicitudController::class, 'cancelar'])->name('vendedor.solicitudes.cancelar');
     Route::post('/vendedor/solicitudes/{solicitud}/alquiler/avanzar', [VendedorSolicitudController::class, 'avanzarAlquiler'])->name('vendedor.solicitudes.alquiler.avanzar');
     Route::post('/vendedor/solicitudes/{solicitud}/finalizar', [VendedorSolicitudController::class, 'finalizarPedido'])->name('vendedor.solicitudes.finalizar');
+    Route::post('/vendedor/solicitudes/{solicitud}/transporte/codigo', [VendedorSolicitudController::class, 'regenerarCodigo'])
+        ->name('vendedor.solicitudes.transporte.codigo');
+    Route::delete('/vendedor/solicitudes/{solicitud}/transporte/codigo', [VendedorSolicitudController::class, 'revocarCodigo'])
+        ->name('vendedor.solicitudes.transporte.revocar');
+    Route::post('/vendedor/solicitudes/{solicitud}/transporte/preparado', [VendedorSolicitudController::class, 'marcarPreparado'])
+        ->name('vendedor.solicitudes.transporte.preparado');
 });
 
+Route::middleware('auth')->get(
+    '/pedidos/detalles/{detalle}/tracking-actual',
+    [PedidoUbicacionController::class, 'detalleLatest']
+)->name('pedidos.detalles.tracking.latest');
+
+Route::middleware('auth')->get(
+    '/mis-pedidos/{pedido}/estados-actuales',
+    [PedidoUbicacionController::class, 'estadosPedido']
+)->name('pedidos.tracking.estados');
+
 // TODOS LOS USUARIOS AUTENTICADOS
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'not.transportista'])->group(function () {
     Route::get('ganados', [GanadoController::class, 'index'])->name('ganados.index');
     Route::get('ganados/{ganado}', [GanadoController::class, 'show'])->name('ganados.show');
     Route::get('maquinarias', [MaquinariaController::class, 'index'])->name('maquinarias.index');
@@ -131,7 +179,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/geocodificacion', [GanadoController::class, 'obtenerGeocodificacion'])->name('api.geocodificacion');
 
     Route::get('/mis-pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
+    Route::get('/mis-pedidos/historial', [PedidoController::class, 'historial'])->name('pedidos.historial');
     Route::get('/mis-pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
+    Route::get('/mis-pedidos/{pedido}/ubicacion-actual', [PedidoUbicacionController::class, 'latest'])->name('pedidos.tracking.latest');
+    Route::post('/mis-pedidos/detalles/{detalle}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion'])->name('pedidos.detalles.confirmarRecepcion');
+    Route::post('/pedidos/detalles/{detalle}/resena', [InteraccionOrganicoController::class, 'guardarResena'])
+        ->name('resenas.store');
+    Route::post('/pedidos/detalles/{detalle}/reclamo', [InteraccionOrganicoController::class, 'guardarReclamo'])
+        ->name('reclamos.store');
+    Route::get('/reclamos', [ReclamoController::class, 'index'])->name('reclamos.index');
+    Route::get('/reclamos/{reclamo}', [ReclamoController::class, 'show'])->name('reclamos.show');
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
 });
 

@@ -24,7 +24,7 @@
 
         .animal-image-wrapper {
             width: 100%;
-            height: 230px;
+            height: 200px;
             background: #f8f9fa;
             border-radius: 0;
             border: 0;
@@ -163,8 +163,8 @@
         @if ($ganados->count() > 0)
             <div class="row">
                 @foreach ($ganados as $ganado)
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="animal-card project-card">
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                        <div class="card shadow-sm border-0 h-100 project-card animal-card">
 
                                     {{-- Imagen --}}
                                     @php
@@ -279,26 +279,26 @@
                                             </span>
                                         </div>
 
-                                        <div class="action-buttons">
+                                        <div class="mt-auto">
                                             <a href="{{ route('ganados.show', $ganado->id) }}"
-                                                class="btn btn-outline-success btn-action btn-block" title="Ver detalles">
-                                                <i class="fas fa-eye mr-1"></i> Ver
+                                                class="btn btn-sm btn-outline-agro w-100 mb-1" title="Ver detalles">
+                                                <i class="fas fa-eye"></i> Ver
                                             </a>
 
                                             @if (auth()->check() && (auth()->user()->isVendedor() || auth()->user()->isAdmin()))
                                                 @if (auth()->user()->isAdmin() || $ganado->user_id == auth()->id())
                                                     <a href="{{ route('ganados.edit', $ganado->id) }}"
-                                                        class="btn btn-outline-primary btn-action btn-block" title="Editar">
-                                                        <i class="fas fa-edit mr-1"></i> Editar
+                                                        class="btn btn-sm btn-outline-primary w-100 mb-1" title="Editar">
+                                                        <i class="fas fa-edit"></i> Editar
                                                     </a>
 
                                                     <form action="{{ route('ganados.destroy', $ganado->id) }}"
                                                         method="POST" class="d-inline" id="deleteForm{{ $ganado->id }}">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="button" class="btn btn-outline-danger btn-action btn-block"
+                                                        <button type="button" class="btn btn-sm btn-outline-danger w-100"
                                                             onclick="confirmDelete({{ $ganado->id }})" title="Eliminar">
-                                                            <i class="fas fa-trash mr-1"></i> Eliminar
+                                                            <i class="fas fa-trash-alt"></i> Eliminar
                                                         </button>
                                                     </form>
                                                 @endif

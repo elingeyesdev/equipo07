@@ -25,8 +25,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'telefono',
         'password',
         'role_id',
+        'transportista_creado_por_id',
     ];
 
     /**
@@ -58,6 +60,21 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function transportistaCreador()
+    {
+        return $this->belongsTo(User::class, 'transportista_creado_por_id');
+    }
+
+    public function transportistasCreados()
+    {
+        return $this->hasMany(User::class, 'transportista_creado_por_id');
+    }
+
+    public function transportistaEnvios()
+    {
+        return $this->hasMany(PedidoDetalle::class, 'transportista_id');
     }
 
     /**
@@ -137,6 +154,11 @@ class User extends Authenticatable
     public function isVendedor(): bool
     {
         return $this->role_name === Role::VENDEDOR;
+    }
+
+    public function isTransportista(): bool
+    {
+        return $this->role_name === Role::TRANSPORTISTA;
     }
 
     /**

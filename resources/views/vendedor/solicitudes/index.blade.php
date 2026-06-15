@@ -38,30 +38,27 @@
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Producto</th>
+                                <th>Pedido</th>
                                 <th>Comprador</th>
-                                <th>Cantidad/Tiempo</th>
                                 <th>Total</th>
                                 <th>Destino</th>
-                                <th>Estado</th>
+                                <th>Productos</th>
+                                <th>Transporte</th>
                                 <th class="text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($solicitudes as $solicitud)
                                 @php
-                                    $badge = [
-                                        'pendiente' => 'warning',
-                                        'aceptada' => 'success',
-                                        'rechazada' => 'secondary',
-                                        'cancelada_producto_vendido' => 'danger',
-                                    ][$solicitud->estado_solicitud] ?? 'secondary';
-                                    $cantidadTexto = $solicitud->cantidad_tiempo_texto;
+                                    $detalles = $solicitud->detallesEnvio;
+                                    $pendientes = $detalles->where('estado_solicitud', 'pendiente')->count();
+                                    $aceptados = $detalles->where('estado_solicitud', 'aceptada')->count();
+                                    $rechazados = $detalles->where('estado_solicitud', 'rechazada')->count();
                                 @endphp
                                 <tr>
                                     <td>
-                                        <strong>{{ $solicitud->nombre_producto }}</strong><br>
-                                        <small class="text-muted">{{ ucfirst($solicitud->product_type) }}</small>
+                                        <strong>#{{ $solicitud->pedido_id }}</strong><br>
+                                        <small class="text-muted">{{ $detalles->count() }} producto(s)</small>
                                     </td>
                                     <td>
                                         {{ $solicitud->pedido->user->name ?? 'Comprador no disponible' }}<br>
@@ -72,20 +69,44 @@
                                         @endif
                                         <small class="text-muted">{{ $solicitud->pedido->created_at->format('d/m/Y H:i') }}</small>
                                     </td>
-                                    <td>{{ $cantidadTexto }}</td>
-                                    <td><strong>Bs {{ number_format($solicitud->subtotal, 2) }}</strong></td>
+                                    <td><strong>Bs {{ number_format($detalles->sum('subtotal'), 2) }}</strong></td>
                                     <td>
                                         <small>{{ \Illuminate\Support\Str::limit($solicitud->pedido->destino_entrega, 45) }}</small>
                                     </td>
                                     <td>
-                                        <span class="badge badge-{{ $badge }}">
-                                            {{ $estados[$solicitud->estado_solicitud] ?? ucfirst($solicitud->estado_solicitud) }}
-                                        </span>
+                                        @foreach ($detalles as $detalle)
+                                            <div class="mb-1">
+                                                <strong>{{ $detalle->nombre_producto }}</strong>
+                                                <small class="text-muted">· {{ $detalle->cantidad_tiempo_texto }}</small>
+                                            </div>
+                                        @endforeach
+                                        <div class="mt-2">
+                                            @if ($pendientes)
+                                                <span class="badge badge-warning">{{ $pendientes }} pendiente(s)</span>
+                                            @endif
+                                            @if ($aceptados)
+                                                <span class="badge badge-success">{{ $aceptados }} aceptado(s)</span>
+                                            @endif
+                                            @if ($rechazados)
+                                                <span class="badge badge-secondary">{{ $rechazados }} rechazado(s)</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if ($aceptados && $solicitud->transporteAcceso?->estaActivo())
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-qrcode mr-1"></i>QR activo
+                                            </span>
+                                        @elseif ($aceptados)
+                                            <span class="badge badge-warning">Sin QR activo</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
                                     <td class="text-right">
                                         <a href="{{ route('vendedor.solicitudes.show', $solicitud) }}"
                                             class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye mr-1"></i>Ver
+                                            <i class="fas fa-eye mr-1"></i>Ver pedido
                                         </a>
                                     </td>
                                 </tr>

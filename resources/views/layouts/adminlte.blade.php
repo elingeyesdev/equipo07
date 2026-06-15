@@ -11,6 +11,52 @@
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
+    <style>
+        .agrovida-process-loading {
+            position: relative;
+            width: min(280px, 100%);
+            height: 82px;
+            margin: 8px auto 0;
+            overflow: hidden;
+        }
+
+        .agrovida-process-loading::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: 17px;
+            left: 0;
+            height: 3px;
+            border-radius: 999px;
+            background: #dce8d8;
+        }
+
+        .agrovida-process-loading img {
+            position: absolute;
+            z-index: 1;
+            bottom: 22px;
+            left: 0;
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            animation: agrovida-process-run 1.8s ease-in-out infinite;
+        }
+
+        @keyframes agrovida-process-run {
+            0% { left: 0; transform: translateY(0) rotate(-3deg); }
+            25% { transform: translateY(-5px) rotate(3deg); }
+            50% { left: calc(100% - 52px); transform: translateY(0) rotate(-3deg); }
+            75% { transform: translateY(-5px) rotate(3deg); }
+            100% { left: 0; transform: translateY(0) rotate(-3deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .agrovida-process-loading img {
+                left: calc(50% - 26px);
+                animation: none;
+            }
+        }
+    </style>
 </head>
 
 @yield('js')
@@ -34,19 +80,25 @@
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
                 @auth
-                    <li class="nav-item dropdown">
-                        <a class="nav-link" data-toggle="dropdown" href="#">
-                            <i class="fas fa-user-circle"></i>
-                            <span class="d-none d-md-inline ml-1">{{ auth()->user()->name }}</span>
-                            <span class="badge badge-info ml-1">{{ auth()->user()->role_name }}</span>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                            <span class="dropdown-item dropdown-header">
-                                {{ auth()->user()->name }}
-                                <br>
-                                <small>{{ auth()->user()->email }}</small>
+                    <li class="nav-item dropdown account-menu">
+                        <a class="nav-link account-menu__trigger" data-toggle="dropdown" href="#" aria-haspopup="true">
+                            <span class="account-menu__avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                            <span class="d-none d-md-flex account-menu__identity">
+                                <strong>{{ auth()->user()->name }}</strong>
+                                <small>{{ auth()->user()->role_name }}</small>
                             </span>
-                            <div class="dropdown-divider"></div>
+                            <i class="fas fa-chevron-down account-menu__chevron"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right account-menu__panel">
+                            <div class="account-menu__header">
+                                <span class="account-menu__avatar account-menu__avatar--large">
+                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                </span>
+                                <span>
+                                    <strong>{{ auth()->user()->name }}</strong>
+                                    <small>{{ auth()->user()->email }}</small>
+                                </span>
+                            </div>
                             <a href="{{ route('home') }}" class="dropdown-item">
                                 <i class="fas fa-home mr-2"></i> Ir al Inicio
                             </a>
@@ -63,7 +115,7 @@
                             <div class="dropdown-divider"></div>
                             <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                 @csrf
-                                <button type="submit" class="dropdown-item dropdown-footer">
+                                <button type="submit" class="dropdown-item dropdown-footer account-menu__logout">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
                                 </button>
                             </form>
@@ -91,7 +143,7 @@
         <!-- Sidebar -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
 
-            <a href="{{ url('/') }}" class="brand-link">
+            <a href="{{ auth()->check() ? route('home') : url('/') }}" class="brand-link">
                 <span class="brand-text font-weight-light">Mercado Agrícola</span>
             </a>
 
@@ -131,22 +183,18 @@
                                 </li>
                             @endif
 
-                            {{-- ===== CARRITO DE COMPRAS (TODOS LOS USUARIOS) ===== --}}
-                            @if (auth()->check())
+                            {{-- ===== CARRITO Y PEDIDOS (CLIENTE/VENDEDOR/ADMIN) ===== --}}
+                            @if (!auth()->user()->isTransportista())
                                 <li class="nav-item">
                                     <a href="{{ route('cart.index') }}"
                                         class="nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-shopping-cart"></i>
                                         <p>
                                             Carrito
-                                            @php
-                                                $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->sum(
-                                                    'cantidad',
-                                                );
-                                            @endphp
-                                            @if ($cartCount > 0)
-                                                <span
-                                                    class="badge badge-danger badge-sm float-right">{{ $cartCount }}</span>
+                                            @if ($navCartCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navCartCount > 99 ? '99+' : $navCartCount }}
+                                                </span>
                                             @endif
                                         </p>
                                     </a>
@@ -159,11 +207,15 @@
                                         <i class="nav-icon fas fa-receipt"></i>
                                         <p>
                                             Mis Pedidos
+                                            @if ($navOrderAlertsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navOrderAlertsCount > 99 ? '99+' : $navOrderAlertsCount }}
+                                                </span>
+                                            @endif
                                         </p>
                                     </a>
                                 </li>
                             @endif
-
 
                             {{-- ===== OPCIONES SOLO PARA ADMIN ===== --}}
                             @if (auth()->user()->isAdmin())
@@ -217,8 +269,8 @@
                                     </ul>
                                 </li>
 
-                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'menu-open' : '' }}">
-                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*') ? 'active' : '' }}">
+                                <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-seedling"></i>
                                         <p>
                                             Selectores Organicos
@@ -245,6 +297,13 @@
                                                 class="nav-link {{ request()->routeIs('admin.certificados_organicos.*') ? 'active' : '' }}">
                                                 <i class="far fa-circle nav-icon"></i>
                                                 <p>Certificados</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.organicos.certificados.pendientes') }}"
+                                                class="nav-link {{ request()->routeIs('admin.organicos.certificados.pendientes') ? 'active' : '' }}">
+                                                <i class="far fa-clock nav-icon"></i>
+                                                <p>Documentos Pendientes</p>
                                             </a>
                                         </li>
                                     </ul>
@@ -332,7 +391,30 @@
                                 <li class="nav-item">
                                     <a href="{{ route('admin.pedidos.index') }}" class="nav-link">
                                         <i class="nav-icon fas fa-receipt"></i>
-                                        <p>Pedidos</p>
+                                        <p>
+                                            Pedidos
+                                            @if ($navPendingRequestsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navPendingRequestsCount > 99 ? '99+' : $navPendingRequestsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('productos-venta.index') }}"
+                                        class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-store"></i>
+                                        <p>Productos en venta</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('reclamos.index') }}"
+                                        class="nav-link {{ request()->routeIs('reclamos.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-flag"></i>
+                                        <p>Reclamos</p>
                                     </a>
                                 </li>
 
@@ -341,7 +423,14 @@
                                     <a href="{{ route('admin.solicitudes-vendedor.index') }}"
                                         class="nav-link {{ request()->routeIs('admin.solicitudes-vendedor.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-clipboard-list"></i>
-                                        <p>Solicitudes de Vendedor</p>
+                                        <p>
+                                            Solicitudes de Vendedor
+                                            @if ($navSellerApplicationsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navSellerApplicationsCount > 99 ? '99+' : $navSellerApplicationsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
                                     </a>
                                 </li>
                             @endif
@@ -350,10 +439,31 @@
                             @if (auth()->user()->isVendedor())
                                 <li class="nav-header">VENTAS</li>
                                 <li class="nav-item">
+                                    <a href="{{ route('productos-venta.index') }}"
+                                        class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-store"></i>
+                                        <p>Mis productos</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a href="{{ route('vendedor.solicitudes.index') }}"
                                         class="nav-link {{ request()->routeIs('vendedor.solicitudes.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-clipboard-list"></i>
-                                        <p>Solicitudes de productos</p>
+                                        <p>
+                                            Solicitudes de productos
+                                            @if ($navPendingRequestsCount > 0)
+                                                <span class="nav-notification-badge nav-notification-badge--sidebar">
+                                                    {{ $navPendingRequestsCount > 99 ? '99+' : $navPendingRequestsCount }}
+                                                </span>
+                                            @endif
+                                        </p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('reclamos.index') }}"
+                                        class="nav-link {{ request()->routeIs('reclamos.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-flag"></i>
+                                        <p>Reclamos</p>
                                     </a>
                                 </li>
                             @endif
@@ -462,6 +572,8 @@
             </div>
         </div>
     </div>
+
+    @include('components.file-viewer-modal')
 
     <script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -735,6 +847,52 @@
                 var $form = $(this);
                 var message = $form.data('message') || '¿Está seguro de eliminar este registro?';
                 showConfirmModal($form, message);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form.question-confirm-form').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    if (form.dataset.submitting === 'true') {
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: form.dataset.confirmTitle || '¿Deseas continuar?',
+                        text: form.dataset.confirmText || 'Confirma para continuar con el proceso.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: form.dataset.confirmButton || 'Sí, continuar',
+                        cancelButtonText: form.dataset.cancelButton || 'Aún no',
+                        confirmButtonColor: '#238647',
+                        cancelButtonColor: '#6c757d',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        allowOutsideClick: false
+                    }).then(function(result) {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        form.dataset.submitting = 'true';
+
+                        Swal.fire({
+                            title: form.dataset.loadingText || 'Procesando...',
+                            html: '<div class="agrovida-process-loading">' +
+                                '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                                '</div>',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false
+                        });
+
+                        HTMLFormElement.prototype.submit.call(form);
+                    });
+                });
             });
         });
     </script>

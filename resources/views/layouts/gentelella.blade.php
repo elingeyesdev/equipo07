@@ -25,7 +25,7 @@
                 <div class="nav_menu">
                     <nav>
                         <ul class="nav navbar-nav navbar-right">
-                            <li><a href="{{ url('/') }}">Inicio</a></li>
+                            <li><a href="{{ auth()->check() ? route('home') : url('/') }}">Inicio</a></li>
                         </ul>
                     </nav>
                 </div>

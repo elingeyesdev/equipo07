@@ -46,7 +46,13 @@ class AdminPedidoController extends Controller
 
     public function show(Pedido $pedido)
     {
-        $pedido->load('detalles', 'user');
+        $pedido->load([
+            'detalles.transporteAcceso',
+            'detalles.transporteEventos' => fn ($query) => $query->latest('created_at')->limit(8),
+            'detalles.resenaProducto.comprador',
+            'detalles.reclamos.creador',
+            'user',
+        ]);
 
         $estados = [
             'pendiente'   => 'Pendiente',

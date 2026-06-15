@@ -5,7 +5,7 @@
     <style>
         :root {
             --primary-color: #007bff;
-            --success-color: #28a745;
+            --success-color: #2eab5b;
             --warning-color: #ffc107;
             --danger-color: #dc3545;
             --info-color: #17a2b8;
@@ -104,7 +104,7 @@
         }
 
         .dropdown-item-modern i.fa-cow {
-            color: #28a745 !important;
+            color: #2eab5b !important;
             font-size: 1.1rem;
         }
 
@@ -437,15 +437,15 @@
         }
 
         .status-ribbon.disponible {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #2eab5b 0%, #20c997 100%);
         }
 
         .status-ribbon.disponible::before {
-            border-right-color: #1e7e34;
+            border-right-color: #238647;
         }
 
         .status-ribbon.disponible::after {
-            border-left-color: #1e7e34;
+            border-left-color: #238647;
         }
 
         .status-ribbon.en_mantenimiento,

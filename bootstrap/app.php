@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.admin'    => \App\Http\Middleware\RoleAdmin::class,
             'role.vendedor' => \App\Http\Middleware\RoleVendedor::class,
             'role.cliente'  => \App\Http\Middleware\RoleCliente::class,
+            'role.transportista' => \App\Http\Middleware\RoleTransportista::class,
+            'not.transportista' => \App\Http\Middleware\NoTransportista::class,
+            'transporte.externo' => \App\Http\Middleware\TransporteAccesoExterno::class,
         ]);
 
         // ⬅️ IMPORTANTE: excluir todas las rutas /api/* del CSRF

@@ -5,14 +5,14 @@
     <style>
         .ganado-card {
             transition: all 0.3s ease;
-            border: 3px solid #28a745 !important;
+            border: 3px solid #2eab5b !important;
             background: #ffffff;
         }
 
         .ganado-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 12px 24px rgba(40, 167, 69, 0.3) !important;
-            border-color: #1e7e34 !important;
+            border-color: #238647 !important;
         }
 
         .ganado-img {
@@ -38,7 +38,7 @@
         }
 
         .border-success {
-            border-color: #28a745 !important;
+            border-color: #2eab5b !important;
         }
 
         /* Evitar zoom y recorte en maquinaria y orgánicos */
@@ -102,15 +102,15 @@
 
         /* Colores según estado */
         .status-ribbon.disponible {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #2eab5b 0%, #20c997 100%);
         }
 
         .status-ribbon.disponible::before {
-            border-right-color: #1e7e34;
+            border-right-color: #238647;
         }
 
         .status-ribbon.disponible::after {
-            border-left-color: #1e7e34;
+            border-left-color: #238647;
         }
 
         .status-ribbon.en_mantenimiento,
@@ -172,6 +172,11 @@
             padding: 1.15rem !important;
         }
 
+        .hero-heading {
+            color: #fff !important;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+        }
+
         .hero-filter-form.form-row {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -221,10 +226,10 @@
             gap: 6px;
             min-height: 38px;
             padding: 0 13px;
-            border: 1px solid rgba(47, 98, 31, 0.28);
+            border: 1px solid rgba(35, 134, 71, 0.28);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.5);
-            color: #2f621f;
+            color: #238647;
             font-weight: 700;
             font-size: 0.92rem;
             text-decoration: none;
@@ -246,8 +251,39 @@
         }
 
         @media (max-width: 575.98px) {
+            .hero {
+                min-height: auto !important;
+            }
+
+            .hero > .container {
+                max-width: 100%;
+                padding: 2.25rem 1rem !important;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+                line-height: 1.15;
+                overflow-wrap: anywhere;
+            }
+
+            .hero h1 br {
+                display: none;
+            }
+
+            .hero-search-panel {
+                max-width: 100%;
+                padding: 1rem !important;
+            }
+
             .hero-filter-form.form-row {
                 grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .hero-filter-form select,
+            .hero-filter-form input,
+            .hero-filter-form button {
+                max-width: 100%;
             }
         }
     </style>
@@ -255,8 +291,8 @@
     <section class="hero"
         style="background:url('{{ asset('img/bg-agrovida.jpg') }}') center/cover no-repeat; min-height:400px; position:relative;">
         <div class="container py-5 text-white" style="position:relative; z-index:2;">
-            <h5 class="mb-2">Bienvenido a Agrovida</h5>
-            <h1 class="display-5 font-weight-bold">
+            <h5 class="hero-heading mb-2">Bienvenido a Agrovida</h5>
+            <h1 class="hero-heading display-5 font-weight-bold">
                 Tu mercado de animales, maquinaria y<br>orgánicos en un solo lugar
             </h1>
 
@@ -429,7 +465,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-image fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -545,7 +581,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center position-relative"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 @if ($maquinaria->estadoMaquinaria)
                                                     @php
                                                         $estadoNombre = strtolower($maquinaria->estadoMaquinaria->nombre);
@@ -671,7 +707,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-leaf fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -828,7 +864,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-image fa-4x text-muted"></i>
                                             </div>
                                         @endif
@@ -954,7 +990,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center position-relative"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 @if ($maquinaria->estadoMaquinaria)
                                                     @php
                                                         $estadoNombre = strtolower($maquinaria->estadoMaquinaria->nombre);
@@ -1073,7 +1109,7 @@
                                             </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                                style="height:220px; border-bottom: 3px solid #28a745;">
+                                                style="height:220px; border-bottom: 3px solid #2eab5b;">
                                                 <i class="fas fa-leaf fa-4x text-muted"></i>
                                             </div>
                                         @endif

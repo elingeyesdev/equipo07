@@ -10,7 +10,8 @@
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <a href="{{ route('maquinarias.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
+                <a href="{{ route('maquinarias.create') }}"
+                    class="card h-100 shadow-sm text-decoration-none text-dark selectable-action">
                     <div class="card-body">
                         <div class="text-success mb-3" style="font-size: 2rem;">
                             <i class="fas fa-tractor"></i>
@@ -22,10 +23,11 @@
             </div>
 
             <div class="col-md-4 mb-3">
-                <a href="{{ route('ganados.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
+                <a href="{{ route('ganados.create') }}"
+                    class="card h-100 shadow-sm text-decoration-none text-dark selectable-action">
                     <div class="card-body">
                         <div class="text-success mb-3" style="font-size: 2rem;">
-                            <i class="fas fa-cow"></i>
+                            <i class="fas fa-horse"></i>
                         </div>
                         <h5 class="font-weight-bold">Animales</h5>
                         <p class="text-muted mb-0">Ganado y animales disponibles para venta.</p>
@@ -34,7 +36,8 @@
             </div>
 
             <div class="col-md-4 mb-3">
-                <a href="{{ route('organicos.create') }}" class="card h-100 shadow-sm text-decoration-none text-dark">
+                <a href="{{ route('organicos.create') }}"
+                    class="card h-100 shadow-sm text-decoration-none text-dark selectable-action">
                     <div class="card-body">
                         <div class="text-success mb-3" style="font-size: 2rem;">
                             <i class="fas fa-leaf"></i>

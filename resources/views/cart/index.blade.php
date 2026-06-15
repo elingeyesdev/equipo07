@@ -18,6 +18,21 @@
             margin-bottom: 0;
         }
 
+        .cart-header h1,
+        .cart-header h2,
+        .cart-header h3,
+        .cart-header h4,
+        .cart-header h5,
+        .cart-header h6,
+        .cart-header p,
+        .cart-header i {
+            color: #fff !important;
+        }
+
+        .cart-header .text-white-50 {
+            color: rgba(255, 255, 255, .82) !important;
+        }
+
         .cart-item-card {
             border: 1px solid #e9ecef;
             border-radius: 12px;

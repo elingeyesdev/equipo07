@@ -1,7 +1,7 @@
 @extends('layouts.adminlte')
 
-@section('title', 'Solicitud #' . $solicitud->id)
-@section('page_title', 'Solicitud #' . $solicitud->id)
+@section('title', 'Pedido agrupado #' . $solicitud->pedido_id)
+@section('page_title', 'Pedido agrupado #' . $solicitud->pedido_id)
 
 @section('content')
     @php
@@ -21,10 +21,17 @@
         $cantidadLabel = $solicitud->cantidad_label;
         $precioLabel = $solicitud->precio_label;
         $totalLabel = $isMaquinaria ? 'Total del alquiler' : 'Subtotal';
-        $alquilerEstados = \App\Models\PedidoDetalle::alquilerEstados();
-        $estadoAlquilerActual = $solicitud->estado_alquiler_actual;
-        $estadoKeys = array_keys($alquilerEstados);
-        $estadoActualIndex = $estadoAlquilerActual ? array_search($estadoAlquilerActual, $estadoKeys, true) : false;
+        $usaTransporteExterno = in_array($solicitud->product_type, ['organico', 'ganado', 'maquinaria'], true);
+        $deliveryLabels = $isMaquinaria
+            ? \App\Models\PedidoDetalle::transporteFases()
+            : \App\Services\TransporteAccesoService::ESTADOS_ORGANICO;
+        $deliveryStatePhases = $isMaquinaria ? \App\Models\PedidoDetalle::transporteEstadoFases() : [];
+        $deliveryFlow = array_keys($deliveryLabels);
+        $deliveryCurrent = $solicitud->estado_transporte_actual === 'asignado' && in_array($solicitud->product_type, ['organico', 'ganado'], true)
+            ? 'aceptado'
+            : $solicitud->estado_transporte_actual;
+        $deliveryCurrentVisible = $deliveryStatePhases[$deliveryCurrent] ?? $deliveryCurrent;
+        $deliveryIndex = array_search($deliveryCurrentVisible, $deliveryFlow, true);
     @endphp
 
     <style>
@@ -79,6 +86,80 @@
             color: #fff;
             background: #2f7d24;
         }
+
+        .solicitud-map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+
+        .solicitud-map-legend__item {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .35rem .55rem;
+            border: 1px solid #dfe8dc;
+            border-radius: 999px;
+            background: #fff;
+            color: #1f2a1b;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .solicitud-map-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 999px;
+            color: #fff;
+            font-size: .72rem;
+        }
+
+        .solicitud-map-dot--driver,
+        .solicitud-map-pin--driver .solicitud-map-pin__icon {
+            background: #0d6efd;
+        }
+
+        .solicitud-map-dot--product,
+        .solicitud-map-pin--product .solicitud-map-pin__icon {
+            background: #fd7e14;
+        }
+
+        .solicitud-map-dot--customer,
+        .solicitud-map-pin--customer .solicitud-map-pin__icon {
+            background: #198754;
+        }
+
+        .solicitud-map-pin {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .22rem .48rem .22rem .22rem;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .95);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .22);
+            white-space: nowrap;
+        }
+
+        .solicitud-map-pin__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 999px;
+            color: #fff;
+        }
+
+        .solicitud-map-pin__label {
+            color: #1f2a1b;
+            font-size: .72rem;
+            font-weight: 800;
+        }
     </style>
 
     <div class="container-fluid">
@@ -95,6 +176,136 @@
                 <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
             </div>
         @endif
+
+        @php
+            $pendientesGrupo = $detallesGrupo->where('estado_solicitud', 'pendiente')->count();
+            $aceptadosGrupo = $detallesGrupo->where('estado_solicitud', 'aceptada')->count();
+            $rechazadosGrupo = $detallesGrupo->where('estado_solicitud', 'rechazada')->count();
+        @endphp
+
+        <div class="card">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-shopping-basket mr-1"></i>Productos solicitados
+                    </h3>
+                    <div class="small text-muted">
+                        Comprador: {{ $solicitud->pedido->user->name ?? 'No disponible' }}
+                        · {{ $detallesGrupo->count() }} producto(s) en este envío
+                    </div>
+                </div>
+                <div>
+                    @if ($pendientesGrupo)
+                        <span class="badge badge-warning">{{ $pendientesGrupo }} pendiente(s)</span>
+                    @endif
+                    @if ($aceptadosGrupo)
+                        <span class="badge badge-success">{{ $aceptadosGrupo }} aceptado(s)</span>
+                    @endif
+                    @if ($rechazadosGrupo)
+                        <span class="badge badge-secondary">{{ $rechazadosGrupo }} rechazado(s)</span>
+                    @endif
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Stock actual</th>
+                            <th>Subtotal</th>
+                            <th>Estado</th>
+                            <th class="text-right">Decisión</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($detallesGrupo as $itemGrupo)
+                            @php
+                                $estadoBadge = [
+                                    'pendiente' => 'warning',
+                                    'aceptada' => 'success',
+                                    'rechazada' => 'secondary',
+                                ][$itemGrupo->estado_solicitud] ?? 'secondary';
+                            @endphp
+                            <tr>
+                                <td>
+                                    <strong>{{ $itemGrupo->nombre_producto }}</strong>
+                                    @if ($itemGrupo->notas)
+                                        <br><small class="text-muted">{{ $itemGrupo->notas }}</small>
+                                    @endif
+                                </td>
+                                <td>{{ ucfirst($itemGrupo->product_type) }}</td>
+                                <td>{{ $itemGrupo->cantidad_tiempo_texto }}</td>
+                                <td>
+                                    @if (in_array($itemGrupo->product_type, ['organico', 'ganado'], true))
+                                        {{ $itemGrupo->product?->stock ?? 0 }}
+                                    @else
+                                        No aplica
+                                    @endif
+                                </td>
+                                <td><strong>Bs {{ number_format($itemGrupo->subtotal, 2) }}</strong></td>
+                                <td>
+                                    <span class="badge badge-{{ $estadoBadge }}">
+                                        {{ $estados[$itemGrupo->estado_solicitud] ?? ucfirst($itemGrupo->estado_solicitud) }}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    @if ($itemGrupo->estado_solicitud === 'pendiente')
+                                        <div class="d-flex flex-wrap justify-content-end">
+                                            <form action="{{ route('vendedor.solicitudes.aceptar', $itemGrupo) }}"
+                                                method="POST" class="mr-2 mb-1 question-confirm-form"
+                                                data-confirm-title="¿Aceptar este producto?"
+                                                data-confirm-text="Se descontará la cantidad solicitada del inventario."
+                                                data-confirm-button="Sí, aceptar producto"
+                                                data-cancel-button="Revisar"
+                                                data-loading-text="Aceptando producto...">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check mr-1"></i>Aceptar este producto
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('vendedor.solicitudes.cancelar', $itemGrupo) }}"
+                                                method="POST" class="mb-1"
+                                                onsubmit="return confirm('¿Rechazar únicamente este producto?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-times mr-1"></i>Rechazar este producto
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @elseif ($itemGrupo->estado_solicitud === 'aceptada')
+                                        <span class="text-success"><i class="fas fa-check-circle mr-1"></i>Aceptado</span>
+                                    @else
+                                        <span class="text-muted"><i class="fas fa-times-circle mr-1"></i>Rechazado</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-right">Total solicitado</th>
+                            <th>Bs {{ number_format($detallesGrupo->sum('subtotal'), 2) }}</th>
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @if ($pendientesGrupo)
+                <div class="card-footer text-muted">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Responde todos los productos. Después podrás habilitar un solo transporte para los aceptados.
+                </div>
+            @elseif ($aceptadosGrupo && $rechazadosGrupo)
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        Se aceptaron {{ $aceptadosGrupo }} producto(s) y se rechazaron {{ $rechazadosGrupo }}.
+                        El envío incluirá únicamente los productos aceptados.
+                    </div>
+                </div>
+            @endif
+        </div>
 
         <div class="row">
             <div class="col-lg-5">
@@ -146,36 +357,62 @@
                                 <dt class="col-sm-5">Notas</dt>
                                 <dd class="col-sm-7">{{ $solicitud->notas }}</dd>
                             @endif
+
+                            @if ($solicitud->detallesEnvio->count() > 1)
+                                <dt class="col-sm-5">Mismo envio</dt>
+                                <dd class="col-sm-7">
+                                    @foreach ($solicitud->detallesEnvio as $itemEnvio)
+                                        <div>
+                                            {{ $itemEnvio->nombre_producto }}
+                                            · {{ $itemEnvio->cantidad_tiempo_texto }}
+                                            <span class="badge badge-{{ $itemEnvio->estado_solicitud === 'aceptada' ? 'success' : 'warning' }}">
+                                                {{ $estados[$itemEnvio->estado_solicitud] ?? $itemEnvio->estado_solicitud }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </dd>
+                            @endif
+
+                            @if ($solicitud->estado_solicitud === 'aceptada' && $usaTransporteExterno)
+                                <dt class="col-sm-5">Acceso transporte</dt>
+                                <dd class="col-sm-7">
+                                    @if ($solicitud->transporteAcceso?->estaActivo())
+                                        <span class="badge badge-success">Codigo/QR activo</span>
+                                    @else
+                                        <span class="badge badge-secondary">Sin codigo activo</span>
+                                    @endif
+                                </dd>
+                            @endif
+                            @if ($solicitud->estado_solicitud === 'aceptada')
+                                <dt class="col-sm-5">Transporte</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge badge-primary" data-vendor-transport-label>
+                                        {{ $solicitud->estado_transporte_label }}
+                                    </span>
+                                </dd>
+                            @endif
                         </dl>
                     </div>
 
-                    @if ($isMaquinaria && $solicitud->estado_solicitud === 'aceptada')
+                    @if ($solicitud->estado_solicitud === 'aceptada' && $usaTransporteExterno)
                         <div class="card-body border-top">
-                            <div class="rental-tracking-card p-3">
+                            <div class="rental-tracking-card p-3 mb-3">
                                 <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h5 class="mb-1 font-weight-bold">
-                                            <i class="fas fa-route mr-1"></i>Seguimiento del alquiler
-                                        </h5>
-                                        <small class="text-muted">Avanza el estado conforme se mueve la maquinaria.</small>
-                                    </div>
-                                    <span class="badge badge-success mt-2 mt-md-0">
-                                        {{ $solicitud->estado_alquiler_label }}
+                                    <h5 class="mb-1 font-weight-bold">
+                                        <i class="fas fa-route mr-1"></i>Seguimiento de entrega
+                                    </h5>
+                                    <span class="badge badge-success" id="seller-delivery-status">
+                                        {{ $solicitud->estado_transporte_label }}
                                     </span>
                                 </div>
-
-                                <div class="rental-tracking-steps mb-3">
-                                    @foreach ($alquilerEstados as $estadoKey => $estadoLabel)
+                                <div class="rental-tracking-steps" id="seller-delivery-steps">
+                                    @foreach ($deliveryFlow as $index => $state)
                                         @php
-                                            $index = array_search($estadoKey, $estadoKeys, true);
-                                            $stepClass = '';
-                                            if ($estadoActualIndex !== false && $index < $estadoActualIndex) {
-                                                $stepClass = 'is-done';
-                                            } elseif ($estadoKey === $estadoAlquilerActual) {
-                                                $stepClass = 'is-current';
-                                            }
+                                            $stepClass = $deliveryIndex !== false && $index < $deliveryIndex
+                                                ? 'is-done'
+                                                : ($state === $deliveryCurrentVisible ? 'is-current' : '');
                                         @endphp
-                                        <div class="rental-tracking-step {{ $stepClass }}">
+                                        <div class="rental-tracking-step {{ $stepClass }}" data-state="{{ $state }}">
                                             <span>
                                                 @if ($stepClass === 'is-done')
                                                     <i class="fas fa-check"></i>
@@ -183,40 +420,133 @@
                                                     {{ $index + 1 }}
                                                 @endif
                                             </span>
-                                            <div>{{ $estadoLabel }}</div>
+                                            <div>{{ $deliveryLabels[$state] ?? ucfirst(str_replace('_', ' ', $state)) }}</div>
                                         </div>
                                     @endforeach
                                 </div>
+                            </div>
 
-                                @if ($solicitud->siguiente_estado_alquiler)
-                                    <form action="{{ route('vendedor.solicitudes.alquiler.avanzar', $solicitud) }}"
-                                        method="POST" class="mb-0">
+                            @if (!$pendientesGrupo && !$isMaquinaria && in_array($deliveryCurrent, ['aceptado', 'asignado'], true))
+                                <form method="POST"
+                                    action="{{ route('vendedor.solicitudes.transporte.preparado', $solicitud) }}"
+                                    class="mb-3 question-confirm-form"
+                                    data-confirm-title="¿Habilitar el transporte?"
+                                    data-confirm-text="La persona con el codigo o QR podra activar el GPS y avanzar el recorrido."
+                                    data-confirm-button="Sí, habilitar"
+                                    data-cancel-button="Todavía no"
+                                    data-loading-text="Actualizando el estado...">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-box-open mr-1"></i>Habilitar transporte
+                                    </button>
+                                    <small class="text-muted d-block mt-2">
+                                        Al marcarlo, el acceso por codigo/QR podra activar el GPS e iniciar el recorrido.
+                                    </small>
+                                </form>
+                            @endif
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="mb-1 font-weight-bold">
+                                        <i class="fas fa-key mr-1"></i>Acceso de transporte externo
+                                    </h5>
+                                    <small class="text-muted">
+                                        Comparte este codigo con la persona que realizara la entrega.
+                                    </small>
+                                </div>
+                                @if ($solicitud->transporteAcceso?->estaActivo())
+                                    <span class="badge badge-success">Activo</span>
+                                @else
+                                    <span class="badge badge-secondary">Sin acceso activo</span>
+                                @endif
+                            </div>
+
+                            @if ($solicitud->transporteAcceso?->estaActivo())
+                                <div class="row align-items-center">
+                                    <div class="col-md-7">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control font-weight-bold"
+                                                id="transport-code" value="{{ $solicitud->transporteAcceso->codigo }}" readonly>
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-success"
+                                                    onclick="navigator.clipboard.writeText(document.getElementById('transport-code').value)">
+                                                    <i class="fas fa-copy mr-1"></i>Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mb-3">
+                                            Vigente hasta:
+                                            {{ $solicitud->transporteAcceso->expires_at?->format('d/m/Y H:i') ?? 'sin limite' }}.
+                                            El transportista puede escribir el codigo o escanear este QR.
+                                        </small>
+                                    </div>
+                                    <div class="col-md-5 text-center mb-3">
+                                        <div class="transport-qr-frame">
+                                            <canvas id="transport-qr-canvas" width="220" height="220"
+                                                aria-label="Codigo QR de transporte"></canvas>
+                                            <span class="transport-qr-loader" aria-hidden="true">
+                                                <i class="fas fa-circle-notch fa-spin"></i>
+                                            </span>
+                                        </div>
+                                        <small class="transport-qr-status" id="transport-qr-status" aria-live="polite">
+                                            Generando codigo QR...
+                                        </small>
+                                        <button type="button" class="btn btn-sm btn-outline-success d-block mx-auto mt-2"
+                                            id="transport-qr-download">
+                                            <i class="fas fa-download mr-1"></i>Descargar QR
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="d-flex flex-wrap">
+                                <form method="POST"
+                                    action="{{ route('vendedor.solicitudes.transporte.codigo', $solicitud) }}"
+                                    class="mr-2 mb-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-sync-alt mr-1"></i>
+                                        {{ $solicitud->transporteAcceso?->estaActivo() ? 'Regenerar codigo' : 'Generar codigo' }}
+                                    </button>
+                                </form>
+
+                                @if ($solicitud->transporteAcceso?->estaActivo())
+                                    <form method="POST"
+                                        action="{{ route('vendedor.solicitudes.transporte.revocar', $solicitud) }}"
+                                        class="mb-2"
+                                        onsubmit="return confirm('¿Revocar el acceso externo de transporte?')">
                                         @csrf
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-arrow-right mr-1"></i>
-                                            Marcar como {{ strtolower($solicitud->siguiente_estado_alquiler_label) }}
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-ban mr-1"></i>Revocar acceso
                                         </button>
                                     </form>
-                                @elseif ($solicitud->estado_alquiler_actual === 'devuelto')
-                                    <div class="alert alert-success mb-0">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        La maquinaria fue devuelta. Ya puedes finalizar el alquiler.
-                                    </div>
-                                @else
-                                    <div class="alert alert-light border mb-0">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        El seguimiento de este alquiler ya no tiene pasos pendientes.
-                                    </div>
                                 @endif
                             </div>
                         </div>
                     @endif
 
-                    @if ($solicitud->estado_solicitud === 'pendiente')
+                    @if(in_array($solicitud->product_type, ['organico', 'ganado', 'maquinaria'], true)
+                        && $solicitud->estado_solicitud === 'aceptada'
+                        && (
+                            $solicitud->recepcion_confirmada_at
+                            || in_array($solicitud->estado_transporte_actual, ['entregado', 'cancelado'], true)
+                            || $solicitud->pedido->estado === 'finalizado'
+                        ))
+                        <div class="card-body border-top">
+                            @include('organicos.partials.postventa', ['detalle' => $solicitud, 'modo' => 'vendedor'])
+                        </div>
+                    @endif
+
+                    @if (false)
                         <div class="card-footer d-flex flex-wrap">
                             <form action="{{ route('vendedor.solicitudes.aceptar', $solicitud) }}" method="POST"
-                                class="mr-2 mb-2"
-                                onsubmit="return confirm('Aceptar esta solicitud cancelara las demas solicitudes pendientes de este producto. ¿Continuar?')">
+                                class="mr-2 mb-2 question-confirm-form"
+                                data-confirm-title="¿Aceptar esta solicitud?"
+                                data-confirm-text="Venderás este producto al comprador seleccionado y las demás solicitudes pendientes del mismo producto serán canceladas."
+                                data-confirm-button="Sí, aceptar solicitud"
+                                data-cancel-button="Revisar nuevamente"
+                                data-loading-text="Aceptando la solicitud...">
                                 @csrf
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-check mr-1"></i>Vender a este comprador
@@ -232,18 +562,29 @@
                                 </button>
                             </form>
                         </div>
-                    @elseif ($solicitud->estado_solicitud === 'aceptada' && $solicitud->pedido->estado !== 'finalizado')
+                    @elseif ($solicitud->estado_solicitud === 'aceptada'
+                        && $solicitud->pedido->estado !== 'finalizado'
+                        && $solicitud->estado_transporte_actual !== 'cancelado')
                         <div class="card-footer">
                             <form action="{{ route('vendedor.solicitudes.finalizar', $solicitud) }}" method="POST"
-                                onsubmit="return confirm('¿Finalizar este pedido?')">
+                                class="question-confirm-form"
+                                data-confirm-title="¿Finalizar este pedido?"
+                                data-confirm-text="Confirma solo cuando el producto ya cumplió todo el flujo de entrega o devolución."
+                                data-confirm-button="Sí, finalizar"
+                                data-cancel-button="Todavía no"
+                                data-loading-text="Finalizando el pedido...">
                                 @csrf
-                                <button type="submit" class="btn btn-success"
+                                <button type="submit" class="btn btn-success" data-vendor-finalize-button
                                     {{ $solicitud->puede_finalizar_desde_vendedor ? '' : 'disabled' }}>
                                     <i class="fas fa-flag-checkered mr-1"></i>Finalizar pedido
                                 </button>
                                 @if (!$solicitud->puede_finalizar_desde_vendedor && $isMaquinaria)
                                     <small class="text-muted d-block mt-2">
-                                        Para finalizar, primero marca el alquiler como devuelto.
+                                        Para finalizar, primero el transportista debe devolver la maquinaria.
+                                    </small>
+                                @elseif (!$solicitud->puede_finalizar_desde_vendedor)
+                                    <small class="text-muted d-block mt-2">
+                                        Para finalizar, primero el comprador debe confirmar la recepcion.
                                     </small>
                                 @endif
                             </form>
@@ -275,6 +616,26 @@
                         @endif
 
                         @if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud)
+                            <div class="solicitud-map-legend">
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--driver">
+                                        <i class="fas fa-truck"></i>
+                                    </span>
+                                    Transportista
+                                </span>
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--product">
+                                        <i class="fas fa-box"></i>
+                                    </span>
+                                    Producto / vendedor
+                                </span>
+                                <span class="solicitud-map-legend__item">
+                                    <span class="solicitud-map-dot solicitud-map-dot--customer">
+                                        <i class="fas fa-home"></i>
+                                    </span>
+                                    Destino comprador
+                                </span>
+                            </div>
                             <div id="solicitud-destino-map"
                                 style="height: 460px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
                             <a class="btn btn-sm btn-outline-success mt-3" target="_blank"
@@ -305,21 +666,58 @@
                 var destinoLng = {{ $solicitud->pedido->destino_longitud }};
                 var productoLat = @json($solicitud->product_latitud);
                 var productoLng = @json($solicitud->product_longitud);
+                var transportistaLat = @json($solicitud->ultimaUbicacion?->latitud ? (float) $solicitud->ultimaUbicacion->latitud : null);
+                var transportistaLng = @json($solicitud->ultimaUbicacion?->longitud ? (float) $solicitud->ultimaUbicacion->longitud : null);
                 var googleMapsUrl = @json($mapsUrl);
+                var trackingUrl = @json(route('pedidos.detalles.tracking.latest', $solicitud, false));
                 var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
+                var transportistaMarker = null;
+                var deliveryFlow = @json($deliveryFlow);
+                var deliveryStatePhases = @json($deliveryStatePhases);
+                var trackingBusy = false;
+                var trackingTimer = null;
+
+                function mapIcon(type, icon, label) {
+                    return L.divIcon({
+                        className: '',
+                        html: '<div class="solicitud-map-pin solicitud-map-pin--' + type + '">' +
+                            '<span class="solicitud-map-pin__icon"><i class="fas ' + icon + '"></i></span>' +
+                            '<span class="solicitud-map-pin__label">' + label + '</span>' +
+                        '</div>',
+                        iconSize: [150, 36],
+                        iconAnchor: [18, 18],
+                        popupAnchor: [0, -18]
+                    });
+                }
+
+                var destinoIcon = mapIcon('customer', 'fa-home', 'Comprador');
+                var productoIcon = mapIcon('product', 'fa-box', 'Producto');
+                var transportistaIcon = mapIcon('driver', 'fa-truck', 'Transportista');
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                var destinoMarker = L.marker([destinoLat, destinoLng])
+                var destinoMarker = L.marker([destinoLat, destinoLng], {
+                        icon: destinoIcon
+                    })
                     .addTo(map)
                     .bindPopup('<strong>Destino del comprador</strong><br>' + @json($solicitud->pedido->destino_entrega));
 
-                if (productoLat && productoLng) {
-                    var productoMarker = L.marker([productoLat, productoLng])
+                if (transportistaLat && transportistaLng) {
+                    transportistaMarker = L.marker([transportistaLat, transportistaLng], {
+                            icon: transportistaIcon
+                        })
                         .addTo(map)
-                        .bindPopup('<strong>Tu producto</strong><br>' + @json($solicitud->nombre_producto));
+                        .bindPopup('<strong>Ultima ubicacion del transportista</strong><br>{{ $solicitud->ultimaUbicacion?->created_at?->format('d/m/Y H:i:s') }}');
+                }
+
+                if (productoLat && productoLng) {
+                    var productoMarker = L.marker([productoLat, productoLng], {
+                            icon: productoIcon
+                        })
+                        .addTo(map)
+                        .bindPopup('<strong>Producto / punto del vendedor</strong><br>' + @json($solicitud->nombre_producto));
 
                     function drawFallbackLine() {
                         var fallbackLine = L.polyline([
@@ -334,7 +732,13 @@
 
                         fallbackLine.bindPopup('Distancia aproximada: {{ number_format($solicitud->distancia_destino_km ?? 0, 1) }} km');
 
-                        map.fitBounds(fallbackLine.getBounds(), {
+                        var fallbackBounds = fallbackLine.getBounds();
+
+                        if (transportistaLat && transportistaLng) {
+                            fallbackBounds.extend([transportistaLat, transportistaLng]);
+                        }
+
+                        map.fitBounds(fallbackBounds, {
                             padding: [40, 40],
                             maxZoom: 14
                         });
@@ -388,7 +792,13 @@
 
                             routeLine.bindPopup(popup);
 
-                            map.fitBounds(routeLine.getBounds(), {
+                            var routeBounds = routeLine.getBounds();
+
+                            if (transportistaLat && transportistaLng) {
+                                routeBounds.extend([transportistaLat, transportistaLng]);
+                            }
+
+                            map.fitBounds(routeBounds, {
                                 padding: [40, 40],
                                 maxZoom: 14
                             });
@@ -400,9 +810,125 @@
                             destinoMarker.openPopup();
                         });
                 } else {
+                    if (transportistaLat && transportistaLng) {
+                        map.fitBounds(L.latLngBounds([
+                            [destinoLat, destinoLng],
+                            [transportistaLat, transportistaLng]
+                        ]), {
+                            padding: [40, 40],
+                            maxZoom: 14
+                        });
+                    }
+
                     destinoMarker.openPopup();
                 }
+
+                function refreshTracking() {
+                    if (trackingBusy || document.hidden) {
+                        scheduleTracking();
+                        return;
+                    }
+
+                    trackingBusy = true;
+                    fetch(trackingUrl, { headers: { 'Accept': 'application/json' } })
+                        .then(function(response) {
+                            if (!response.ok) throw new Error('Tracking no disponible');
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            var status = document.getElementById('seller-delivery-status');
+                            if (status) status.textContent = data.estado_label;
+
+                            var currentVisibleState = deliveryStatePhases[data.estado] || data.estado;
+                            var currentIndex = deliveryFlow.indexOf(currentVisibleState);
+                            document.querySelectorAll('#seller-delivery-steps [data-state]').forEach(function(step) {
+                                var index = deliveryFlow.indexOf(step.dataset.state);
+                                step.classList.toggle('is-done', currentIndex >= 0 && index < currentIndex);
+                                step.classList.toggle('is-current', step.dataset.state === currentVisibleState);
+                            });
+
+                            if (!data.ubicacion) return;
+                            var position = [data.ubicacion.latitud, data.ubicacion.longitud];
+
+                            if (!transportistaMarker) {
+                                transportistaMarker = L.marker(position, { icon: transportistaIcon }).addTo(map);
+                            } else {
+                                transportistaMarker.setLatLng(position);
+                            }
+
+                            transportistaMarker.bindPopup(
+                                '<strong>Ubicacion actual del transportista</strong><br>' +
+                                (data.ubicacion.fecha_humana || '')
+                            );
+                        })
+                        .catch(function() {})
+                        .finally(function() {
+                            trackingBusy = false;
+                            scheduleTracking();
+                        });
+                }
+
+                function scheduleTracking() {
+                    clearTimeout(trackingTimer);
+                    trackingTimer = setTimeout(refreshTracking, 12000);
+                }
+
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) {
+                        clearTimeout(trackingTimer);
+                        refreshTracking();
+                    }
+                });
+
+                refreshTracking();
             });
         </script>
     @endif
+    @if ($usaTransporteExterno && $solicitud->transporteAcceso?->estaActivo())
+        <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+        <script src="{{ asset('js/transport-qr-seller.js') }}?v={{ filemtime(public_path('js/transport-qr-seller.js')) }}"></script>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var estadoUrl = @json(route('pedidos.detalles.estadoTransporte', $solicitud, false));
+
+            function applyState(data) {
+                var transportLabel = document.querySelector('[data-vendor-transport-label]');
+                var finalizeButton = document.querySelector('[data-vendor-finalize-button]');
+
+                if (transportLabel && data.estado_transporte_label) {
+                    transportLabel.textContent = data.estado_transporte_label;
+                }
+
+                if (finalizeButton) {
+                    finalizeButton.disabled = !data.puede_finalizar_desde_vendedor;
+                }
+            }
+
+            function refreshState() {
+                fetch(estadoUrl, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('No se pudo consultar estado');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.ok) {
+                            applyState(data);
+                        }
+                    })
+                    .catch(function() {});
+            }
+
+            refreshState();
+            setInterval(refreshState, 5000);
+        });
+    </script>
 @endsection
