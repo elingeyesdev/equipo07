@@ -8,7 +8,19 @@ class CaracteristicaGanado extends Model
 {
     protected $table = 'caracteristicas_ganado';
 
-protected $fillable = ['ganado_id', 'edad', 'edad_valor', 'unidad_edad', 'sexo', 'descripcion'];
+    protected $fillable = [
+        'ganado_id',
+        'edad',
+        'edad_valor',
+        'unidad_edad',
+        'fecha_nacimiento',
+        'sexo',
+        'descripcion',
+    ];
+
+    protected $casts = [
+        'fecha_nacimiento' => 'date',
+    ];
 
     public function ganado()
     {

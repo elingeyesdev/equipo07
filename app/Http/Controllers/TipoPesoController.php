@@ -9,7 +9,7 @@ class TipoPesoController extends Controller
 {
     public function index()
     {
-        $items = TipoPeso::orderBy('id', 'desc')->get();
+        $items = TipoPeso::orderBy('id', 'desc')->paginate(10);
         return view('tipo_pesos.index', compact('items'));
     }
 

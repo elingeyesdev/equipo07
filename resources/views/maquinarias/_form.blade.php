@@ -417,21 +417,28 @@
         <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('maquinarias.index') }}"
             class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Volver
-        </a>
-        <div class="maquinaria-wizard__action-group">
-            <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
-                <i class="fas fa-chevron-left mr-1"></i> Anterior
-            </button>
+	        </a>
+	        <div class="maquinaria-wizard__action-group">
+	            <button type="button" class="btn btn-outline-secondary" data-draft-save>
+	                <i class="fas fa-save mr-1"></i> Guardar borrador
+	            </button>
+	            <button type="button" class="btn btn-outline-danger" data-draft-discard>
+	                <i class="fas fa-trash-alt mr-1"></i> Descartar borrador
+	            </button>
+	            <button type="button" class="btn btn-outline-agro" data-wizard-prev disabled>
+	                <i class="fas fa-chevron-left mr-1"></i> Anterior
+	            </button>
             <button type="button" class="btn btn-success" data-wizard-next>
                 Siguiente <i class="fas fa-chevron-right ml-1"></i>
             </button>
             <button type="submit" class="btn btn-success d-none" data-wizard-submit>
                 <i class="fas fa-save mr-1"></i> Guardar
             </button>
-        </div>
-    </div>
-    </div>
-</div>
+	        </div>
+	    </div>
+	    <small class="text-success d-none mt-2 d-block" data-draft-status></small>
+	    </div>
+	</div>
 
 <div class="modal fade maquinaria-map-modal" id="maquinariaMapModal" tabindex="-1" role="dialog"
     aria-labelledby="maquinariaMapModalLabel" aria-hidden="true">
@@ -1463,3 +1470,6 @@
         updateCount();
     });
 </script>
+@include('components.form-draft', [
+    'draftKey' => isset($maquinaria) && $maquinaria ? 'maquinarias.edit.' . $maquinaria->id : 'maquinarias.create',
+])

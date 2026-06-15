@@ -9,7 +9,7 @@ class PropositoController extends Controller
 {
     public function index()
     {
-        $items = Proposito::orderBy('id', 'desc')->get();
+        $items = Proposito::orderBy('id', 'desc')->paginate(10);
         return view('propositos.index', compact('items'));
     }
 

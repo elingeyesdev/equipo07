@@ -1,68 +1,159 @@
 @csrf
-<link rel="stylesheet" href="{{ asset('css/ganado-form.css') }}">
+@php
+    $edadModo = old(
+        'edad_modo',
+        isset($ganado) && $ganado?->caracteristica?->fecha_nacimiento ? 'fecha_nacimiento' : 'edad'
+    );
+    $fechaNacimiento = old(
+        'fecha_nacimiento',
+        isset($ganado) && $ganado?->caracteristica?->fecha_nacimiento
+            ? $ganado->caracteristica->fecha_nacimiento->format('Y-m-d')
+            : ''
+    );
+    $initialGanadoForm = [
+        'modalidad' => old('modalidad', $ganado->modalidad ?? ''),
+        'tipo_animal_id' => old('tipo_animal_id', $ganado->tipo_animal_id ?? ''),
+        'raza_id' => old('raza_id', $ganado->raza_id ?? ''),
+        'proposito' => old('proposito', $ganado->proposito ?? ''),
+        'tipo_genetica' => old('tipo_genetica', $ganado->tipo_genetica ?? ''),
+        'sexo' => old('sexo', $ganado->caracteristica->sexo ?? ''),
+        'forma_cobro' => old('forma_cobro', $ganado->datoComercial->forma_cobro ?? 'Contacto directo'),
+    ];
+    $propositosFormulario = ($propositos ?? collect())->pluck('nombre')->values();
+    if ($propositosFormulario->isEmpty()) {
+        $propositosFormulario = collect([
+            'Carne',
+            'Lechería',
+            'Doble Propósito',
+            'Reproducción / Padrillos',
+        ]);
+    }
+@endphp
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-<div class="agro-wizard-page">
-    <div class="agro-wizard">
-        <div class="agro-wizard__shell">
+<style>
+    .ganado-age-panel,
+    .ganado-info-panel {
+        background: #f8fbf8;
+        border: 1px solid rgba(46, 171, 91, 0.14);
+        border-radius: 12px;
+    }
+
+    .modality-btn {
+        align-items: center;
+        background: #fff;
+        border: 1px solid rgba(46, 171, 91, 0.16);
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        gap: 0.8rem;
+        height: 100%;
+        min-height: 86px;
+        padding: 1rem;
+        transition: all 0.18s ease;
+    }
+
+    .modality-btn:hover {
+        border-color: rgba(46, 171, 91, 0.42);
+        box-shadow: 0 12px 26px rgba(31, 42, 27, 0.07);
+        transform: translateY(-1px);
+    }
+
+    .modality-btn.selected {
+        background: #f5fbf2;
+        border-color: rgba(46, 171, 91, 0.62);
+        box-shadow: 0 16px 32px rgba(46, 171, 91, 0.12);
+    }
+
+    .modality-btn .icon {
+        align-items: center;
+        background: rgba(46, 171, 91, 0.1);
+        border-radius: 10px;
+        color: #238647;
+        display: inline-flex;
+        flex: 0 0 42px;
+        font-size: 1.35rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+
+    .modality-btn .label {
+        color: #263522;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+</style>
+
+<div class="maquinaria-wizard" data-ganado-wizard>
+    <div class="maquinaria-wizard__shell">
             
-            <div class="agro-wizard__hero">
+            <div class="maquinaria-wizard__hero">
                 <div>
-                    <span class="agro-wizard__eyebrow">Marketplace</span>
-                    <h2 class="agro-wizard__title">
-                        <i><i class="fas fa-chart-line"></i></i> 
+                    <span class="maquinaria-wizard__eyebrow">Registro de ganado</span>
+                    <h3 class="maquinaria-wizard__title mb-1">
+                        <i class="fas fa-paw mr-2"></i>
                         {{ isset($ganado) ? 'Editar Publicación' : 'Publicar Inventario Ganadero' }}
-                    </h2>
-                    <p class="agro-wizard__subtitle">Completa los datos paso a paso. No podrás avanzar si faltan datos requeridos.</p>
+                    </h3>
+                    <p class="maquinaria-wizard__subtitle mb-0">Completa los datos paso a paso. No podrás avanzar si faltan datos requeridos.</p>
                 </div>
-                <span class="agro-wizard__badge" id="stepCounterBadge">Paso 1 de 4</span>
+                <span class="badge badge-success maquinaria-wizard__badge" id="stepCounterBadge">Paso 1 de 4</span>
             </div>
 
-            <div class="agro-wizard__progress">
-                <div class="agro-wizard__step-indicator is-active" id="ind-0">
-                    <div class="agro-wizard__step-icon"><span class="agro-wizard__step-number">1</span></div>
-                    <div class="agro-wizard__step-copy">
-                        <span class="agro-wizard__step-title">Categoría y Especie</span>
-                        <span class="agro-wizard__step-status">En progreso</span>
+            <div class="maquinaria-wizard__progress" role="tablist" aria-label="Pasos del registro de ganado">
+                <div class="maquinaria-wizard__step-indicator is-active" id="ind-0">
+                    <span class="maquinaria-wizard__step-number">1</span>
+                    <span class="maquinaria-wizard__step-icon"><i class="fas fa-paw"></i></span>
+                    <div class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">Categoría y especie</span>
+                        <span class="maquinaria-wizard__step-description">Modalidad, especie, propósito y raza.</span>
+                        <span class="maquinaria-wizard__step-status">En progreso</span>
                     </div>
                 </div>
-                <div class="agro-wizard__step-indicator" id="ind-1">
-                    <div class="agro-wizard__step-icon"><span class="agro-wizard__step-number">2</span></div>
-                    <div class="agro-wizard__step-copy">
-                        <span class="agro-wizard__step-title">Detalles y Ficha</span>
-                        <span class="agro-wizard__step-status">Pendiente</span>
+                <div class="maquinaria-wizard__step-indicator" id="ind-1">
+                    <span class="maquinaria-wizard__step-number">2</span>
+                    <span class="maquinaria-wizard__step-icon"><i class="fas fa-clipboard-list"></i></span>
+                    <div class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">Ficha</span>
+                        <span class="maquinaria-wizard__step-description">Título, stock, sexo, edad y descripción.</span>
+                        <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
-                <div class="agro-wizard__step-indicator" id="ind-2">
-                    <div class="agro-wizard__step-icon"><span class="agro-wizard__step-number">3</span></div>
-                    <div class="agro-wizard__step-copy">
-                        <span class="agro-wizard__step-title">Precio y Peso</span>
-                        <span class="agro-wizard__step-status">Pendiente</span>
+                <div class="maquinaria-wizard__step-indicator" id="ind-2">
+                    <span class="maquinaria-wizard__step-number">3</span>
+                    <span class="maquinaria-wizard__step-icon"><i class="fas fa-balance-scale"></i></span>
+                    <div class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">Precio y peso</span>
+                        <span class="maquinaria-wizard__step-description">Pesaje y precio de referencia.</span>
+                        <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
-                <div class="agro-wizard__step-indicator" id="ind-3">
-                    <div class="agro-wizard__step-icon"><span class="agro-wizard__step-number">4</span></div>
-                    <div class="agro-wizard__step-copy">
-                        <span class="agro-wizard__step-title">Sanidad y Ubicación</span>
-                        <span class="agro-wizard__step-status">Pendiente</span>
+                <div class="maquinaria-wizard__step-indicator" id="ind-3">
+                    <span class="maquinaria-wizard__step-number">4</span>
+                    <span class="maquinaria-wizard__step-icon"><i class="fas fa-map-marker-alt"></i></span>
+                    <div class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">Sanidad y ubicación</span>
+                        <span class="maquinaria-wizard__step-description">Documentos, imágenes y localización.</span>
+                        <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
             </div>
 
-            <div class="agro-wizard__progressbar">
+            <div class="maquinaria-wizard__progressbar" aria-hidden="true">
                 <span id="progressBar" style="width: 0%;"></span>
             </div>
 
-            <div class="agro-wizard__content">
+            <div class="maquinaria-wizard__content">
                 
-                <div class="agro-wizard-step is-active" id="step-0">
-                    <div class="agro-wizard-step-header">
+                <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step is-active" id="step-0">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h3>1. Definición Inicial</h3>
+                            <h3 class="card-title mb-0"><i class="fas fa-paw mr-2"></i>Definición inicial</h3>
                             <small>Selecciona cómo y qué tipo de ganado deseas comercializar.</small>
                         </div>
+                        <span class="badge badge-success">Paso 1 de 4</span>
                     </div>
-                    <div class="agro-wizard-step-body">
+                    <div class="card-body">
                         
                         <div class="mb-4">
                             <label>Modalidad de Venta <span class="text-danger">*</span></label>
@@ -88,7 +179,7 @@
 
                         <div class="mb-4" id="div_especie" style="display: none;">
                             <label>Especie Principal <span class="text-danger">*</span></label>
-                            <select name="tipo_animal_id" id="tipo_animal_id" class="form-select">
+                            <select name="tipo_animal_id" id="tipo_animal_id" class="form-control">
                                 <option value="">Selecciona la especie...</option>
                                 @foreach ($tipo_animals as $item)
                                     <option value="{{ $item->id }}" data-name="{{ $item->nombre }}" {{ old('tipo_animal_id', $ganado->tipo_animal_id ?? '') == $item->id ? 'selected' : '' }}>
@@ -103,23 +194,24 @@
                                 </div>
                             <div class="col-md-6 mb-3">
                                 <label>Raza <span class="text-danger">*</span></label>
-                                <select name="raza_id" id="raza_id" class="form-select">
+                                <select name="raza_id" id="raza_id" class="form-control">
                                     <option value="">Selecciona la raza...</option>
                                 </select>
                             </div>
                         </div>
 
                     </div>
-                </div>
+                </section>
 
-                <div class="agro-wizard-step" id="step-1">
-                    <div class="agro-wizard-step-header">
+                <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" id="step-1">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h3>2. Ficha y Detalles</h3>
+                            <h3 class="card-title mb-0"><i class="fas fa-clipboard-list mr-2"></i>Ficha y detalles</h3>
                             <small>Proporciona información descriptiva sobre tu publicación.</small>
                         </div>
+                        <span class="badge badge-success">Paso 2 de 4</span>
                     </div>
-                    <div class="agro-wizard-step-body">
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label>Título de la Publicación <span class="text-danger">*</span></label>
@@ -133,19 +225,39 @@
 
                             <div class="col-md-6 mb-3" id="div_sexo">
                                 <label>Sexo <span class="text-danger">*</span></label>
-                                <select name="sexo" id="sexo" class="form-select">
+                                <select name="sexo" id="sexo" class="form-control">
                                     <option value="">Selecciona el sexo...</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-12 mb-3 p-3 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;" id="div_edad">
-                                <label>Edad (Promedio o Exacta) <span class="text-danger">*</span></label>
-                                <div class="d-flex gap-3">
-                                    <input type="number" name="edad_valor" id="edad_valor" class="form-control w-75" placeholder="Ej: 15" value="{{ old('edad_valor', $ganado->caracteristica->edad_valor ?? '') }}">
-                                    <select name="unidad_edad" id="unidad_edad" class="form-select w-25">
+                            <div class="col-md-12 mb-3 p-3 ganado-age-panel" id="div_edad">
+                                <label>Edad o fecha de nacimiento <span class="text-danger">*</span></label>
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="edad_modo_switch"
+                                        {{ $edadModo === 'fecha_nacimiento' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="edad_modo_switch">
+                                        Usar fecha de nacimiento
+                                    </label>
+                                </div>
+                                <input type="hidden" name="edad_modo" id="edad_modo" value="{{ $edadModo }}">
+
+                                <div class="d-flex gap-3" id="edad_manual_group">
+                                    <input type="number" name="edad_valor" id="edad_valor" class="form-control w-75"
+                                        placeholder="Ej: 15" min="0"
+                                        value="{{ old('edad_valor', $ganado->caracteristica->edad_valor ?? '') }}">
+                                    <select name="unidad_edad" id="unidad_edad" class="form-control w-25">
                                         <option value="Meses" {{ old('unidad_edad', $ganado->caracteristica->unidad_edad ?? '') == 'Meses' ? 'selected' : '' }}>Meses</option>
                                         <option value="Años" {{ old('unidad_edad', $ganado->caracteristica->unidad_edad ?? '') == 'Años' ? 'selected' : '' }}>Años</option>
                                     </select>
+                                </div>
+
+                                <div id="fecha_nacimiento_group">
+                                    <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
+                                        class="form-control" max="{{ now()->format('Y-m-d') }}"
+                                        value="{{ $fechaNacimiento }}">
+                                    <small class="form-text text-muted" id="edad_calculada_texto">
+                                        La edad se calculará automáticamente al guardar.
+                                    </small>
                                 </div>
                             </div>
 
@@ -155,18 +267,19 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="agro-wizard-step" id="step-2">
-                    <div class="agro-wizard-step-header">
+                <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" id="step-2">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h3>3. Valor y Pesaje</h3>
+                            <h3 class="card-title mb-0"><i class="fas fa-balance-scale mr-2"></i>Valor y pesaje</h3>
                             <small>Fija tus precios y medidas para la venta.</small>
                         </div>
+                        <span class="badge badge-success">Paso 3 de 4</span>
                     </div>
-                    <div class="agro-wizard-step-body">
+                    <div class="card-body">
                         
-                        <div class="p-3 mb-4 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;" id="div_peso_wrapper">
+                        <div class="p-3 mb-4 ganado-info-panel" id="div_peso_wrapper">
                             <h6 class="font-weight-bold mb-3 text-success"><i class="fas fa-balance-scale"></i> Información de Peso</h6>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -175,7 +288,7 @@
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label>Unidad <span class="text-danger">*</span></label>
-                                    <select name="unidad_peso" id="unidad_peso" class="form-select">
+                                    <select name="unidad_peso" id="unidad_peso" class="form-control">
                                         <option value="kg" {{ old('unidad_peso', $ganado->datoProductivo->unidad_peso ?? '') == 'kg' ? 'selected' : '' }}>Kilogramos (kg)</option>
                                         <option value="lb" {{ old('unidad_peso', $ganado->datoProductivo->unidad_peso ?? '') == 'lb' ? 'selected' : '' }}>Libras (lb)</option>
                                         <option value="@" {{ old('unidad_peso', $ganado->datoProductivo->unidad_peso ?? '') == '@' ? 'selected' : '' }}>Arrobas (@)</option>
@@ -183,7 +296,7 @@
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label>Tipo de Pesaje <span class="text-danger">*</span></label>
-                                    <select name="tipo_pesaje" id="tipo_pesaje" class="form-select">
+                                    <select name="tipo_pesaje" id="tipo_pesaje" class="form-control">
                                         <option value="Peso Vivo Estimado" {{ old('tipo_pesaje', $ganado->datoProductivo->tipo_pesaje ?? '') == 'Peso Vivo Estimado' ? 'selected' : '' }}>Peso Vivo (Estimado)</option>
                                         <option value="Peso en Báscula" {{ old('tipo_pesaje', $ganado->datoProductivo->tipo_pesaje ?? '') == 'Peso en Báscula' ? 'selected' : '' }}>Peso Real (Báscula)</option>
                                     </select>
@@ -191,7 +304,7 @@
                             </div>
                         </div>
 
-                        <div class="row p-3 rounded" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                        <div class="row p-3 ganado-info-panel">
                             <div class="col-md-6 mb-3">
                                 <label>Precio Base <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -199,63 +312,59 @@
                                     <input type="number" name="precio" id="precio" class="form-control font-weight-bold" step="0.01" value="{{ old('precio', $ganado->precio ?? '') }}" placeholder="0.00">
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label>Forma de Cobro <span class="text-danger">*</span></label>
-                                <select name="forma_cobro" id="forma_cobro" class="form-select">
-                                    <option value="">Selecciona cobro...</option>
-                                </select>
-                            </div>
+                            <input type="hidden" name="forma_cobro" id="forma_cobro" value="{{ old('forma_cobro', $ganado->datoComercial->forma_cobro ?? 'Contacto directo') }}">
                         </div>
 
                     </div>
-                </div>
+                </section>
 
-                <div class="agro-wizard-step" id="step-3">
-                    <div class="agro-wizard-step-header">
+                <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" id="step-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h3>4. Multimedia y Ubicación</h3>
+                            <h3 class="card-title mb-0"><i class="fas fa-map-marker-alt mr-2"></i>Multimedia y ubicación</h3>
                             <small>Sube imágenes claras y define la ubicación de la propiedad.</small>
                         </div>
+                        <span class="badge badge-success">Paso 4 de 4</span>
                     </div>
-                    <div class="agro-wizard-step-body">
+                    <div class="card-body">
 
-                        <div class="p-3 mb-4 rounded" style="background: #f8fafc; border: 2px solid #e2e8f0;" id="div_sanidad">
+                        <div class="p-3 mb-4 ganado-info-panel" id="div_sanidad">
                             <div class="form-check custom-switch">
                                 <input type="checkbox" class="form-check-input" id="has_sanity" name="has_sanity" value="1" {{ old('has_sanity', isset($ganado) && $ganado->datosSanitarios()->where('has_sanity', true)->exists() ? 'checked' : '') }}>
                                 <label class="form-check-label font-weight-bold ml-2" for="has_sanity" id="label_sanity">¿Cuenta con cartillas de sanidad al día?</label>
                             </div>
                             
                             <div id="sanidad_upload_zone" class="mt-3" style="display: none;">
-                                <label for="pdf-input" class="agro-upload-zone bg-white">
-                                    <span class="agro-upload-zone__icon" style="background: #fff; color: var(--agro); border: 1px solid #bbf7d0;"><i class="fas fa-file-pdf"></i></span>
+                                <label for="pdf-input" class="maquinaria-upload-zone">
+                                    <span class="maquinaria-upload-zone__icon"><i class="fas fa-file-pdf"></i></span>
                                     <div class="d-flex flex-column text-left">
                                         <strong class="text-dark">Documentos Sanitarios (Opcional)</strong>
                                         <small class="text-muted">Sube el certificado PDF.</small>
                                     </div>
-                                    <span class="agro-upload-zone__cta ml-auto">Seleccionar PDF</span>
+                                    <span class="maquinaria-upload-zone__cta ml-auto">Seleccionar PDF</span>
                                 </label>
-                                <input type="file" name="documento_pdf" id="pdf-input" class="agro-upload-input" accept=".pdf">
+                                <input type="file" name="documento_pdf" id="pdf-input" class="maquinaria-upload-input" accept=".pdf">
                                 <span id="pdf-file-name" class="text-success small mt-1 d-block"></span>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label>Fotografías del Ganado</label>
-                            <label for="imagenes-input" class="agro-upload-zone">
-                                <span class="agro-upload-zone__icon"><i class="fas fa-image"></i></span>
+                            <label for="imagenes-input" class="maquinaria-upload-zone">
+                                <span class="maquinaria-upload-zone__icon"><i class="fas fa-image"></i></span>
                                 <div class="d-flex flex-column text-left">
                                     <strong class="text-dark">Sube hasta 5 fotos</strong>
                                     <small class="text-muted">Formatos: JPG, PNG. Máximo 10MB por archivo.</small>
                                 </div>
-                                <span class="agro-upload-zone__cta ml-auto">Explorar Galería</span>
+                                <span class="maquinaria-upload-zone__cta ml-auto">Explorar Galería</span>
                             </label>
-                            <input type="file" name="imagenes[]" id="imagenes-input" class="agro-upload-input" accept="image/*" multiple>
+                            <input type="file" name="imagenes[]" id="imagenes-input" class="maquinaria-upload-input" accept="image/*" multiple>
                             <div id="preview-container" class="row mt-3"></div>
                         </div>
 
                         <div>
                             <label>Ubicación de la Propiedad <span class="text-danger">*</span></label>
-                            <div id="map" style="height: 350px; border-radius: 8px; border: 1px solid rgba(44, 91, 31, 0.14);"></div>
+                            <div id="map" class="maquinaria-wizard__map" style="height: 350px;"></div>
                             <input type="hidden" name="latitud" id="latitud" value="{{ old('latitud', $ganado->latitud ?? '') }}">
                             <input type="hidden" name="longitud" id="longitud" value="{{ old('longitud', $ganado->longitud ?? '') }}">
                             <input type="hidden" name="departamento" id="departamento">
@@ -266,46 +375,47 @@
                         </div>
 
                     </div>
-                </div>
+                </section>
 
             </div>
 
-            <div class="agro-wizard__actions">
-                <button type="button" class="btn-agro-outline" id="btnPrev" style="visibility: hidden;">
-                    <i class="fas fa-chevron-left mr-2"></i> Atrás
-                </button>
-                <div>
-                    <button type="button" class="btn-agro-primary" id="btnNext">
-                        Siguiente <i class="fas fa-chevron-right ml-2"></i>
-                    </button>
-                    <button type="submit" class="btn-agro-primary" id="btnSubmit" style="display: none; background: #1e293b;">
+            <div class="maquinaria-wizard__actions">
+		                <button type="button" class="btn btn-outline-agro" id="btnPrev" style="visibility: hidden;">
+		                    <i class="fas fa-chevron-left mr-2"></i> Atrás
+		                </button>
+		                <div class="maquinaria-wizard__action-group">
+		                    <button type="button" class="btn btn-outline-secondary" data-draft-save>
+		                        <i class="fas fa-save mr-2"></i> Guardar borrador
+		                    </button>
+		                    <button type="button" class="btn btn-outline-danger" data-draft-discard>
+		                        <i class="fas fa-trash-alt mr-2"></i> Descartar borrador
+		                    </button>
+		                    <button type="button" class="btn btn-success" id="btnNext">
+		                        Siguiente <i class="fas fa-chevron-right ml-2"></i>
+		                    </button>
+                    <button type="submit" class="btn btn-success" id="btnSubmit" style="display: none;">
                         Publicar Ganado <i class="fas fa-check-circle ml-2"></i>
                     </button>
                 </div>
-            </div>
+	            </div>
+	            <small class="text-success d-none mt-2 d-block" data-draft-status></small>
 
-        </div>
-    </div>
+	        </div>
 </div>
 
 <script>
     const dbTipos = @json($tipo_animals);
     const dbRazas = @json($razas);
-    const dbPurposes = {
-        'Bovino': ['Carne', 'Lechería', 'Doble Propósito', 'Reproducción / Padrillos'],
-        'Equino': ['Trabajo', 'Deporte / Exhibición', 'Reproducción / Padrillos'],
-        'Ovino': ['Carne', 'Lana', 'Lechería', 'Reproducción / Padrillos'],
-        'Porcino': ['Carne', 'Reproducción / Padrillos'],
-        'Caprino': ['Carne', 'Lechería', 'Reproducción / Padrillos'],
-    };
+    const dbPurposes = @json($propositosFormulario);
+    const initialGanadoForm = @json($initialGanadoForm);
 </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let step = 0;
     const totalSteps = 4;
-    const stepsDOM = document.querySelectorAll('.agro-wizard-step');
-    const indsDOM = document.querySelectorAll('.agro-wizard__step-indicator');
+    const stepsDOM = document.querySelectorAll('.maquinaria-wizard-step');
+    const indsDOM = document.querySelectorAll('.maquinaria-wizard__step-indicator');
     const btnNext = document.getElementById('btnNext');
     const btnPrev = document.getElementById('btnPrev');
     const btnSubmit = document.getElementById('btnSubmit');
@@ -320,10 +430,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectRaza = document.getElementById('raza_id');
     const selectSexo = document.getElementById('sexo');
     const divSexo = document.getElementById('div_sexo');
-    const selectCobro = document.getElementById('forma_cobro');
-    const divPeso = document.getElementById('div_peso_wrapper');
-    const divEdad = document.getElementById('div_edad');
-    const inputStock = document.getElementById('stock');
+	    const selectCobro = document.getElementById('forma_cobro');
+	    const divPeso = document.getElementById('div_peso_wrapper');
+	    const divEdad = document.getElementById('div_edad');
+	    const inputStock = document.getElementById('stock');
+	    const edadModo = document.getElementById('edad_modo');
+	    const edadModoSwitch = document.getElementById('edad_modo_switch');
+	    const edadManualGroup = document.getElementById('edad_manual_group');
+	    const fechaNacimientoGroup = document.getElementById('fecha_nacimiento_group');
+	    const fechaNacimientoInput = document.getElementById('fecha_nacimiento');
+	    const edadCalculadaTexto = document.getElementById('edad_calculada_texto');
     
     // 1. Lógica Visual Wizard
     function updateWizard() {
@@ -331,10 +447,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         indsDOM.forEach((ind, i) => {
             ind.classList.remove('is-active', 'is-complete');
-            const status = ind.querySelector('.agro-wizard__step-status');
-            if (i < step) { ind.classList.add('is-complete'); status.textContent = "Completado"; status.style.color = "#fff"; }
-            else if (i === step) { ind.classList.add('is-active'); status.textContent = "En progreso"; status.style.color = "var(--agro-700)"; }
-            else { status.textContent = "Pendiente"; status.style.color = "#667466"; }
+            const status = ind.querySelector('.maquinaria-wizard__step-status');
+            if (i < step) {
+                ind.classList.add('is-complete');
+                status.textContent = "Completado";
+            } else if (i === step) {
+                ind.classList.add('is-active');
+                status.textContent = "En progreso";
+            } else {
+                status.textContent = "Pendiente";
+            }
         });
 
         progressBar.style.width = ((step) / (totalSteps - 1)) * 100 + '%';
@@ -364,9 +486,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mod !== 'Genetica' && !document.getElementById('proposito')?.value) valid = false;
         } else if (step === 1) {
             if (!document.getElementById('nombre').value || !inputStock.value || !document.getElementById('descripcion').value) valid = false;
-            if (mod !== 'Genetica' && (!selectSexo.value || !document.getElementById('edad_valor').value)) valid = false;
+	            if (mod !== 'Genetica' && !selectSexo.value) valid = false;
+	            if (mod !== 'Genetica' && edadModo.value === 'fecha_nacimiento' && !fechaNacimientoInput.value) valid = false;
+	            if (mod !== 'Genetica' && edadModo.value !== 'fecha_nacimiento' && !document.getElementById('edad_valor').value) valid = false;
         } else if (step === 2) {
-            if (!document.getElementById('precio').value || !selectCobro.value) valid = false;
+            if (!document.getElementById('precio').value) valid = false;
             if (mod !== 'Genetica' && !document.getElementById('peso_actual').value) valid = false;
         } else if (step === 3) {
             if (!document.getElementById('latitud').value) valid = false;
@@ -382,8 +506,93 @@ document.addEventListener('DOMContentLoaded', function() {
         el.addEventListener('change', checkStepValid);
     });
 
-    btnNext.addEventListener('click', () => { if (!btnNext.disabled) { step++; updateWizard(); } });
-    btnPrev.addEventListener('click', () => { if (step > 0) { step--; updateWizard(); } });
+	    btnNext.addEventListener('click', () => { if (!btnNext.disabled) { step++; updateWizard(); } });
+	    btnPrev.addEventListener('click', () => { if (step > 0) { step--; updateWizard(); } });
+
+	    function updateEdadMode() {
+	        const usarFecha = edadModoSwitch.checked;
+	        edadModo.value = usarFecha ? 'fecha_nacimiento' : 'edad';
+	        edadManualGroup.style.display = usarFecha ? 'none' : 'flex';
+	        fechaNacimientoGroup.style.display = usarFecha ? 'block' : 'none';
+	        document.getElementById('edad_valor').required = !usarFecha && inputMod.value !== 'Genetica';
+	        document.getElementById('unidad_edad').required = !usarFecha && inputMod.value !== 'Genetica';
+	        fechaNacimientoInput.required = usarFecha && inputMod.value !== 'Genetica';
+	        updateEdadCalculada();
+	        checkStepValid();
+	    }
+
+	    function updateEdadCalculada() {
+	        if (!fechaNacimientoInput.value) {
+	            edadCalculadaTexto.textContent = 'La edad se calculará automáticamente al guardar.';
+	            return;
+	        }
+
+	        const birthDate = new Date(fechaNacimientoInput.value + 'T00:00:00');
+	        const today = new Date();
+	        let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + today.getMonth() - birthDate.getMonth();
+	        if (today.getDate() < birthDate.getDate()) months -= 1;
+	        months = Math.max(months, 0);
+	        edadCalculadaTexto.textContent = `Edad aproximada calculada: ${months} ${months === 1 ? 'mes' : 'meses'}.`;
+	    }
+
+	    edadModoSwitch.addEventListener('change', updateEdadMode);
+	    fechaNacimientoInput.addEventListener('change', updateEdadCalculada);
+
+	    function syncModalityLayout(val) {
+	        if (!val) return;
+
+	        document.querySelectorAll('.modality-btn').forEach(b => {
+	            b.classList.toggle('selected', b.dataset.value === val);
+	        });
+
+	        divEspecie.style.display = 'block';
+	        divSexo.style.display = val === 'Genetica' ? 'none' : 'block';
+	        divEdad.style.display = val === 'Genetica' ? 'none' : 'block';
+	        divPeso.style.display = val === 'Genetica' ? 'none' : 'block';
+	        selectCobro.value = selectCobro.value || 'Contacto directo';
+	        document.getElementById('label_sanity').textContent = val === 'Genetica' ? '¿Cuenta con Certificado Genético?' : '¿Cuenta con cartillas de sanidad al día?';
+	        updateEdadMode();
+	    }
+
+	    function applySavedDynamicState(values) {
+	        const mod = values.modalidad || inputMod.value;
+
+	        if (!mod) return;
+
+	        inputMod.value = mod;
+	        syncModalityLayout(mod);
+
+	        if (values.tipo_animal_id) {
+	            selectTipo.value = values.tipo_animal_id;
+	            selectTipo.dispatchEvent(new Event('change', { bubbles: true }));
+	        }
+
+	        if (values.raza_id) {
+	            selectRaza.value = values.raza_id;
+	        }
+
+	        if (values.tipo_genetica && document.getElementById('tipo_genetica')) {
+	            document.getElementById('tipo_genetica').value = values.tipo_genetica;
+	        }
+
+	        if (values.proposito && document.getElementById('proposito')) {
+	            document.getElementById('proposito').value = values.proposito;
+	            buildSexoOptions(mod, values.proposito);
+	        }
+
+	        if (values.sexo) {
+	            selectSexo.value = values.sexo;
+	        }
+
+	        selectCobro.value = values.forma_cobro || 'Contacto directo';
+
+	        updateEdadMode();
+	        checkStepValid();
+	    }
+
+	    inputMod.closest('form')?.addEventListener('form-draft:restored', function(event) {
+	        applySavedDynamicState(event.detail?.draft || {});
+	    });
 
     // 3. Lógica de Negocio (React -> Vanilla JS)
     
@@ -392,28 +601,20 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.modality-btn').forEach(b => b.classList.remove('selected'));
             this.classList.add('selected');
-            const val = this.dataset.value;
-            inputMod.value = val;
-            
-            // Reset cascading states
-            divEspecie.style.display = 'block';
-            selectTipo.value = '';
-            divPropRaza.style.display = 'none';
+	            const val = this.dataset.value;
+	            inputMod.value = val;
+	            syncModalityLayout(val);
+
+	            // Reset cascading states
+	            selectTipo.value = '';
+	            divPropRaza.style.display = 'none';
             
             // Configurar paso 2 y 3 segun modalidad
             if (val === 'Individual') { inputStock.value = 1; inputStock.setAttribute('readonly', true); }
             else { inputStock.value = ''; inputStock.removeAttribute('readonly'); }
 
-            divSexo.style.display = val === 'Genetica' ? 'none' : 'block';
-            divEdad.style.display = val === 'Genetica' ? 'none' : 'block';
-            divPeso.style.display = val === 'Genetica' ? 'none' : 'block';
-            selectCobro.disabled = val === 'Genetica';
-            
-            document.getElementById('label_sanity').textContent = val === 'Genetica' ? '¿Cuenta con Certificado Genético?' : '¿Cuenta con cartillas de sanidad al día?';
-
-            buildCobroOptions(val);
-            checkStepValid();
-        });
+	            checkStepValid();
+	        });
     });
 
     // Especie Change
@@ -427,24 +628,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (mod === 'Genetica') {
             colProposito.innerHTML = `
                 <label>Tipo de Material Genético <span class="text-danger">*</span></label>
-                <select name="tipo_genetica" id="tipo_genetica" class="form-select">
+                <select name="tipo_genetica" id="tipo_genetica" class="form-control">
                     <option value="">Selecciona el tipo...</option>
                     <option value="Semen">Pajuelas de Semen</option>
                     <option value="Embrion">Embriones</option>
                 </select>
             `;
             document.getElementById('tipo_genetica').addEventListener('change', function() {
-                buildCobroOptions(mod, this.value);
                 checkStepValid();
             });
         } else {
-            let options = '<option value="">Selecciona el propósito...</option>';
-            if (dbPurposes[typeName]) {
-                dbPurposes[typeName].forEach(p => options += `<option value="${p}">${p}</option>`);
-            }
+	            let options = '<option value="">Selecciona el propósito...</option>';
+	            dbPurposes.forEach(p => options += `<option value="${p}">${p}</option>`);
             colProposito.innerHTML = `
                 <label>Propósito del Ganado <span class="text-danger">*</span></label>
-                <select name="proposito" id="proposito" class="form-select">${options}</select>
+                <select name="proposito" id="proposito" class="form-control">${options}</select>
             `;
             document.getElementById('proposito').addEventListener('change', function() {
                 buildSexoOptions(mod, this.value);
@@ -473,30 +671,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function buildCobroOptions(mod, geneticType = null) {
-        selectCobro.innerHTML = '<option value="">Selecciona cobro...</option>';
-        let opts = [];
-        if (mod === 'Genetica') {
-            opts = geneticType === 'Semen' ? ['Por Dosis/Pajuela'] : ['Por Embrión'];
-        } else if (mod === 'Individual') {
-            opts = ['Por cabeza', 'Por kilo vivo'];
-        } else if (mod === 'Lote') {
-            opts = ['Por cabeza', 'Por kilo vivo', 'Por lote completo'];
-        }
-        opts.forEach(o => selectCobro.innerHTML += `<option value="${o}">${o}</option>`);
-    }
-
     // Toggle Sanity PDF
-    document.getElementById('has_sanity').addEventListener('change', function() {
-        document.getElementById('sanidad_upload_zone').style.display = this.checked ? 'block' : 'none';
-    });
+	    document.getElementById('has_sanity').addEventListener('change', function() {
+	        document.getElementById('sanidad_upload_zone').style.display = this.checked ? 'block' : 'none';
+	    });
+	    document.getElementById('has_sanity').dispatchEvent(new Event('change', { bubbles: true }));
 
     document.getElementById('pdf-input').addEventListener('change', function() {
         if(this.files[0]) document.getElementById('pdf-file-name').textContent = 'Archivo: ' + this.files[0].name;
     });
 
-    // Inicializar visual
-    updateWizard();
+	    // Inicializar visual
+	    applySavedDynamicState(initialGanadoForm);
+	    updateEdadMode();
+	    updateWizard();
 
     // --- LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ---
     const imagenesInput = document.getElementById('imagenes-input');
@@ -523,15 +711,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         col.className = 'col-md-4 col-sm-6 mb-3'; // Diseño de cuadrícula
 
                         const card = document.createElement('div');
-                        card.className = 'ganado-image-preview';
+                        card.className = 'card card-outline card-success h-100 mb-0 maquinaria-image-card';
 
                         const image = document.createElement('img');
                         image.src = event.target.result;
                         image.alt = `Vista previa de ${file.name}`;
-                        image.className = 'ganado-image-preview__img';
+                        image.className = 'card-img-top maquinaria-image-card__image';
 
                         const caption = document.createElement('span');
-                        caption.className = 'ganado-image-preview__name';
+                        caption.className = 'card-footer bg-white p-2 text-muted small font-weight-bold text-truncate';
                         caption.textContent = file.name;
 
                         card.appendChild(image);
@@ -547,8 +735,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-});
-</script>
+	});
+	</script>
+@include('components.form-draft', [
+    'draftKey' => isset($ganado) && $ganado ? 'ganados.edit.' . $ganado->id : 'ganados.create',
+])
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>

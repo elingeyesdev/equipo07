@@ -9,12 +9,15 @@ use App\Models\TipoPeso;
 use App\Models\Raza;
 use App\Models\DatoSanitario;
 use App\Models\GanadoImagen;
+use App\Models\Proposito;
 use App\Models\UbicacionGanado;
 use App\Models\UbicacionGeograficaGanado;
 use App\Services\GeocodificacionService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class GanadoController extends Controller
 {
@@ -48,6 +51,7 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::orderBy('nombre')->get();
+        $propositos   = Proposito::orderBy('nombre')->get();
         $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
             ->orderBy('id', 'desc')
             ->get();
@@ -56,6 +60,7 @@ class GanadoController extends Controller
             'categorias',
             'tipoPesos',
             'razas',
+            'propositos',
             'datosSanitarios'
         ));
     }
@@ -75,18 +80,32 @@ class GanadoController extends Controller
             'stock'          => 'required|integer|min:1',
             'descripcion'    => 'required|string',
             'precio'         => 'required|numeric|min:0',
-            'forma_cobro'    => 'required|string',
+            'forma_cobro'    => 'nullable|string|max:255',
+            'edad_modo'      => 'nullable|in:edad,fecha_nacimiento',
+            'edad_valor'     => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo', 'edad') === 'edad'),
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+            'unidad_edad'    => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo', 'edad') === 'edad'),
+                'nullable',
+                'in:Meses,Años',
+            ],
+            'fecha_nacimiento' => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo') === 'fecha_nacimiento'),
+                'nullable',
+                'date',
+                'before_or_equal:today',
+            ],
             'imagenes.*'     => 'nullable|image|max:10240',
             'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
             'latitud'        => 'required|numeric',
             'longitud'       => 'required|numeric',
         ]);
 
-        // Calcular edad en meses para compatibilidad legacy
-        $edadMeses = 0;
-        if ($request->modalidad !== 'Genetica') {
-            $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
-        }
+        $edadGanado = $this->resolverEdadGanado($request);
 
         // 2. Guardar datos principales
         $data = [
@@ -106,11 +125,12 @@ class GanadoController extends Controller
 
         // 3. Sincronizar Relaciones con los nuevos campos
         $ganado->caracteristica()->create([
-            'edad'        => $edadMeses,
-            'edad_valor'  => $request->edad_valor,
-            'unidad_edad' => $request->unidad_edad,
-            'sexo'        => $request->sexo,
-            'descripcion' => $request->descripcion,
+            'edad'             => $edadGanado['edad'],
+            'edad_valor'       => $edadGanado['edad_valor'],
+            'unidad_edad'      => $edadGanado['unidad_edad'],
+            'fecha_nacimiento' => $edadGanado['fecha_nacimiento'],
+            'sexo'             => $request->sexo,
+            'descripcion'      => $request->descripcion,
         ]);
 
         $ganado->datoProductivo()->create([
@@ -122,7 +142,7 @@ class GanadoController extends Controller
         $ganado->datoComercial()->create([
             'precio'            => $request->precio,
             'stock'             => $request->stock,
-            'forma_cobro'       => $request->forma_cobro,
+            'forma_cobro'       => $request->input('forma_cobro', 'Contacto directo') ?: 'Contacto directo',
             'fecha_publicacion' => now(),
         ]);
 
@@ -175,6 +195,7 @@ class GanadoController extends Controller
         $categorias   = Categoria::orderBy('nombre')->get();
         $tipoPesos    = TipoPeso::orderBy('nombre')->get();
         $razas        = Raza::where('tipo_animal_id', $ganado->tipo_animal_id)->get();
+        $propositos   = Proposito::orderBy('nombre')->get();
         $datosSanitarios = DatoSanitario::with(['vacunacion', 'tratamientoMedicamento'])
             ->orderBy('id', 'desc')
             ->get();
@@ -184,6 +205,7 @@ class GanadoController extends Controller
             'categorias',
             'tipoPesos',
             'razas',
+            'propositos',
             'datosSanitarios'
         ));
     }
@@ -208,18 +230,32 @@ class GanadoController extends Controller
             'stock'          => 'required|integer|min:1',
             'descripcion'    => 'required|string',
             'precio'         => 'required|numeric|min:0',
-            'forma_cobro'    => 'required|string',
+            'forma_cobro'    => 'nullable|string|max:255',
+            'edad_modo'      => 'nullable|in:edad,fecha_nacimiento',
+            'edad_valor'     => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo', 'edad') === 'edad'),
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+            'unidad_edad'    => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo', 'edad') === 'edad'),
+                'nullable',
+                'in:Meses,Años',
+            ],
+            'fecha_nacimiento' => [
+                Rule::requiredIf(fn () => $request->modalidad !== 'Genetica' && $request->input('edad_modo') === 'fecha_nacimiento'),
+                'nullable',
+                'date',
+                'before_or_equal:today',
+            ],
             'imagenes.*'     => 'nullable|image|max:10240',
             'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
             'latitud'        => 'required|numeric',
             'longitud'       => 'required|numeric',
         ]);
 
-        // Calcular edad en meses para compatibilidad legacy
-        $edadMeses = 0;
-        if ($request->modalidad !== 'Genetica') {
-            $edadMeses = $request->unidad_edad === 'Años' ? ($request->edad_valor * 12) : $request->edad_valor;
-        }
+        $edadGanado = $this->resolverEdadGanado($request);
 
         $data = [
             'nombre'         => $request->nombre,
@@ -281,11 +317,12 @@ class GanadoController extends Controller
         $ganado->caracteristica()->updateOrCreate(
             ['ganado_id' => $ganado->id],
             [
-                'edad'        => $edadMeses,
-                'edad_valor'  => $request->edad_valor,
-                'unidad_edad' => $request->unidad_edad,
-                'sexo'        => $request->sexo,
-                'descripcion' => $request->descripcion,
+                'edad'             => $edadGanado['edad'],
+                'edad_valor'       => $edadGanado['edad_valor'],
+                'unidad_edad'      => $edadGanado['unidad_edad'],
+                'fecha_nacimiento' => $edadGanado['fecha_nacimiento'],
+                'sexo'             => $request->sexo,
+                'descripcion'      => $request->descripcion,
             ]
         );
 
@@ -303,7 +340,7 @@ class GanadoController extends Controller
             [
                 'precio'            => $request->precio,
                 'stock'             => $request->stock,
-                'forma_cobro'       => $request->forma_cobro,
+                'forma_cobro'       => $request->input('forma_cobro', 'Contacto directo') ?: 'Contacto directo',
                 'fecha_publicacion' => $ganado->fecha_publicacion ?? now(),
             ]
         );
@@ -483,6 +520,40 @@ class GanadoController extends Controller
             'caracteristica',
             'genealogia.madre',
             'genealogia.padre',
+        ];
+    }
+
+    private function resolverEdadGanado(Request $request): array
+    {
+        if ($request->modalidad === 'Genetica') {
+            return [
+                'edad' => 0,
+                'edad_valor' => null,
+                'unidad_edad' => null,
+                'fecha_nacimiento' => null,
+            ];
+        }
+
+        if ($request->input('edad_modo', 'edad') === 'fecha_nacimiento' && $request->filled('fecha_nacimiento')) {
+            $fechaNacimiento = Carbon::parse($request->fecha_nacimiento)->startOfDay();
+            $edadMeses = (int) max(0, $fechaNacimiento->diffInMonths(now()->startOfDay()));
+
+            return [
+                'edad' => $edadMeses,
+                'edad_valor' => $edadMeses,
+                'unidad_edad' => 'Meses',
+                'fecha_nacimiento' => $fechaNacimiento->toDateString(),
+            ];
+        }
+
+        $edadValor = (int) $request->edad_valor;
+        $edadMeses = $request->unidad_edad === 'Años' ? $edadValor * 12 : $edadValor;
+
+        return [
+            'edad' => $edadMeses,
+            'edad_valor' => $edadValor,
+            'unidad_edad' => $request->unidad_edad ?: 'Meses',
+            'fecha_nacimiento' => null,
         ];
     }
 
