@@ -1,0 +1,16 @@
+{
+  "name": "AgroVida Entorno Definitivo",
+  "image": "mcr.microsoft.com/devcontainers/php:8.2-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "onecentlin.laravel-blade"
+      ]
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib && sudo service postgresql start && sudo -u postgres psql -c \"CREATE DATABASE mercado_agricola;\" && sudo -u postgres psql -c \"ALTER USER postgres WITH PASSWORD 'root';\" && composer install && npm install && php artisan key:generate && php artisan migrate:fresh --seed"
+}
