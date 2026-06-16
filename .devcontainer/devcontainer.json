@@ -1,8 +1,14 @@
 {
-  "name": "AgroVida Entorno Definitivo",
-  "image": "mcr.microsoft.com/devcontainers/php:8.2-bullseye",
+  "name": "AgroVida Automático",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/devcontainers/features/php:1": {
+      "version": "8.2",
+      "installComposer": true
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
   },
   "customizations": {
     "vscode": {
@@ -12,5 +18,6 @@
       ]
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib && sudo service postgresql start && sudo -u postgres psql -c \"CREATE DATABASE mercado_agricola;\" && sudo -u postgres psql -c \"ALTER USER postgres WITH PASSWORD 'root';\" && composer install && npm install && php artisan key:generate && php artisan migrate:fresh --seed"
+  "postCreateCommand": "sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib php8.2-pgsql php8.2-xml php8.2-mbstring php8.2-curl php8.2-zip && sudo service postgresql start && sudo -u postgres psql -c \"CREATE DATABASE mercado_agricola;\" && sudo -u postgres psql -c \"ALTER USER postgres WITH PASSWORD 'root';\" && cp .env.example .env && sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env && sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env && sed -i 's/DB_PORT=.*/DB_PORT=5432/' .env && sed -i 's/DB_DATABASE=.*/DB_DATABASE=mercado_agricola/' .env && sed -i 's/DB_USERNAME=.*/DB_USERNAME=postgres/' .env && sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env && composer install && npm install && npm run build && php artisan key:generate",
+  "postStartCommand": "sudo service postgresql start && php artisan migrate:fresh --seed"
 }
