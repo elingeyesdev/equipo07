@@ -181,7 +181,7 @@
                         <div class="form-group">
                             <label for="stock">Stock *</label>
                             <input type="number" name="stock" id="stock" class="form-control" placeholder="Cantidad disponible"
-                                value="{{ old('stock', $organico->stock ?? 0) }}" required min="0">
+                                value="{{ old('stock', $organico->stock ?? 0) }}" required min="0" max="1000000">
                         </div>
 
                         <div class="form-group mb-md-0">
@@ -191,7 +191,7 @@
                                     <span class="input-group-text">Bs</span>
                                 </div>
                                 <input type="number" step="0.01" name="precio" id="precio" class="form-control"
-                                    placeholder="0.00" value="{{ old('precio', $organico->precio ?? 0) }}" required min="0">
+                                    placeholder="0.00" value="{{ old('precio', $organico->precio ?? 0) }}" required min="0" max="10000000">
                             </div>
                         </div>
                     </div>

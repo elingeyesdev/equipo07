@@ -38,8 +38,8 @@ class VendedorTransportistaController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'telefono' => 'nullable|string|max:30',
-            'password' => 'required|string|min:6|confirmed',
+            'telefono' => ['nullable', 'string', 'max:18', 'regex:/^(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}$/'],
+            'password' => 'required|string|min:8|max:72|confirmed',
         ]);
 
         $role = Role::where('nombre', Role::TRANSPORTISTA)->firstOrFail();

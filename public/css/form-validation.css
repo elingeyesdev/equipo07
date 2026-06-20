@@ -1,0 +1,22 @@
+.agro-field-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 .12rem rgba(220, 53, 69, .16) !important;
+}
+
+.agro-field-valid {
+    border-color: #28a745 !important;
+}
+
+.agro-validation-feedback {
+    display: block;
+    width: 100%;
+    margin-top: .25rem;
+    color: #c82333;
+    font-size: .82rem;
+    line-height: 1.25;
+}
+
+.agro-required-mark {
+    color: #c82333;
+    margin-left: .2rem;
+}

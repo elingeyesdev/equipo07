@@ -88,7 +88,8 @@
                             <label for="telefono">Teléfono *</label>
                             <input type="text" name="telefono" id="telefono" 
                                    class="form-control @error('telefono') is-invalid @enderror" 
-                                   value="{{ old('telefono') }}" maxlength="20"
+                                   value="{{ old('telefono') }}" maxlength="18" inputmode="tel"
+                                   pattern="(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}"
                                    placeholder="Ej: 70012345">
                             @error('telefono')
                                 <div class="invalid-feedback d-block">
@@ -172,4 +173,3 @@
     });
 </script>
 @endsection
-

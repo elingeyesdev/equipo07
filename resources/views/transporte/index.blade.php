@@ -160,7 +160,7 @@
 <body>
     <main class="transport-access">
         <div class="transport-brand">
-            <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">
+            <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">
             <strong>AgroVida Transporte</strong>
         </div>
 

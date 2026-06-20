@@ -255,7 +255,7 @@
 
     <header class="topbar">
         <div class="brand">
-            <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">
+            <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">
             <span>Transporte AgroVida</span>
         </div>
         <form method="POST" action="{{ route('transporte.salir') }}">
@@ -887,7 +887,7 @@
                     Swal.fire({
                         title: 'Actualizando el recorrido...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,
@@ -950,7 +950,7 @@
                     Swal.fire({
                         title: 'Registrando la cancelación...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,

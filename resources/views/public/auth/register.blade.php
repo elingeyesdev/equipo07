@@ -10,7 +10,7 @@
 
                 <div class="auth-hero-content">
                     <div class="auth-hero-brand">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="auth-hero-logo">
+                        <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida" class="auth-hero-logo">
                         <span>AgroVida Bolivia</span>
                     </div>
 
@@ -34,7 +34,7 @@
             <section class="auth-form-panel" aria-label="Formulario de registro">
                 <div class="auth-login-card auth-register-card">
                     <div class="auth-login-brand">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="auth-login-logo">
+                        <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida" class="auth-login-logo">
                     </div>
 
                     <div class="auth-login-header">

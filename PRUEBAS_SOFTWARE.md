@@ -1,15 +1,33 @@
 # Pruebas de software realizadas
 
-## Prueba de unidad
+## Pruebas unitarias
 
-Se realizo una prueba de unidad sobre el servicio `TransporteAccesoService`, encargado de la logica de acceso y avance de estados del transporte.
+Se implementaron pruebas unitarias con PHPUnit sobre servicios reales del sistema Laravel:
 
-La prueba valida que:
+- `App\Services\TransporteAccesoService`: valida reglas de negocio para codigos de transporte, flujo de estados, activacion GPS y tipo de recorrido.
+- `App\Services\EnvioAgrupacionService`: valida agrupacion de productos por vendedor, tipo de carga, distancia, direccion y coordenadas de origen.
 
-- Los codigos de transporte se normalicen correctamente aunque tengan espacios, guiones o minusculas.
-- El hash del codigo sea igual aunque el usuario escriba el codigo con formatos distintos.
-- El flujo de transporte de productos organicos avance en el orden esperado.
-- El flujo de alquiler de maquinaria use correctamente los estados de recogida, entrega y retorno.
+### Funcionalidades evaluadas
+
+| Nro. | Funcionalidad evaluada | Objetivo e impacto | Resultado esperado |
+| --- | --- | --- | --- |
+| 1 | Normalizacion de codigos de transporte | Asegurar que el codigo pueda ingresarse con espacios, guiones o minusculas sin afectar la busqueda. | El codigo se guarda en mayusculas y sin separadores. |
+| 2 | Hash de codigo de transporte | Evitar fallos de acceso cuando el usuario escribe el mismo codigo con otro formato. | Dos formatos equivalentes generan el mismo hash. |
+| 3 | Flujo de transporte para organicos | Verificar que los productos organicos avancen por el flujo correcto de entrega. | Preparando avanza a en camino y luego a esperando confirmacion. |
+| 4 | Flujo de transporte para maquinaria | Validar el recorrido completo de recogida, entrega y retorno de maquinaria alquilada. | Cada estado avanza al siguiente estado esperado. |
+| 5 | Estados disponibles para organicos | Evitar que productos organicos muestren estados de retorno de maquinaria. | El catalogo no contiene `en_camino_retorno`. |
+| 6 | Estados disponibles para maquinaria | Confirmar que maquinaria use el catalogo completo de transporte. | El catalogo incluye estados de retorno. |
+| 7 | Activacion GPS en organicos | Confirmar que el GPS solo se active mientras el envio necesita seguimiento. | Se activa en `preparando` y se desactiva en `entregado`. |
+| 8 | Activacion GPS en maquinaria | Confirmar que el GPS se desactive cuando el retorno ya finalizo. | Se activa durante recogida y se desactiva en `devuelto_vendedor`. |
+| 9 | Tipo de recorrido | Diferenciar rutas de entrega y devolucion para mostrar el tracking correcto. | `en_camino_entrega` es entrega y `en_camino_retorno` es devolucion. |
+| 10 | Agrupacion de organicos cercanos | Reducir envios cuando productos del mismo vendedor salen de puntos cercanos. | Productos dentro de 500 metros comparten grupo. |
+| 11 | Separacion por distancia | Evitar agrupar productos demasiado alejados. | Productos fuera del radio generan grupos distintos. |
+| 12 | Separacion por tipo de carga | Evitar mezclar organicos y ganado en un mismo transporte. | Tipos de carga diferentes generan grupos distintos. |
+| 13 | Agrupacion por direccion normalizada | Permitir agrupar sin coordenadas cuando la direccion escrita representa el mismo origen. | Direcciones equivalentes comparten grupo. |
+| 14 | Separacion por vendedor | Evitar unir productos de vendedores distintos aunque compartan origen. | Vendedores distintos generan grupos distintos. |
+| 15 | Maquinaria en grupos independientes | Evitar compartir traslado de maquinaria aunque tenga igual origen. | Cada maquinaria genera su propio grupo. |
+| 16 | Calculo de distancia | Validar la formula usada para comparar origenes. | El mismo punto devuelve distancia 0. |
+| 17 | Datos de origen del grupo | Confirmar que el resultado conserve direccion y coordenadas del origen. | La agrupacion devuelve direccion, latitud y longitud correctas. |
 
 Comando usado:
 
@@ -19,7 +37,16 @@ php artisan test --testsuite=Unit
 
 Criterio de aprobacion: todos los casos de prueba unitaria deben pasar sin errores.
 
-Resultado obtenido: 5 pruebas pasaron correctamente, con 13 aserciones exitosas.
+Resultado obtenido: 18 pruebas pasaron correctamente, con 33 aserciones exitosas.
+
+### Evidencias requeridas
+
+Por cada funcionalidad evaluada se deben tomar:
+
+- Captura de la funcionalidad funcionando en el sistema.
+- Captura del codigo de la prueba unitaria correspondiente.
+- Captura de la ejecucion exitosa del comando `php artisan test --testsuite=Unit`.
+- Breve descripcion usando la informacion de la tabla anterior.
 
 ## Prueba de estres con JMeter
 

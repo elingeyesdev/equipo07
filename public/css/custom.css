@@ -427,16 +427,16 @@ body {
 }
 .project-topbar .navbar-brand {
   flex-shrink: 0;
-  min-height: 64px;
+  min-height: 96px;
   min-width: 0;
   font-size: 1.3rem;
   letter-spacing: -.01em;
 }
 
 .project-topbar__logo {
-  width: 42px;
-  height: 42px;
-  padding: 3px;
+  width: 84px;
+  height: 84px;
+  padding: 5px;
   border: 2px solid rgba(255, 255, 255, .72);
   border-radius: 50%;
   background: #fff;

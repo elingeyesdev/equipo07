@@ -56,13 +56,14 @@
                             <div class="form-group">
                                 <label for="telefono">Telefono</label>
                                 <input type="text" name="telefono" id="telefono" class="form-control"
-                                    value="{{ old('telefono') }}" placeholder="Ej: 70000000">
+                                    value="{{ old('telefono') }}" placeholder="Ej: 70000000" maxlength="18"
+                                    inputmode="tel" pattern="(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}">
                             </div>
 
                             <div class="form-group">
                                 <label for="password">Contraseña temporal</label>
                                 <input type="text" name="password" id="password" class="form-control"
-                                    value="{{ old('password') }}" required minlength="6">
+                                    value="{{ old('password') }}" required minlength="8" maxlength="72">
                                 <small class="text-muted">
                                     Dale esta contraseña al transportista para que pueda iniciar sesion.
                                 </small>
@@ -71,7 +72,7 @@
                             <div class="form-group mb-0">
                                 <label for="password_confirmation">Confirmar contraseña</label>
                                 <input type="text" name="password_confirmation" id="password_confirmation"
-                                    class="form-control" value="{{ old('password_confirmation') }}" required minlength="6">
+                                    class="form-control" value="{{ old('password_confirmation') }}" required minlength="8" maxlength="72">
                             </div>
                         </div>
                         <div class="card-footer">
