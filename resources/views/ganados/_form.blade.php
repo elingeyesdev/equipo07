@@ -356,11 +356,11 @@
                                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-image"></i></span>
                                 <div class="d-flex flex-column text-left">
                                     <strong class="text-dark">Sube hasta 5 fotos</strong>
-                                    <small class="text-muted">Formatos: JPG, PNG. Máximo 10MB por archivo.</small>
+                                    <small class="text-muted">Formatos: JPG, PNG, GIF, WEBP. Máximo 10MB por archivo.</small>
                                 </div>
                                 <span class="maquinaria-upload-zone__cta ml-auto">Explorar Galería</span>
                             </label>
-                            <input type="file" name="imagenes[]" id="imagenes-input" class="maquinaria-upload-input" accept="image/*" multiple>
+                            <input type="file" name="imagenes[]" id="imagenes-input" class="maquinaria-upload-input" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" multiple>
                             <div id="preview-container" class="row mt-3"></div>
                         </div>
 
@@ -704,6 +704,101 @@ document.addEventListener('DOMContentLoaded', function() {
         if(this.files[0]) document.getElementById('pdf-file-name').textContent = 'Archivo: ' + this.files[0].name;
     });
 
+    const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+    const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+    function getFileExtension(file) {
+        return (file.name.split('.').pop() || '').toLowerCase();
+    }
+
+    function isAllowedImageFile(file) {
+        return allowedImageTypes.has(file.type) || allowedImageExtensions.includes(getFileExtension(file));
+    }
+
+    function isAllowedFileForInput(input, file) {
+        const extension = getFileExtension(file);
+
+        if (input.accept.includes('.pdf') && extension === 'pdf') {
+            return true;
+        }
+
+        return isAllowedImageFile(file);
+    }
+
+    function renderFileCard(container, file, removeCallback) {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 col-sm-6 mb-3';
+
+        const card = document.createElement('div');
+        card.className = 'card card-outline card-success h-100 mb-0 maquinaria-image-card';
+
+        const removeButton = removeCallback
+            ? '<button type="button" class="btn btn-sm btn-danger position-absolute" style="top:8px;right:8px;" data-remove-preview><i class="fas fa-times"></i></button>'
+            : '';
+
+        if (isAllowedImageFile(file)) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                card.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${event.target.result}" class="card-img-top maquinaria-image-card__image" alt="Vista previa de ${file.name}">
+                        ${removeButton}
+                    </div>
+                    <span class="card-footer bg-white p-2 text-muted small font-weight-bold text-truncate">${file.name}</span>
+                `;
+                col.appendChild(card);
+                container.appendChild(col);
+                if (removeCallback) {
+                    card.querySelector('[data-remove-preview]').addEventListener('click', function() {
+                        removeCallback();
+                        col.remove();
+                    });
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            card.innerHTML = `
+                <div class="position-relative d-flex align-items-center justify-content-center bg-light" style="height:150px;">
+                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                    ${removeButton}
+                </div>
+                <span class="card-footer bg-white p-2 text-muted small font-weight-bold text-truncate">${file.name}</span>
+            `;
+            col.appendChild(card);
+            container.appendChild(col);
+            if (removeCallback) {
+                card.querySelector('[data-remove-preview]').addEventListener('click', function() {
+                    removeCallback();
+                    col.remove();
+                });
+            }
+        }
+    }
+
+    document.querySelectorAll('[data-file-preview-target]').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const container = document.getElementById(input.dataset.filePreviewTarget);
+            if (!container) return;
+
+            container.innerHTML = '';
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!isAllowedFileForInput(input, file)) {
+                input.value = '';
+                alert('Formato no permitido. Usa JPG, PNG, GIF, WEBP o PDF solo donde se indique.');
+                return;
+            }
+
+            renderFileCard(container, file, function() {
+                input.value = '';
+                if (input.id === 'pdf-input') {
+                    document.getElementById('pdf-file-name').textContent = '';
+                }
+            });
+        });
+    });
+
 	    // Inicializar visual
 	    applySavedDynamicState(initialGanadoForm);
 	    updateEdadMode();
@@ -712,50 +807,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ---
     const imagenesInput = document.getElementById('imagenes-input');
     const previewContainer = document.getElementById('preview-container');
+    const selectedGanadoImages = new Map();
 
     if (imagenesInput && previewContainer) {
-        imagenesInput.addEventListener('change', function(e) {
-            // Limpiar el contenedor antes de mostrar las nuevas imágenes
-            previewContainer.innerHTML = ''; 
-            
-            // Tomar los archivos y limitar visualmente a 5 (como dice el mockup)
-            const files = Array.from(e.target.files).slice(0, 5);
+        function syncGanadoImagesInput() {
+            const transfer = new DataTransfer();
+            selectedGanadoImages.forEach(function(file) {
+                transfer.items.add(file);
+            });
+            imagenesInput.files = transfer.files;
+        }
 
-            if (files.length > 0) {
-                files.forEach((file) => {
-                    // Validar que sea realmente una imagen
-                    if (!file.type.startsWith('image/')) return;
-
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(event) {
-                        // Crear el elemento visual para la imagen
-                        const col = document.createElement('div');
-                        col.className = 'col-md-4 col-sm-6 mb-3'; // Diseño de cuadrícula
-
-                        const card = document.createElement('div');
-                        card.className = 'card card-outline card-success h-100 mb-0 maquinaria-image-card';
-
-                        const image = document.createElement('img');
-                        image.src = event.target.result;
-                        image.alt = `Vista previa de ${file.name}`;
-                        image.className = 'card-img-top maquinaria-image-card__image';
-
-                        const caption = document.createElement('span');
-                        caption.className = 'card-footer bg-white p-2 text-muted small font-weight-bold text-truncate';
-                        caption.textContent = file.name;
-
-                        card.appendChild(image);
-                        card.appendChild(caption);
-                        col.appendChild(card);
-                        previewContainer.appendChild(col);
-                    };
-                    
-                    // Leer el archivo como URL de datos
-                    reader.readAsDataURL(file);
+        function renderGanadoImages() {
+            previewContainer.innerHTML = '';
+            selectedGanadoImages.forEach(function(file, fileKey) {
+                renderFileCard(previewContainer, file, function() {
+                    selectedGanadoImages.delete(fileKey);
+                    syncGanadoImagesInput();
+                    renderGanadoImages();
                 });
-            }
+            });
+        }
+
+        imagenesInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).filter(isAllowedImageFile);
+
+            files.forEach((file) => {
+                if (selectedGanadoImages.size >= 5) return;
+                const key = `${file.name}-${file.size}-${file.lastModified}`;
+                selectedGanadoImages.set(key, file);
+            });
+
+            syncGanadoImagesInput();
+            renderGanadoImages();
         });
+
+        const galleryLabel = document.querySelector('label[for="imagenes-input"]');
+        if (galleryLabel) {
+            ['dragenter', 'dragover'].forEach(function(eventName) {
+                galleryLabel.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    galleryLabel.classList.add('is-dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(function(eventName) {
+                galleryLabel.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    galleryLabel.classList.remove('is-dragover');
+                });
+            });
+
+            galleryLabel.addEventListener('drop', function(event) {
+                const files = Array.from(event.dataTransfer.files).filter(isAllowedImageFile);
+                files.forEach((file) => {
+                    if (selectedGanadoImages.size >= 5) return;
+                    const key = `${file.name}-${file.size}-${file.lastModified}`;
+                    selectedGanadoImages.set(key, file);
+                });
+                syncGanadoImagesInput();
+                renderGanadoImages();
+            });
+        }
     }
 
 	});

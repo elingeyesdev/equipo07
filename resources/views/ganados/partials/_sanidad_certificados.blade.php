@@ -120,11 +120,12 @@
                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></span>
                 <span class="maquinaria-upload-zone__content">
                     <strong>{{ $fileText($datoSanitario->marca_ganado_foto ?? null, 'Seleccione una imagen de la marca...') }}</strong>
-                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF.</small>
+                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF, WEBP.</small>
                 </span>
             </label>
             <input type="file" name="marca_ganado_foto" class="maquinaria-upload-input sanitary-file-input"
-                id="marca_ganado_foto" accept="image/*">
+                id="marca_ganado_foto" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" data-file-preview-target="marca_ganado_foto_preview">
+            <div id="marca_ganado_foto_preview" class="row mt-3"></div>
         </div>
 
         <div class="form-group">
@@ -147,11 +148,12 @@
                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></span>
                 <span class="maquinaria-upload-zone__content">
                     <strong>{{ $fileText($datoSanitario->carnet_dueno_foto ?? null, 'Seleccione una imagen del carnet...') }}</strong>
-                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF.</small>
+                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF, WEBP.</small>
                 </span>
             </label>
             <input type="file" name="carnet_dueno_foto" class="maquinaria-upload-input sanitary-file-input"
-                id="carnet_dueno_foto" accept="image/*">
+                id="carnet_dueno_foto" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" data-file-preview-target="carnet_dueno_foto_preview">
+            <div id="carnet_dueno_foto_preview" class="row mt-3"></div>
         </div>
     </div>
 
@@ -177,8 +179,10 @@
                     <small>Opcional. Tamaño máximo: 10MB.</small>
                 </span>
             </label>
-            <input type="file" name="documento_pdf" id="pdf-input" class="maquinaria-upload-input" accept=".pdf">
+            <input type="file" name="documento_pdf" id="pdf-input" class="maquinaria-upload-input" accept=".pdf"
+                data-file-preview-target="documento_pdf_preview">
             <span id="pdf-file-name" class="text-success small mt-1 d-block"></span>
+            <div id="documento_pdf_preview" class="row mt-3"></div>
         </div>
 
         @include('datos_sanitarios._current_file_preview', [
@@ -194,11 +198,12 @@
                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></span>
                 <span class="maquinaria-upload-zone__content">
                     <strong>{{ $fileText($datoSanitario->certificado_imagen ?? null, 'Seleccione una imagen del certificado...') }}</strong>
-                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF.</small>
+                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF, WEBP.</small>
                 </span>
             </label>
             <input type="file" name="certificado_imagen" class="maquinaria-upload-input sanitary-file-input"
-                id="certificado_imagen" accept="image/*">
+                id="certificado_imagen" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" data-file-preview-target="certificado_imagen_preview">
+            <div id="certificado_imagen_preview" class="row mt-3"></div>
         </div>
 
         @include('datos_sanitarios._current_file_preview', [
@@ -214,11 +219,12 @@
                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></span>
                 <span class="maquinaria-upload-zone__content">
                     <strong>{{ $fileText($datoSanitario->certificado_campeon_imagen ?? null, 'Seleccione una imagen del certificado...') }}</strong>
-                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF.</small>
+                    <small>Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF, WEBP.</small>
                 </span>
             </label>
             <input type="file" name="certificado_campeon_imagen" class="maquinaria-upload-input sanitary-file-input"
-                id="certificado_campeon_imagen" accept="image/*">
+                id="certificado_campeon_imagen" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" data-file-preview-target="certificado_campeon_imagen_preview">
+            <div id="certificado_campeon_imagen_preview" class="row mt-3"></div>
         </div>
 
         @include('datos_sanitarios._current_file_preview', [
@@ -235,11 +241,12 @@
                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-cloud-upload-alt"></i></span>
                 <span class="maquinaria-upload-zone__content">
                     <strong>{{ $fileText($datoSanitario->arbol_genealogico ?? null, 'Seleccione un archivo PDF o imagen...') }}</strong>
-                    <small>Formatos: PDF, JPG, PNG, GIF. Tamaño máximo: 10MB.</small>
+                    <small>Formatos: PDF, JPG, PNG, GIF, WEBP. Tamaño máximo: 10MB.</small>
                 </span>
             </label>
             <input type="file" name="arbol_genealogico" class="maquinaria-upload-input sanitary-file-input"
-                id="arbol_genealogico" accept=".pdf,.jpg,.jpeg,.png,.gif">
+                id="arbol_genealogico" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" data-file-preview-target="arbol_genealogico_preview">
+            <div id="arbol_genealogico_preview" class="row mt-3"></div>
         </div>
     </div>
 
