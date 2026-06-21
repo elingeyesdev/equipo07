@@ -16,6 +16,7 @@ use App\Http\Controllers\SolicitudVendedorController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminGanadoCertificadoController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\AdminPedidoController;
 use App\Http\Controllers\PedidoUbicacionController;
@@ -25,6 +26,8 @@ use App\Http\Controllers\TransportePublicoController;
 use App\Http\Controllers\ProductoVentaController;
 use App\Http\Controllers\InteraccionOrganicoController;
 use App\Http\Controllers\ReclamoController;
+use App\Http\Controllers\TransportistaEnvioController;
+use App\Http\Controllers\ComprobantePedidoController;
 
 
 Route::view('/', 'public.landing')->name('landing');
@@ -58,7 +61,14 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::middleware('auth')->post('/notificaciones/marcar-leidas', function () {
+    auth()->user()->unreadNotifications->markAsRead();
+
+    return back();
+})->name('notificaciones.marcarLeidas');
 Route::middleware('auth')->get('/pedidos/detalles/{detalle}/estado-transporte', [PedidoUbicacionController::class, 'estadoDetalle'])->name('pedidos.detalles.estadoTransporte');
+Route::middleware('auth')->get('/pedidos/{pedido}/comprobante-reserva', [ComprobantePedidoController::class, 'reserva'])->name('pedidos.comprobante.reserva');
+Route::middleware('auth')->get('/pedidos/detalles/{detalle}/comprobante-final', [ComprobantePedidoController::class, 'final'])->name('pedidos.detalles.comprobante.final');
 Route::get('/inicio', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/anuncios', [App\Http\Controllers\HomeController::class, 'anuncios'])->name('ads.index');
 Route::view('/publicar', 'public.ads.create')->middleware('not.transportista')->name('ads.create');
@@ -93,6 +103,12 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->name('admin.')->grou
         ->name('organicos.certificados.pendientes');
     Route::patch('/organicos/certificados/{certificado}/estado', [OrganicoController::class, 'actualizarEstadoCertificado'])
         ->name('organicos.certificados.estado');
+    Route::get('/ganados/certificados-pendientes', [AdminGanadoCertificadoController::class, 'index'])
+        ->name('ganados.certificados.pendientes');
+    Route::patch('/ganados/certificados/{datoSanitario}/aprobar', [AdminGanadoCertificadoController::class, 'aprobar'])
+        ->name('ganados.certificados.aprobar');
+    Route::delete('/ganados/certificados/{datoSanitario}/rechazar', [AdminGanadoCertificadoController::class, 'rechazar'])
+        ->name('ganados.certificados.rechazar');
 
 
     Route::get('/pedidos', [AdminPedidoController::class, 'index'])->name('pedidos.index');
@@ -147,6 +163,16 @@ Route::middleware(['auth', 'role.vendedor'])->group(function () {
         ->name('vendedor.solicitudes.transporte.revocar');
     Route::post('/vendedor/solicitudes/{solicitud}/transporte/preparado', [VendedorSolicitudController::class, 'marcarPreparado'])
         ->name('vendedor.solicitudes.transporte.preparado');
+});
+
+// TRANSPORTISTA
+Route::middleware(['auth', 'role.transportista'])->prefix('transportista')->name('transportista.')->group(function () {
+    Route::get('/envios', [TransportistaEnvioController::class, 'index'])->name('envios.index');
+    Route::get('/envios/historial', [TransportistaEnvioController::class, 'historial'])->name('envios.historial');
+    Route::get('/envios/{envio}', [TransportistaEnvioController::class, 'show'])->name('envios.show');
+    Route::get('/envios/{envio}/gps', [TransportistaEnvioController::class, 'tracking'])->name('envios.tracking');
+    Route::post('/envios/{solicitud}/gps/ubicacion', [PedidoUbicacionController::class, 'store'])->name('envios.tracking.store');
+    Route::post('/envios/{solicitud}/gps/estado', [PedidoUbicacionController::class, 'avanzarEstado'])->name('envios.tracking.estado');
 });
 
 Route::middleware('auth')->get(

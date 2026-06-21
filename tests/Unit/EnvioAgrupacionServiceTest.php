@@ -47,17 +47,31 @@ class EnvioAgrupacionServiceTest extends TestCase
         $this->assertNotSame($grupos[1]['grupo_envio'], $grupos[2]['grupo_envio']);
     }
 
-    public function test_sin_coordenadas_solo_agrupa_la_misma_direccion_normalizada(): void
+    public function test_maquinaria_no_se_agrupa_aunque_tenga_mismo_vendedor_y_origen(): void
     {
         $service = new EnvioAgrupacionService;
         $items = new Collection([
-            $this->item(1, 'ganado', 3, null, null, 'Granja El Sol, Warnes'),
-            $this->item(2, 'ganado', 3, null, null, ' granja el sol - warnes '),
+            $this->item(1, 'maquinaria', 8, -17.7833000, -63.1821000, 'Finca Norte'),
+            $this->item(2, 'maquinaria', 8, -17.7833000, -63.1821000, 'Finca Norte'),
         ]);
 
         $grupos = $service->agrupar($items);
 
-        $this->assertSame($grupos[1]['grupo_envio'], $grupos[2]['grupo_envio']);
+        $this->assertNotSame($grupos[1]['grupo_envio'], $grupos[2]['grupo_envio']);
+    }
+
+    public function test_calcula_distancia_aproximada_entre_dos_coordenadas(): void
+    {
+        $service = new EnvioAgrupacionService;
+        $distancia = $service->distanciaMetros(
+            -17.7833000,
+            -63.1821000,
+            -17.7843000,
+            -63.1821000
+        );
+
+        $this->assertGreaterThan(100, $distancia);
+        $this->assertLessThan(120, $distancia);
     }
 
     private function item(

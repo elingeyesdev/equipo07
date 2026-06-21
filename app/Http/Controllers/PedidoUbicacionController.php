@@ -206,6 +206,14 @@ class PedidoUbicacionController extends Controller
             return back()->with('error', 'No hay un siguiente estado de transporte disponible.');
         }
 
+        if ($siguienteEstado === 'esperando_confirmacion') {
+            request()->validate([
+                'firma_transportista' => ['required', 'string', 'starts_with:data:image/png;base64,'],
+            ], [
+                'firma_transportista.required' => 'La firma del transportista es obligatoria para registrar la entrega.',
+            ]);
+        }
+
         $errorDistancia = $this->validarDistanciaParaEstado($solicitud, $siguienteEstado);
 
         if ($errorDistancia) {
@@ -219,9 +227,16 @@ class PedidoUbicacionController extends Controller
             return back()->with('error', $errorDistancia);
         }
 
-        $solicitud->update([
+        $update = [
             'estado_transporte' => $siguienteEstado,
-        ]);
+        ];
+
+        if ($siguienteEstado === 'esperando_confirmacion') {
+            $update['firma_transportista'] = request('firma_transportista');
+            $update['firma_transportista_at'] = now();
+        }
+
+        $solicitud->update($update);
 
         $this->sincronizarEstadoPedido($solicitud->fresh(), $siguienteEstado);
 

@@ -254,13 +254,26 @@ class TransporteAccesoService
                         'estado' => 'No hay un siguiente estado disponible.',
                     ]);
                 }
+
+                if ($estadoNuevo === 'esperando_confirmacion' && ! request()->filled('firma_transportista')) {
+                    throw ValidationException::withMessages([
+                        'firma_transportista' => 'La firma del transportista es obligatoria para registrar la entrega.',
+                    ]);
+                }
             }
 
-            PedidoDetalle::whereIn('id', $detalles->pluck('id'))->update([
+            $update = [
                 'estado_transporte' => $estadoNuevo,
                 'cancelacion_motivo' => $estadoNuevo === 'cancelado' ? trim($motivoCancelacion) : null,
                 'cancelado_at' => $estadoNuevo === 'cancelado' ? now() : null,
-            ]);
+            ];
+
+            if ($estadoNuevo === 'esperando_confirmacion') {
+                $update['firma_transportista'] = request('firma_transportista');
+                $update['firma_transportista_at'] = now();
+            }
+
+            PedidoDetalle::whereIn('id', $detalles->pluck('id'))->update($update);
 
             $estadoPedido = $this->estadoPedidoPara($detalle, $estadoNuevo);
             foreach ($detalles as $detalleGrupo) {
