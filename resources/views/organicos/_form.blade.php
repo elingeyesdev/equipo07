@@ -85,6 +85,27 @@
     .certificate-upload-preview__name {
         overflow-wrap: anywhere;
     }
+
+    .upload-format-help {
+        color: #5f7165;
+        display: block;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        margin: 0.25rem 0 0.5rem;
+    }
+
+    .upload-format-error {
+        color: #dc3545;
+        display: none;
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin: 0.35rem 0 0.5rem;
+    }
+
+    .upload-format-error.is-visible {
+        display: block;
+    }
 </style>
 
 <input type="hidden" name="categoria_id" value="{{ $categoriaSeleccionada }}">
@@ -375,7 +396,11 @@
 
                                 <div id="cert_file_{{ $certificado->id }}" class="cert-file-panel {{ !$sinCertificado ? 'is-active' : '' }}">
                                     <input type="file" name="certificados[{{ $certificado->id }}][archivo]"
-                                        class="form-control mb-2 certificate-file-input" accept=".pdf,image/*">
+                                        class="form-control certificate-file-input" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                    <small class="upload-format-help">
+                                        Formatos permitidos: PDF, JPG, JPEG o PNG. Tamaño máximo: 4MB.
+                                    </small>
+                                    <small class="upload-format-error" data-upload-format-error></small>
                                     <div class="certificate-upload-preview" data-certificate-preview></div>
                                     @if ($registro?->archivo)
                                         <small class="form-text text-muted mb-2">Archivo actual: {{ basename($registro->archivo) }}</small>
@@ -410,7 +435,11 @@
                                 </div>
                                 <small class="d-block text-muted mb-2">{{ $certificado->descripcion }}</small>
                                 <input type="file" name="certificados[{{ $certificado->id }}][archivo]"
-                                    class="form-control mb-2 certificate-file-input" accept=".pdf,image/*">
+                                    class="form-control certificate-file-input" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                <small class="upload-format-help">
+                                    Formatos permitidos: PDF, JPG, JPEG o PNG. Tamaño máximo: 4MB.
+                                </small>
+                                <small class="upload-format-error" data-upload-format-error></small>
                                 <div class="certificate-upload-preview" data-certificate-preview></div>
                                 @if ($registro?->archivo)
                                     <small class="form-text text-muted mb-2">Archivo actual: {{ basename($registro->archivo) }}</small>
@@ -445,7 +474,11 @@
                     <div class="col-md-4 mb-2">
                         <input type="file" name="certificados_adicionales[0][archivo]"
                             class="form-control certificate-file-input"
-                            accept=".pdf,image/*">
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                        <small class="upload-format-help">
+                            Formatos permitidos: PDF, JPG, JPEG o PNG. Tamaño máximo: 4MB.
+                        </small>
+                        <small class="upload-format-error" data-upload-format-error></small>
                         <div class="certificate-upload-preview mt-2" data-certificate-preview></div>
                     </div>
                     <div class="col-md-4 mb-2">
@@ -498,11 +531,12 @@
                     </span>
                     <span class="maquinaria-upload-zone__content">
                         <strong>Haz clic para subir imágenes</strong>
-                        <small>También puedes arrastrar tus archivos aquí. JPG, PNG o GIF, máximo 2MB por imagen.</small>
+                        <small>También puedes arrastrar tus archivos aquí. Formatos: JPG, JPEG, PNG o GIF. Máximo 2MB por imagen.</small>
                     </span>
                     <span class="maquinaria-upload-zone__cta">Seleccionar archivos</span>
                 </label>
-                <input type="file" name="imagenes[]" class="maquinaria-upload-input" accept="image/*" multiple id="imagenes-input">
+                <input type="file" name="imagenes[]" class="maquinaria-upload-input" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" multiple id="imagenes-input">
+                <small class="upload-format-error" data-product-images-error></small>
                 <div id="imagenes-count" class="maquinaria-upload-count text-muted mt-2"></div>
             </div>
         </div>
@@ -560,6 +594,42 @@
         let markerOrigen = null;
 
         form.setAttribute('novalidate', 'novalidate');
+
+        const certificateAllowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+        const certificateAllowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        const productImageAllowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        const productImageAllowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        const certificateMaxBytes = 4 * 1024 * 1024;
+        const productImageMaxBytes = 2 * 1024 * 1024;
+
+        function fileExtension(file) {
+            return (file.name.split('.').pop() || '').toLowerCase();
+        }
+
+        function isAllowedFile(file, allowedExtensions, allowedTypes) {
+            return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension(file));
+        }
+
+        function fileSizeMessage(maxBytes) {
+            return `${(maxBytes / 1024 / 1024).toFixed(0)}MB`;
+        }
+
+        function setUploadError(element, message) {
+            if (!element) {
+                alert(message);
+                return;
+            }
+
+            element.textContent = message;
+            element.classList.add('is-visible');
+        }
+
+        function clearUploadError(element) {
+            if (!element) return;
+
+            element.textContent = '';
+            element.classList.remove('is-visible');
+        }
 
         const unidadSelect = document.getElementById('unidad_id');
         const precioLabel = document.getElementById('precio-label');
@@ -831,6 +901,7 @@
 
         wizard.querySelectorAll('.certificate-file-input').forEach(input => {
             const preview = input.parentElement.querySelector('[data-certificate-preview]');
+            const formatError = input.parentElement.querySelector('[data-upload-format-error]');
             let objectUrl = null;
 
             if (!preview) return;
@@ -851,13 +922,26 @@
 
             input.addEventListener('change', function() {
                 clearPreview();
+                clearUploadError(formatError);
 
                 const file = this.files && this.files[0];
                 if (!file) return;
 
+                if (!isAllowedFile(file, certificateAllowedExtensions, certificateAllowedTypes)) {
+                    clearPreview(true);
+                    setUploadError(formatError, `No se puede subir "${file.name}". Usa PDF, JPG, JPEG o PNG.`);
+                    return;
+                }
+
+                if (file.size > certificateMaxBytes) {
+                    clearPreview(true);
+                    setUploadError(formatError, `No se puede subir "${file.name}". El certificado no debe superar ${fileSizeMessage(certificateMaxBytes)}.`);
+                    return;
+                }
+
                 objectUrl = URL.createObjectURL(file);
                 const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-                const isImage = file.type.startsWith('image/');
+                const isImage = ['jpg', 'jpeg', 'png'].includes(fileExtension(file));
 
                 const header = document.createElement('div');
                 header.className = 'd-flex justify-content-between align-items-start mb-2';
@@ -900,7 +984,7 @@
                     media.innerHTML =
                         '<div class="text-center text-muted p-4">' +
                         '<i class="fas fa-file fa-3x mb-2"></i>' +
-                        '<span class="d-block">No hay vista previa para este formato.</span>' +
+                        '<span class="d-block">Formato de certificado reconocido.</span>' +
                         '</div>';
                 }
 
@@ -989,6 +1073,7 @@
         const uploadZone = wizard.querySelector('[data-upload-zone]');
         const previewContainer = document.getElementById('preview-container');
         const countDisplay = document.getElementById('imagenes-count');
+        const productImagesError = wizard.querySelector('[data-product-images-error]');
         const imagenesActuales = {{ isset($organico) && $organico->imagenes ? $organico->imagenes->count() : 0 }};
         let imagenesAEliminar = [];
         let selectedFiles = [];
@@ -1080,7 +1165,7 @@
             });
 
             uploadZone.addEventListener('drop', function(event) {
-                const files = Array.from(event.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                const files = Array.from(event.dataTransfer.files);
                 const dataTransfer = new DataTransfer();
                 files.forEach(file => dataTransfer.items.add(file));
                 input.files = dataTransfer.files;
@@ -1093,10 +1178,40 @@
         input.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
             const slots = Math.max(0, 3 - liveExistingImagesCount() - selectedFiles.length);
+            const validFiles = [];
+            const rejectedNames = [];
 
-            files.slice(0, slots).forEach((file, index) => {
-                if (!file.type.startsWith('image/')) return;
+            clearUploadError(productImagesError);
 
+            files.forEach(file => {
+                if (!isAllowedFile(file, productImageAllowedExtensions, productImageAllowedTypes)) {
+                    rejectedNames.push(file.name);
+                    return;
+                }
+
+                if (file.size > productImageMaxBytes) {
+                    rejectedNames.push(`${file.name} (supera ${fileSizeMessage(productImageMaxBytes)})`);
+                    return;
+                }
+
+                validFiles.push(file);
+            });
+
+            if (rejectedNames.length) {
+                setUploadError(
+                    productImagesError,
+                    `No se puede subir: ${rejectedNames.join(', ')}. Usa JPG, JPEG, PNG o GIF de máximo ${fileSizeMessage(productImageMaxBytes)}.`
+                );
+            }
+
+            if (validFiles.length > slots) {
+                setUploadError(
+                    productImagesError,
+                    `Solo puedes agregar ${slots} imagen(es) más. El límite total es 3 imágenes por publicación.`
+                );
+            }
+
+            validFiles.slice(0, slots).forEach((file, index) => {
                 selectedFiles.push({
                     id: Date.now() + '-' + index + '-' + file.name,
                     file: file,

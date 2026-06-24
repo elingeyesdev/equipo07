@@ -146,6 +146,7 @@ Route::middleware(['auth', 'role.vendedor'])->prefix('admin')->name('admin.')->g
 
 Route::middleware(['auth', 'role.vendedor'])->group(function () {
     Route::get('/productos-en-venta', [ProductoVentaController::class, 'index'])->name('productos-venta.index');
+    Route::delete('/productos-en-venta/{tipo}/{id}', [ProductoVentaController::class, 'destroy'])->name('productos-venta.destroy');
 
     Route::resource('ganados', GanadoController::class)->except(['index', 'show']);
     Route::resource('maquinarias', MaquinariaController::class)->except(['index', 'show'])->names('maquinarias');

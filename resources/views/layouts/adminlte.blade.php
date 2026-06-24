@@ -38,7 +38,8 @@
             left: 0;
             width: 52px;
             height: 52px;
-            object-fit: contain;
+            border-radius: 50%;
+            object-fit: cover;
             animation: agrovida-process-run 1.8s ease-in-out infinite;
         }
 
@@ -414,7 +415,7 @@
                                     <a href="{{ route('productos-venta.index') }}"
                                         class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-store"></i>
-                                        <p>Productos en venta</p>
+                                        <p>Publicaciones</p>
                                     </a>
                                 </li>
 
@@ -929,7 +930,7 @@
                         Swal.fire({
                             title: form.dataset.loadingText || 'Procesando...',
                             html: '<div class="agrovida-process-loading">' +
-                                '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                                '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida">' +
                                 '</div>',
                             allowOutsideClick: false,
                             allowEscapeKey: false,

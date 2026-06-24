@@ -210,9 +210,11 @@
             }
 
             .doc-preview-btn {
+                background: transparent;
                 border: 1px solid #2f7d32;
                 border-radius: 8px;
                 color: #2f7d32;
+                cursor: pointer;
                 display: inline-flex;
                 align-items: center;
                 gap: .45rem;
@@ -241,6 +243,103 @@
 
             .image-preview-trigger {
                 cursor: pointer;
+            }
+
+            .sanitary-panel-toggle {
+                background: #ffffff !important;
+                border: 1px solid rgba(255, 255, 255, .75) !important;
+                border-radius: 8px;
+                color: #205b34 !important;
+                font-weight: 700;
+                padding: .55rem .85rem;
+            }
+
+            .product-detail-page .sanitary-detail-card .sanitary-detail-header {
+                background: linear-gradient(135deg, #238647 0%, #145c31 100%) !important;
+                border-bottom: 0 !important;
+                color: #ffffff !important;
+            }
+
+            .product-detail-page .sanitary-detail-card .sanitary-detail-header h5,
+            .product-detail-page .sanitary-detail-card .sanitary-detail-header h5 i {
+                color: #ffffff !important;
+            }
+
+            .sanitary-detail-card .card-body {
+                background: #ffffff;
+            }
+
+            .sanitary-document-grid {
+                display: grid;
+                gap: .85rem;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            }
+
+            .sanitary-document-card {
+                background: #f7fbf8;
+                border: 1px solid #cfe3d4;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: .9rem;
+                min-height: 112px;
+                padding: .9rem;
+            }
+
+            .sanitary-document-card .section-title {
+                color: #30483a !important;
+                font-size: .78rem;
+                letter-spacing: .02em;
+                line-height: 1.25;
+                text-transform: uppercase;
+            }
+
+            .sanitary-document-card .doc-preview-btn {
+                background: #ffffff;
+                justify-content: center;
+                min-width: 150px;
+                text-align: center;
+            }
+
+            .sanitary-document-card__thumb {
+                border: 1px solid #dbe5d7;
+                border-radius: 6px;
+                height: 64px;
+                width: 76px;
+                object-fit: cover;
+                flex: 0 0 auto;
+            }
+
+            .sanitary-document-card__icon {
+                align-items: center;
+                background: #fff;
+                border: 1px solid #dbe5d7;
+                border-radius: 6px;
+                color: #dc3545;
+                display: flex;
+                height: 64px;
+                justify-content: center;
+                width: 76px;
+                flex: 0 0 auto;
+            }
+
+            .protected-document-viewer {
+                height: 78vh;
+                overflow: hidden;
+                user-select: none;
+            }
+
+            .protected-document-viewer iframe,
+            .protected-document-viewer img {
+                border: 0;
+                height: 100%;
+                width: 100%;
+            }
+
+            .protected-document-viewer img {
+                object-fit: contain;
+                pointer-events: none;
             }
 
             .info-icon {
@@ -442,255 +541,241 @@
                     </div>
                 </div>
 
-                <!-- Datos Sanitarios -->
-                @if ($ganado->datoSanitario)
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-syringe"></i> Datos Sanitarios
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @if ($ganado->datoSanitario->vacuna)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-vial text-success info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Otras Vacunas</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->vacuna }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->vacunado_fiebre_aftosa || $ganado->datoSanitario->vacunado_antirabica)
-                                    <div class="col-12 info-row-item">
-                                        <small class="text-muted d-block mb-1 section-title">Vacunaciones
-                                            Específicas</small>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            @if ($ganado->datoSanitario->vacunado_fiebre_aftosa)
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-shield-alt"></i> Fiebre Aftosa
-                                                </span>
-                                            @endif
-                                            @if ($ganado->datoSanitario->vacunado_antirabica)
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-shield-alt"></i> Antirrábica
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->tratamiento)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-stethoscope text-info info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Tratamiento</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->tratamiento }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->medicamento)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-capsules text-info info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Medicamento</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->medicamento }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->fecha_aplicacion)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-check text-info info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Fecha de
-                                                    Aplicación</small>
-                                                <strong
-                                                    class="d-block info-value">{{ \Carbon\Carbon::parse($ganado->datoSanitario->fecha_aplicacion)->format('d/m/Y') }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->proxima_fecha)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-alt text-warning info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Próxima Fecha</small>
-                                                <strong
-                                                    class="d-block info-value">{{ \Carbon\Carbon::parse($ganado->datoSanitario->proxima_fecha)->format('d/m/Y') }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->veterinario)
-                                    <div class="col-md-6 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-user-md text-primary info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Veterinario</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->veterinario }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->observaciones)
-                                    <div class="col-12 info-row-item">
-                                        <div class="d-flex align-items-start">
-                                            <i class="fas fa-comment-alt text-info info-icon mt-1"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-1 section-title">Observaciones</small>
-                                                <p class="mb-0 info-value">{{ $ganado->datoSanitario->observaciones }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Certificado de Vacunación SENASAG -->
-                @if ($ganado->datoSanitario && $ganado->datoSanitario->certificado_imagen)
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-file-medical"></i> Certificado de Vacunación SENASAG
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="btn-inline-img">
-                                <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
-                                    class="doc-preview-btn"
-                                    data-file-viewer
-                                    data-file-title="Certificado de Vacunacion SENASAG">
-                                    <i class="fas fa-file-image"></i> Ver Certificado
-                                </a>
-                                <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_imagen) }}"
-                                    alt="Certificado SENASAG"
-                                    class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
-                                    data-toggle="modal"
-                                    data-target="#imageModal"
-                                    onclick="document.getElementById('imageModalImg').src = this.src"
-                                    title="Click para ver imagen completa">
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Certificado de Campeón -->
-                @if ($ganado->datoSanitario && $ganado->datoSanitario->certificado_campeon_imagen)
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-trophy"></i> Certificado de Campeón
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="btn-inline-img">
-                                <a href="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
-                                    class="doc-preview-btn"
-                                    data-file-viewer
-                                    data-file-title="Certificado de Campeon">
-                                    <i class="fas fa-trophy"></i> Ver Certificado Campeón
-                                </a>
-                                <img src="{{ asset('storage/' . $ganado->datoSanitario->certificado_campeon_imagen) }}"
-                                    alt="Certificado Campeón"
-                                    class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
-                                    data-toggle="modal"
-                                    data-target="#imageModal"
-                                    onclick="document.getElementById('imageModalImg').src = this.src"
-                                    title="Click para ver imagen completa">
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Logros y Reconocimientos --}}
+                {{-- Datos sanitarios, documentos y reconocimientos --}}
                 @php
+                    $datoSanitario = $ganado->datoSanitario;
                     $tieneLogros = false;
                     $logrosBelleza = [];
                     $logrosLeche = [];
                     $logrosCarne = [];
                     $logrosReproduccion = [];
 
-                    if ($ganado->datoSanitario) {
-                        if ($ganado->datoSanitario->logro_campeon_raza) {
+                    if ($datoSanitario) {
+                        if ($datoSanitario->logro_campeon_raza) {
                             $logrosBelleza[] = 'Campeón de Raza';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_gran_campeon_macho) {
+                        if ($datoSanitario->logro_gran_campeon_macho) {
                             $logrosBelleza[] = 'Gran Campeón Macho';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_gran_campeon_hembra) {
+                        if ($datoSanitario->logro_gran_campeon_hembra) {
                             $logrosBelleza[] = 'Gran Campeón Hembra';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_ubre) {
+                        if ($datoSanitario->logro_mejor_ubre) {
                             $logrosBelleza[] = 'Mejor Ubre';
                             $tieneLogros = true;
                         }
 
-                        if ($ganado->datoSanitario->logro_campeona_litros_dia) {
+                        if ($datoSanitario->logro_campeona_litros_dia) {
                             $logrosLeche[] = 'Campeona Litros/Día';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_lactancia) {
+                        if ($datoSanitario->logro_mejor_lactancia) {
                             $logrosLeche[] = 'Mejor Lactancia';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_calidad_leche) {
+                        if ($datoSanitario->logro_mejor_calidad_leche) {
                             $logrosLeche[] = 'Mejor Calidad de Leche';
                             $tieneLogros = true;
                         }
 
-                        if ($ganado->datoSanitario->logro_mejor_novillo) {
+                        if ($datoSanitario->logro_mejor_novillo) {
                             $logrosCarne[] = 'Mejor Novillo';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_gran_campeon_carne) {
+                        if ($datoSanitario->logro_gran_campeon_carne) {
                             $logrosCarne[] = 'Gran Campeón de Carne';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_semental) {
+                        if ($datoSanitario->logro_mejor_semental) {
                             $logrosCarne[] = 'Mejor Semental';
                             $tieneLogros = true;
                         }
 
-                        if ($ganado->datoSanitario->logro_mejor_madre) {
+                        if ($datoSanitario->logro_mejor_madre) {
                             $logrosReproduccion[] = 'Mejor Madre';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_padre) {
+                        if ($datoSanitario->logro_mejor_padre) {
                             $logrosReproduccion[] = 'Mejor Padre';
                             $tieneLogros = true;
                         }
-                        if ($ganado->datoSanitario->logro_mejor_fertilidad) {
+                        if ($datoSanitario->logro_mejor_fertilidad) {
                             $logrosReproduccion[] = 'Mejor Fertilidad';
                             $tieneLogros = true;
                         }
                     }
+
+                    $documentosSanitarios = [];
+                    if ($datoSanitario?->certificado_imagen) {
+                        $documentosSanitarios[] = [
+                            'titulo' => 'Certificado SENASAG',
+                            'icono' => 'fas fa-file-medical',
+                            'ruta' => asset('storage/' . $datoSanitario->certificado_imagen),
+                            'tipo' => 'image',
+                        ];
+                    }
+                    if ($datoSanitario?->certificado_campeon_imagen) {
+                        $documentosSanitarios[] = [
+                            'titulo' => 'Certificado de campeón',
+                            'icono' => 'fas fa-trophy',
+                            'ruta' => asset('storage/' . $datoSanitario->certificado_campeon_imagen),
+                            'tipo' => 'image',
+                        ];
+                    }
+                    if ($datoSanitario?->marca_ganado_foto) {
+                        $documentosSanitarios[] = [
+                            'titulo' => 'Foto de la marca',
+                            'icono' => 'fas fa-image',
+                            'ruta' => asset('storage/' . $datoSanitario->marca_ganado_foto),
+                            'tipo' => 'image',
+                        ];
+                    }
+                    if ($datoSanitario?->carnet_dueno_foto) {
+                        $documentosSanitarios[] = [
+                            'titulo' => 'Carnet del dueño',
+                            'icono' => 'fas fa-id-card',
+                            'ruta' => asset('storage/' . $datoSanitario->carnet_dueno_foto),
+                            'tipo' => 'image',
+                        ];
+                    }
+                    if ($datoSanitario?->arbol_genealogico) {
+                        $rutaArbol = asset('storage/' . $datoSanitario->arbol_genealogico);
+                        $documentosSanitarios[] = [
+                            'titulo' => 'Árbol genealógico',
+                            'icono' => 'fas fa-sitemap',
+                            'ruta' => $rutaArbol,
+                            'tipo' => str_ends_with(strtolower($datoSanitario->arbol_genealogico), '.pdf') ? 'pdf' : 'image',
+                        ];
+                    }
                 @endphp
 
-                @if ($tieneLogros)
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-warning text-dark">
+                @if ($datoSanitario)
+                    <div class="card shadow-sm border-0 mb-3 sanitary-detail-card">
+                        <div class="card-header sanitary-detail-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
-                                <i class="fas fa-trophy"></i> Logros y Reconocimientos
+                                <i class="fas fa-shield-alt"></i> Datos sanitarios y certificados
                             </h5>
+                            <button class="btn btn-light btn-sm sanitary-panel-toggle" type="button" data-toggle="collapse"
+                                data-target="#sanitaryDetails" aria-expanded="false" aria-controls="sanitaryDetails">
+                                <i class="fas fa-eye"></i> Ver apartado
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
+                        <div id="sanitaryDetails" class="collapse">
+                            <div class="card-body">
+                                <div class="row">
+                                    @if ($datoSanitario->vacuna)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Otras Vacunas</small>
+                                            <strong class="d-block info-value">{{ $datoSanitario->vacuna }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->vacunado_fiebre_aftosa || $datoSanitario->vacunado_antirabica)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-1 section-title">Vacunaciones</small>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @if ($datoSanitario->vacunado_fiebre_aftosa)
+                                                    <span class="badge badge-success"><i class="fas fa-shield-alt"></i> Fiebre Aftosa</span>
+                                                @endif
+                                                @if ($datoSanitario->vacunado_antirabica)
+                                                    <span class="badge badge-success"><i class="fas fa-shield-alt"></i> Antirrábica</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->tratamiento)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Tratamiento</small>
+                                            <strong class="d-block info-value">{{ $datoSanitario->tratamiento }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->medicamento)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Medicamento</small>
+                                            <strong class="d-block info-value">{{ $datoSanitario->medicamento }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->fecha_aplicacion)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Fecha de Aplicación</small>
+                                            <strong class="d-block info-value">{{ \Carbon\Carbon::parse($datoSanitario->fecha_aplicacion)->format('d/m/Y') }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->proxima_fecha)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Próxima Fecha</small>
+                                            <strong class="d-block info-value">{{ \Carbon\Carbon::parse($datoSanitario->proxima_fecha)->format('d/m/Y') }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->veterinario)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Veterinario</small>
+                                            <strong class="d-block info-value">{{ $datoSanitario->veterinario }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->marca_ganado || $datoSanitario->senal_numero)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Identificación</small>
+                                            <strong class="d-block info-value">
+                                                {{ $datoSanitario->marca_ganado ?: 'Sin marca registrada' }}
+                                                @if ($datoSanitario->senal_numero)
+                                                    · Señal {{ $datoSanitario->senal_numero }}
+                                                @endif
+                                            </strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->nombre_dueno)
+                                        <div class="col-md-6 info-row-item">
+                                            <small class="text-muted d-block mb-0 section-title">Dueño registrado</small>
+                                            <strong class="d-block info-value">{{ $datoSanitario->nombre_dueno }}</strong>
+                                        </div>
+                                    @endif
+                                    @if ($datoSanitario->observaciones)
+                                        <div class="col-12 info-row-item">
+                                            <small class="text-muted d-block mb-1 section-title">Observaciones</small>
+                                            <p class="mb-0 info-value">{{ $datoSanitario->observaciones }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if (count($documentosSanitarios))
+                                    <div class="border-top pt-3 mt-2">
+                                        <small class="text-muted d-block mb-2 section-title">Certificados y documentos</small>
+                                        <div class="sanitary-document-grid">
+                                            @foreach ($documentosSanitarios as $documento)
+                                                <div class="sanitary-document-card">
+                                                    <div class="min-width-0">
+                                                        <small class="text-muted d-block section-title mb-1">{{ $documento['titulo'] }}</small>
+                                                        <button type="button" class="doc-preview-btn"
+                                                            data-protected-file-viewer
+                                                            data-file-title="{{ $documento['titulo'] }}"
+                                                            data-file-type="{{ $documento['tipo'] }}"
+                                                            data-file-src="{{ $documento['ruta'] }}">
+                                                            <i class="{{ $documento['icono'] }}"></i> Ver documento
+                                                        </button>
+                                                    </div>
+                                                    @if ($documento['tipo'] === 'image')
+                                                        <img src="{{ $documento['ruta'] }}" alt="{{ $documento['titulo'] }}"
+                                                            class="sanitary-document-card__thumb" oncontextmenu="return false;">
+                                                    @else
+                                                        <span class="sanitary-document-card__icon">
+                                                            <i class="fas fa-file-pdf fa-2x"></i>
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if ($tieneLogros)
+                                    <div class="border-top pt-3 mt-3">
+                                        <small class="text-muted d-block mb-2 section-title">
+                                            <i class="fas fa-trophy text-warning"></i> Logros y Reconocimientos
+                                        </small>
+                                        <div class="row">
                                 @if (count($logrosBelleza) > 0)
                                     <div class="col-md-6 info-row-item">
                                         <small class="text-muted d-block mb-1 section-title">
@@ -743,24 +828,10 @@
                                         @endforeach
                                     </div>
                                 @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Árbol Genealógico --}}
-                @if ($ganado->datoSanitario && $ganado->datoSanitario->arbol_genealogico)
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-sitemap"></i> Árbol Genealógico
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <a href="{{ asset('storage/' . $ganado->datoSanitario->arbol_genealogico) }}"
-                                class="btn btn-success btn-sm" data-file-viewer data-file-title="Arbol genealogico">
-                                <i class="fas fa-sitemap"></i> Ver Árbol Genealógico
-                            </a>
                         </div>
                     </div>
                 @endif
@@ -922,118 +993,6 @@
                                     </a>
                                 </div>
                             @endauth
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Marca del Animal --}}
-                @if (
-                    $ganado->datoSanitario &&
-                        ($ganado->datoSanitario->marca_ganado ||
-                            $ganado->datoSanitario->senal_numero ||
-                            $ganado->datoSanitario->marca_ganado_foto))
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-tag"></i> Marca del Animal
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                @if ($ganado->datoSanitario->marca_ganado)
-                                    <div class="col-12 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-tag text-primary info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Marca del
-                                                    Ganado</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->marca_ganado }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->senal_numero)
-                                    <div class="col-12 info-row-item">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-hashtag text-primary info-icon"></i>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block mb-0 section-title">Señal o #</small>
-                                                <strong
-                                                    class="d-block info-value">{{ $ganado->datoSanitario->senal_numero }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                                @if ($ganado->datoSanitario->marca_ganado_foto)
-                                    <div class="col-12 info-row-item">
-                                        <small class="text-muted d-block mb-1 section-title">Foto de la Marca</small>
-                                        <div class="btn-inline-img">
-                                            <a href="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
-                                                class="doc-preview-btn"
-                                                data-file-viewer
-                                                data-file-title="Foto de la marca">
-                                                <i class="fas fa-image"></i> Ver Foto
-                                            </a>
-                                            <img src="{{ asset('storage/' . $ganado->datoSanitario->marca_ganado_foto) }}"
-                                                alt="Foto de la Marca"
-                                                class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
-                                                data-toggle="modal"
-                                                data-target="#imageModal"
-                                                onclick="document.getElementById('imageModalImg').src = this.src"
-                                                title="Click para ver imagen completa">
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Información del Dueño --}}
-                @if ($ganado->datoSanitario && ($ganado->datoSanitario->nombre_dueno || $ganado->datoSanitario->carnet_dueno_foto))
-                    <div class="card shadow-sm border-0 mb-3">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-user"></i> Información del Dueño
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            @if ($ganado->datoSanitario->nombre_dueno)
-                                <div class="info-row-item">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-info rounded-circle d-flex align-items-center justify-content-center mr-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="fas fa-user text-white"></i>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <small class="text-muted d-block mb-0 section-title">Nombre del Dueño</small>
-                                            <strong
-                                                class="d-block info-value">{{ $ganado->datoSanitario->nombre_dueno }}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                            @if ($ganado->datoSanitario->carnet_dueno_foto)
-                                <div class="info-row-item">
-                                    <small class="text-muted d-block mb-1 section-title">Carnet del Dueño</small>
-                                    <div class="btn-inline-img">
-                                        <a href="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
-                                            class="doc-preview-btn"
-                                            data-file-viewer
-                                            data-file-title="Carnet del dueno">
-                                            <i class="fas fa-id-card"></i> Ver Carnet
-                                        </a>
-                                        <img src="{{ asset('storage/' . $ganado->datoSanitario->carnet_dueno_foto) }}"
-                                            alt="Carnet Dueño"
-                                            class="img-thumbnail img-preview-inline image-preview-trigger doc-preview-thumb"
-                                            data-toggle="modal"
-                                            data-target="#imageModal"
-                                            onclick="document.getElementById('imageModalImg').src = this.src"
-                                            title="Click para ver imagen completa">
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 @endif
@@ -1208,6 +1167,25 @@
         </script>
     @endif
 
+    {{-- MODAL PARA CERTIFICADOS Y DOCUMENTOS SIN DESCARGA DIRECTA --}}
+    <div class="modal fade" id="protectedDocumentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="protectedDocumentTitle">
+                        <i class="fas fa-file-alt text-success"></i> Documento
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-2">
+                    <div class="protected-document-viewer" id="protectedDocumentViewer" oncontextmenu="return false;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- MODAL PARA VER IMAGEN EN GRANDE --}}
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -1223,5 +1201,43 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewer = document.getElementById('protectedDocumentViewer');
+            const title = document.getElementById('protectedDocumentTitle');
+
+            document.querySelectorAll('[data-protected-file-viewer]').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const fileSrc = button.dataset.fileSrc;
+                    const fileType = button.dataset.fileType;
+                    const fileTitle = button.dataset.fileTitle || 'Documento';
+
+                    title.innerHTML = `<i class="fas fa-file-alt text-success"></i> ${fileTitle}`;
+                    viewer.innerHTML = '';
+
+                    if (fileType === 'pdf') {
+                        const iframe = document.createElement('iframe');
+                        iframe.src = `${fileSrc}#toolbar=0&navpanes=0&scrollbar=1`;
+                        iframe.setAttribute('title', fileTitle);
+                        iframe.setAttribute('loading', 'lazy');
+                        viewer.appendChild(iframe);
+                    } else {
+                        const image = document.createElement('img');
+                        image.src = fileSrc;
+                        image.alt = fileTitle;
+                        image.setAttribute('draggable', 'false');
+                        viewer.appendChild(image);
+                    }
+
+                    $('#protectedDocumentModal').modal('show');
+                });
+            });
+
+            $('#protectedDocumentModal').on('hidden.bs.modal', function() {
+                viewer.innerHTML = '';
+            });
+        });
+    </script>
 
 @endsection

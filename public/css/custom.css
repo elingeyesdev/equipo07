@@ -436,11 +436,11 @@ body {
 .project-topbar__logo {
   width: 42px;
   height: 42px;
-  padding: 3px;
+  padding: 0;
   border: 2px solid rgba(255, 255, 255, .72);
   border-radius: 50%;
   background: #fff;
-  object-fit: contain;
+  object-fit: cover;
   box-shadow: 0 5px 14px rgba(44, 64, 51, .16);
 }
 .project-topbar .navbar-collapse {
@@ -930,12 +930,12 @@ body.no-topbar .content-wrapper{
 .auth-hero-logo{
   width: 76px;
   max-width: 90px;
-  height: auto;
+  height: 76px;
   max-height: 90px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 50%;
   background: #fff;
-  padding: 8px;
+  padding: 0;
 }
 
 .auth-hero-copy{
@@ -1032,6 +1032,7 @@ body.no-topbar .content-wrapper{
 
 .auth-register-card .auth-login-logo{
   width: 116px;
+  height: 116px;
   max-width: 136px;
   max-height: 136px;
 }
@@ -1052,9 +1053,10 @@ body.no-topbar .content-wrapper{
 .auth-login-logo{
   width: 138px;
   max-width: 150px;
-  height: auto;
+  height: 138px;
   max-height: 150px;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 50%;
   display: inline-block;
 }
 
@@ -1310,6 +1312,7 @@ body.no-topbar .main-footer .float-right{
 
   .auth-hero-logo{
     width: 64px;
+    height: 64px;
     max-width: 76px;
     max-height: 76px;
   }
@@ -1337,6 +1340,7 @@ body.no-topbar .main-footer .float-right{
 
   .auth-login-logo{
     width: 120px;
+    height: 120px;
     max-width: 136px;
     max-height: 136px;
   }

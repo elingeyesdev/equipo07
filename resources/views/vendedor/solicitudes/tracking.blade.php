@@ -365,10 +365,10 @@
                     <div class="driver-simulation-panel__body">
                         <div>
                             <h5 class="driver-simulation-panel__title">
-                                <i class="fas fa-route mr-1"></i>Modo simulacion para defensa
+                                <i class="fas fa-route mr-1"></i>Modo simulacion
                             </h5>
                             <p class="driver-simulation-panel__text" id="gps-simulation-text">
-                                Mueve el transportista hacia el objetivo actual y guarda ubicaciones de prueba.
+                                Mueve el transportista hacia el objetivo actual y registra su ubicacion.
                             </p>
                             <div class="driver-simulation-progress mt-2" aria-hidden="true">
                                 <div class="driver-simulation-progress__bar" id="gps-simulation-progress"></div>
@@ -1294,7 +1294,7 @@
                         setSimulationText(simulationRoute.length > 2
                             ? 'El transportista sigue la ruta calculada por calles.'
                             : 'No se pudo calcular ruta por calles; usando linea de respaldo.');
-                        setMessage('info', 'Demo en marcha: el transportista se movera siguiendo la ruta del mapa.');
+                        setMessage('info', 'Simulacion en marcha: el transportista se movera siguiendo la ruta del mapa.');
                         sendSimulatedPoint(simulationRoute[0]);
 
                         simulationTimer = setInterval(function() {

@@ -24,7 +24,7 @@
             <nav class="main-header navbar navbar-expand-lg navbar-white navbar-light border-0 project-topbar">
                 <div class="container">
                     <a href="{{ route('home') }}" class="navbar-brand d-flex align-items-center">
-                        <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida" class="project-topbar__logo">
+                        <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida" class="project-topbar__logo">
                         <span class="brand-text font-weight-bold ml-2 text-white">AgroVida Bolivia</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topnav">

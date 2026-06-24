@@ -4,7 +4,7 @@
 @section('content')
     <style>
         :root {
-            --primary-color: #007bff;
+            --primary-color: #238647;
             --success-color: #2eab5b;
             --warning-color: #ffc107;
             --danger-color: #dc3545;
@@ -20,19 +20,34 @@
 
         /* Header Mejorado */
         .page-header-modern {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, #eaf8ef 0%, #f8fbf8 100%);
+            border: 1px solid rgba(46, 171, 91, 0.18);
+            border-left: 6px solid var(--success-color);
+            border-radius: 10px;
             padding: 2rem;
             margin-bottom: 2rem;
-            color: white;
-            box-shadow: var(--shadow-md);
+            color: #2c4033;
+            box-shadow: 0 8px 24px rgba(44, 64, 51, 0.08);
         }
 
         .page-header-modern h2 {
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            color: #2c4033;
+            text-shadow: none;
+        }
+
+        .page-header-modern h2 i {
+            color: var(--success-color);
+        }
+
+        .page-header-modern p {
+            color: #66766c;
+        }
+
+        .page-header-modern p i {
+            color: var(--success-color);
         }
 
         /* Botón Publicar Mejorado */
@@ -369,22 +384,27 @@
 
         /* Sección de Títulos Mejorada */
         .section-title-modern {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            background: linear-gradient(135deg, #eaf8ef 0%, #f8fbf8 100%);
             padding: 1rem 1.5rem;
-            border-radius: var(--border-radius);
+            border-radius: 10px;
             margin-bottom: 1.5rem;
-            border-left: 4px solid var(--primary-color);
+            border: 1px solid rgba(46, 171, 91, 0.18);
+            border-left: 4px solid var(--success-color);
         }
 
         .section-title-modern h4 {
             margin: 0;
-            color: var(--dark-color);
+            color: #2c4033;
             font-weight: 700;
             font-size: 1.25rem;
         }
 
+        .section-title-modern h4 i {
+            color: var(--success-color);
+        }
+
         .section-title-modern .badge {
-            background: var(--primary-color);
+            background: var(--success-color);
             color: white;
             padding: 0.5rem 0.75rem;
             border-radius: 20px;
@@ -546,7 +566,7 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <div>
                     <h2 class="mb-2">
-                        <i class="fas fa-bullhorn mr-2"></i> Anuncios
+                        Anuncios
                     </h2>
                     <p class="mb-0 opacity-90">
                         <i class="fas fa-info-circle mr-1"></i> Explora todos los productos disponibles
@@ -674,7 +694,7 @@
                 <div class="mb-5">
                     <div class="section-title-modern">
                         <h4>
-                            <i class="fas fa-cow text-primary"></i> Animales
+                            <i class="fas fa-cow"></i> Animales
                             @if (method_exists($ganados, 'total'))
                                 <span class="badge">({{ $ganados->total() }})</span>
                             @else

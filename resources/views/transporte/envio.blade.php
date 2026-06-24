@@ -29,7 +29,7 @@
             background: rgba(255,255,255,.96);
         }
         .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
-        .brand img { width: 38px; height: 38px; object-fit: contain; }
+        .brand img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
         .exit { border: 0; color: #596658; background: transparent; cursor: pointer; }
         .page { width: min(1120px, 100%); margin: 0 auto; padding: 18px; }
         .status-band {
@@ -224,7 +224,8 @@
             left: 0;
             width: 52px;
             height: 52px;
-            object-fit: contain;
+            border-radius: 50%;
+            object-fit: cover;
             animation: agrovida-delivery-run 1.8s ease-in-out infinite;
         }
         @keyframes agrovida-delivery-run {
@@ -268,7 +269,7 @@
 
     <header class="topbar">
         <div class="brand">
-            <img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">
+            <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida">
             <span>Transporte AgroVida</span>
         </div>
         <form method="POST" action="{{ route('transporte.salir') }}">
@@ -371,9 +372,9 @@
                         {{ $puedeActivarGps ? 'GPS detenido.' : 'Esperando que el transporte sea habilitado.' }}
                     </div>
                     <div class="gps-demo">
-                        <p class="gps-demo__title"><i class="fas fa-vial"></i> Demo para defensa</p>
+                        <p class="gps-demo__title"><i class="fas fa-vial"></i> Simulacion de recorrido</p>
                         <p class="gps-demo__text" id="gps-demo-text">
-                            Usa la simulacion si no quieres depender del GPS real o HTTPS.
+                            Recorrido listo para enviar ubicaciones durante el trayecto.
                         </p>
                         <div class="gps-demo__bar" aria-hidden="true"><span id="gps-demo-progress"></span></div>
                     </div>
@@ -1269,7 +1270,7 @@
                     Swal.fire({
                         title: 'Actualizando el recorrido...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,
@@ -1332,7 +1333,7 @@
                     Swal.fire({
                         title: 'Registrando la cancelación...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,

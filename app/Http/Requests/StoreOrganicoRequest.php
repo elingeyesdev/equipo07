@@ -51,7 +51,7 @@ class StoreOrganicoRequest extends FormRequest
             'certificados_adicionales.*.fecha_vencimiento' => 'nullable|date',
             'certificados_adicionales.*.observaciones' => 'nullable|string|max:1000',
 
-            'imagenes.*' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
+            'imagenes.*' => 'nullable|file|mimes:jpeg,jpg,png,gif|max:2048',
         ];
     }
 
@@ -63,12 +63,11 @@ class StoreOrganicoRequest extends FormRequest
             'unidad_id.exists' => 'La unidad seleccionada no es valida.',
             'precio.required' => 'El precio es obligatorio.',
             'stock.required' => 'El stock es obligatorio.',
-            'imagenes.*.image' => 'Los archivos deben ser imagenes validas.',
-            'imagenes.*.mimes' => 'Las imagenes deben ser de tipo: jpeg, jpg, png o gif.',
+            'imagenes.*.mimes' => 'Las imagenes deben ser JPG, JPEG, PNG o GIF. No se aceptan HEIC, WEBP ni AVIF.',
             'imagenes.*.max' => 'Cada imagen no debe superar los 2MB.',
-            'certificados.*.archivo.mimes' => 'Los certificados deben ser PDF o imagen.',
+            'certificados.*.archivo.mimes' => 'Los certificados deben ser PDF, JPG, JPEG o PNG.',
             'certificados.*.archivo.max' => 'Cada certificado no debe superar los 4MB.',
-            'certificados_adicionales.*.archivo.mimes' => 'Los certificados adicionales deben ser PDF o imagen.',
+            'certificados_adicionales.*.archivo.mimes' => 'Los certificados adicionales deben ser PDF, JPG, JPEG o PNG.',
             'certificados_adicionales.*.archivo.max' => 'Cada certificado adicional no debe superar los 4MB.',
             'tipo_cultivo_id.required' => 'El tipo de cultivo es obligatorio.',
             'tipo_cultivo_id.exists' => 'El tipo de cultivo seleccionado no es valido.',
