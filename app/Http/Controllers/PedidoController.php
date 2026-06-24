@@ -93,7 +93,7 @@ class PedidoController extends Controller
     {
         $request->validate([
             'destino_entrega' => 'required|string|min:5|max:500',
-            'telefono_contacto' => ['required', 'string', 'max:25', 'regex:/^[0-9+\-\s()]{7,25}$/'],
+            'telefono_contacto' => ['required', 'string', 'max:18', 'regex:/^(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}$/'],
             'destino_latitud' => 'required|numeric|between:-90,90',
             'destino_longitud' => 'required|numeric|between:-180,180',
         ], [

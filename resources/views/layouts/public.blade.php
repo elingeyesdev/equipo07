@@ -7,6 +7,7 @@
     <title>@yield('title', 'AgroVida')</title>
 
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-validation.css') }}?v={{ filemtime(public_path('css/form-validation.css')) }}">
 
     @if (View::hasSection('standalone_public'))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -24,7 +25,7 @@
             <nav class="main-header navbar navbar-expand-lg navbar-white navbar-light border-0 project-topbar">
                 <div class="container">
                     <a href="{{ route('home') }}" class="navbar-brand d-flex align-items-center">
-                        <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida" class="project-topbar__logo">
+                        <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida" class="project-topbar__logo">
                         <span class="brand-text font-weight-bold ml-2 text-white">AgroVida Bolivia</span>
                     </a>
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topnav">
@@ -200,6 +201,7 @@
         <script src="{{ asset('vendor/adminlte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js') }}"></script>
         <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
     @endunless
+    <script src="{{ asset('js/form-validation.js') }}?v={{ filemtime(public_path('js/form-validation.js')) }}"></script>
 </body>
 
 </html>

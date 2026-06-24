@@ -24,7 +24,7 @@ class StoreSolicitudVendedorRequest extends FormRequest
     {
         return [
             'motivo' => 'required|string|min:10|max:1000',
-            'telefono' => 'required|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'telefono' => ['required', 'string', 'max:18', 'regex:/^(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}$/'],
             'direccion' => 'required|string|max:255',
             'documento' => 'nullable|string|max:255',
             'archivo_documento' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120', // 5MB

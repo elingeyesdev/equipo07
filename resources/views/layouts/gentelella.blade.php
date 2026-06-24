@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ asset('gentelella/vendors/font-awesome/css/font-awesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('gentelella/vendors/nprogress/nprogress.css') }}">
     <link rel="stylesheet" href="{{ asset('gentelella/build/css/custom.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/form-validation.css') }}?v={{ filemtime(public_path('css/form-validation.css')) }}">
 </head>
 
 <body class="nav-md">
@@ -50,6 +51,7 @@
     <script src="{{ asset('gentelella/vendors/fastclick/lib/fastclick.js') }}"></script>
     <script src="{{ asset('gentelella/vendors/nprogress/nprogress.js') }}"></script>
     <script src="{{ asset('gentelella/build/js/custom.min.js') }}"></script>
+    <script src="{{ asset('js/form-validation.js') }}?v={{ filemtime(public_path('js/form-validation.js')) }}"></script>
 </body>
 
 </html>

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/form-validation.css') }}?v={{ filemtime(public_path('css/form-validation.css')) }}">
     <style>
         .agrovida-process-loading {
             position: relative;
@@ -930,7 +931,7 @@
                         Swal.fire({
                             title: form.dataset.loadingText || 'Procesando...',
                             html: '<div class="agrovida-process-loading">' +
-                                '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}" alt="AgroVida">' +
+                                '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">' +
                                 '</div>',
                             allowOutsideClick: false,
                             allowEscapeKey: false,
@@ -944,6 +945,7 @@
         });
     </script>
 
+    <script src="{{ asset('js/form-validation.js') }}?v={{ filemtime(public_path('js/form-validation.js')) }}"></script>
 </body>
 
 </html>

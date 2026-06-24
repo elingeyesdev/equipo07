@@ -156,7 +156,8 @@
                         <input type="tel" name="telefono"
                             class="form-control @error('telefono') is-invalid @enderror"
                             placeholder="Ej: +591 700 00000"
-                            value="{{ old('telefono', $maquinaria->telefono ?? '') }}">
+                            value="{{ old('telefono', $maquinaria->telefono ?? '') }}" maxlength="18"
+                            pattern="(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}" title="Ingresa 7 u 8 dÃ­gitos; puedes anteponer +591">
                     </div>
 
                     <div class="form-group mb-md-0">
@@ -168,7 +169,7 @@
                             </div>
                             <input type="number" step="0.01" name="precio_dia"
                                 class="form-control @error('precio_dia') is-invalid @enderror" placeholder="0.00"
-                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" required
+                                value="{{ old('precio_dia', $maquinaria->precio_dia ?? 0) }}" min="0" max="10000000" required
                                 data-hourly-price>
                         </div>
                         <small class="form-text text-muted">

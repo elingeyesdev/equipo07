@@ -778,7 +778,9 @@
                                                 <input type="tel" name="telefono_contacto" id="telefono_contacto"
                                                     class="form-control @error('telefono_contacto') is-invalid @enderror"
                                                     value="{{ old('telefono_contacto') }}"
-                                                    placeholder="Ej: 70000000" required>
+                                                    placeholder="Ej: 70000000" required maxlength="18"
+                                                    pattern="(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}"
+                                                    title="Ingresa 7 u 8 dÃ­gitos; puedes anteponer +591">
                                                 @error('telefono_contacto')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
