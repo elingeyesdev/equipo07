@@ -28,6 +28,7 @@
             'Reproducción / Padrillos',
         ]);
     }
+    $datoSanitario = isset($ganado) && $ganado ? $ganado->datoSanitario : null;
 @endphp
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -97,11 +98,11 @@
                     </h3>
                     <p class="maquinaria-wizard__subtitle mb-0">Completa los datos paso a paso. No podrás avanzar si faltan datos requeridos.</p>
                 </div>
-                <span class="badge badge-success maquinaria-wizard__badge" id="stepCounterBadge">Paso 1 de 4</span>
+                <span class="badge badge-success maquinaria-wizard__badge" id="stepCounterBadge">Paso 1 de 5</span>
             </div>
 
             <div class="maquinaria-wizard__progress" role="tablist" aria-label="Pasos del registro de ganado">
-                <div class="maquinaria-wizard__step-indicator is-active" id="ind-0">
+                <div class="maquinaria-wizard__step-indicator is-active" id="ind-0" data-ganado-step-indicator="0">
                     <span class="maquinaria-wizard__step-number">1</span>
                     <span class="maquinaria-wizard__step-icon"><i class="fas fa-paw"></i></span>
                     <div class="maquinaria-wizard__step-copy">
@@ -110,7 +111,7 @@
                         <span class="maquinaria-wizard__step-status">En progreso</span>
                     </div>
                 </div>
-                <div class="maquinaria-wizard__step-indicator" id="ind-1">
+                <div class="maquinaria-wizard__step-indicator" id="ind-1" data-ganado-step-indicator="1">
                     <span class="maquinaria-wizard__step-number">2</span>
                     <span class="maquinaria-wizard__step-icon"><i class="fas fa-clipboard-list"></i></span>
                     <div class="maquinaria-wizard__step-copy">
@@ -119,7 +120,7 @@
                         <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
-                <div class="maquinaria-wizard__step-indicator" id="ind-2">
+                <div class="maquinaria-wizard__step-indicator" id="ind-2" data-ganado-step-indicator="2">
                     <span class="maquinaria-wizard__step-number">3</span>
                     <span class="maquinaria-wizard__step-icon"><i class="fas fa-balance-scale"></i></span>
                     <div class="maquinaria-wizard__step-copy">
@@ -128,12 +129,21 @@
                         <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
-                <div class="maquinaria-wizard__step-indicator" id="ind-3">
+                <div class="maquinaria-wizard__step-indicator" id="ind-3" data-ganado-step-indicator="3">
                     <span class="maquinaria-wizard__step-number">4</span>
+                    <span class="maquinaria-wizard__step-icon"><i class="fas fa-certificate"></i></span>
+                    <div class="maquinaria-wizard__step-copy">
+                        <span class="maquinaria-wizard__step-title">Sanidad y certificados</span>
+                        <span class="maquinaria-wizard__step-description">Vacunas, certificados y documentos.</span>
+                        <span class="maquinaria-wizard__step-status">Pendiente</span>
+                    </div>
+                </div>
+                <div class="maquinaria-wizard__step-indicator" id="ind-4" data-ganado-step-indicator="4">
+                    <span class="maquinaria-wizard__step-number">5</span>
                     <span class="maquinaria-wizard__step-icon"><i class="fas fa-map-marker-alt"></i></span>
                     <div class="maquinaria-wizard__step-copy">
-                        <span class="maquinaria-wizard__step-title">Sanidad y ubicación</span>
-                        <span class="maquinaria-wizard__step-description">Documentos, imágenes y localización.</span>
+                        <span class="maquinaria-wizard__step-title">Fotos y ubicación</span>
+                        <span class="maquinaria-wizard__step-description">Fotografías y localización.</span>
                         <span class="maquinaria-wizard__step-status">Pendiente</span>
                     </div>
                 </div>
@@ -151,7 +161,7 @@
                             <h3 class="card-title mb-0"><i class="fas fa-paw mr-2"></i>Definición inicial</h3>
                             <small>Selecciona cómo y qué tipo de ganado deseas comercializar.</small>
                         </div>
-                        <span class="badge badge-success">Paso 1 de 4</span>
+                        <span class="badge badge-success">Paso 1 de 5</span>
                     </div>
                     <div class="card-body">
                         
@@ -209,7 +219,7 @@
                             <h3 class="card-title mb-0"><i class="fas fa-clipboard-list mr-2"></i>Ficha y detalles</h3>
                             <small>Proporciona información descriptiva sobre tu publicación.</small>
                         </div>
-                        <span class="badge badge-success">Paso 2 de 4</span>
+                        <span class="badge badge-success">Paso 2 de 5</span>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -275,7 +285,7 @@
                             <h3 class="card-title mb-0"><i class="fas fa-balance-scale mr-2"></i>Valor y pesaje</h3>
                             <small>Fija tus precios y medidas para la venta.</small>
                         </div>
-                        <span class="badge badge-success">Paso 3 de 4</span>
+                        <span class="badge badge-success">Paso 3 de 5</span>
                     </div>
                     <div class="card-body">
                         
@@ -321,44 +331,36 @@
                 <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" id="step-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
+                            <h3 class="card-title mb-0"><i class="fas fa-certificate mr-2"></i>Certificados y sanidad</h3>
+                            <small>Registra vacunas, certificados, identificación y reconocimientos disponibles.</small>
+                        </div>
+                        <span class="badge badge-success">Paso 4 de 5</span>
+                    </div>
+                    <div class="card-body">
+                        @include('ganados.partials._sanidad_certificados', ['datoSanitario' => $datoSanitario])
+                    </div>
+                </section>
+
+                <section class="card card-outline card-success shadow-sm mb-4 maquinaria-wizard-step" id="step-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
                             <h3 class="card-title mb-0"><i class="fas fa-map-marker-alt mr-2"></i>Multimedia y ubicación</h3>
                             <small>Sube imágenes claras y define la ubicación de la propiedad.</small>
                         </div>
-                        <span class="badge badge-success">Paso 4 de 4</span>
+                        <span class="badge badge-success">Paso 5 de 5</span>
                     </div>
                     <div class="card-body">
-
-                        <div class="p-3 mb-4 ganado-info-panel" id="div_sanidad">
-                            <div class="form-check custom-switch">
-                                <input type="checkbox" class="form-check-input" id="has_sanity" name="has_sanity" value="1" {{ old('has_sanity', isset($ganado) && $ganado->datosSanitarios()->where('has_sanity', true)->exists() ? 'checked' : '') }}>
-                                <label class="form-check-label font-weight-bold ml-2" for="has_sanity" id="label_sanity">¿Cuenta con cartillas de sanidad al día?</label>
-                            </div>
-                            
-                            <div id="sanidad_upload_zone" class="mt-3" style="display: none;">
-                                <label for="pdf-input" class="maquinaria-upload-zone">
-                                    <span class="maquinaria-upload-zone__icon"><i class="fas fa-file-pdf"></i></span>
-                                    <div class="d-flex flex-column text-left">
-                                        <strong class="text-dark">Documentos Sanitarios (Opcional)</strong>
-                                        <small class="text-muted">Sube el certificado PDF.</small>
-                                    </div>
-                                    <span class="maquinaria-upload-zone__cta ml-auto">Seleccionar PDF</span>
-                                </label>
-                                <input type="file" name="documento_pdf" id="pdf-input" class="maquinaria-upload-input" accept=".pdf">
-                                <span id="pdf-file-name" class="text-success small mt-1 d-block"></span>
-                            </div>
-                        </div>
-
                         <div class="mb-4">
                             <label>Fotografías del Ganado</label>
                             <label for="imagenes-input" class="maquinaria-upload-zone">
                                 <span class="maquinaria-upload-zone__icon"><i class="fas fa-image"></i></span>
                                 <div class="d-flex flex-column text-left">
                                     <strong class="text-dark">Sube hasta 5 fotos</strong>
-                                    <small class="text-muted">Formatos: JPG, PNG. Máximo 10MB por archivo.</small>
+                                    <small class="text-muted">Formatos: JPG, PNG, GIF, WEBP. Máximo 10MB por archivo.</small>
                                 </div>
                                 <span class="maquinaria-upload-zone__cta ml-auto">Explorar Galería</span>
                             </label>
-                            <input type="file" name="imagenes[]" id="imagenes-input" class="maquinaria-upload-input" accept="image/*" multiple>
+                            <input type="file" name="imagenes[]" id="imagenes-input" class="maquinaria-upload-input" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" multiple>
                             <div id="preview-container" class="row mt-3"></div>
                         </div>
 
@@ -413,7 +415,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let step = 0;
-    const totalSteps = 4;
+    let maxVisitedStep = 0;
+    const totalSteps = 5;
     const stepsDOM = document.querySelectorAll('.maquinaria-wizard-step');
     const indsDOM = document.querySelectorAll('.maquinaria-wizard__step-indicator');
     const btnNext = document.getElementById('btnNext');
@@ -443,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 1. Lógica Visual Wizard
     function updateWizard() {
+        maxVisitedStep = Math.max(maxVisitedStep, step);
         stepsDOM.forEach((s, i) => s.classList.toggle('is-active', i === step));
         
         indsDOM.forEach((ind, i) => {
@@ -457,10 +461,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 status.textContent = "Pendiente";
             }
+            ind.classList.toggle('is-available', i <= maxVisitedStep);
         });
 
         progressBar.style.width = ((step) / (totalSteps - 1)) * 100 + '%';
-        document.getElementById('stepCounterBadge').textContent = `Paso ${step + 1} de 4`;
+        document.getElementById('stepCounterBadge').textContent = `Paso ${step + 1} de ${totalSteps}`;
 
         btnPrev.style.visibility = step === 0 ? 'hidden' : 'visible';
         if (step === totalSteps - 1) {
@@ -492,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (step === 2) {
             if (!document.getElementById('precio').value) valid = false;
             if (mod !== 'Genetica' && !document.getElementById('peso_actual').value) valid = false;
-        } else if (step === 3) {
+        } else if (step === 4) {
             if (!document.getElementById('latitud').value) valid = false;
         }
 
@@ -508,6 +513,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	    btnNext.addEventListener('click', () => { if (!btnNext.disabled) { step++; updateWizard(); } });
 	    btnPrev.addEventListener('click', () => { if (step > 0) { step--; updateWizard(); } });
+
+        indsDOM.forEach((indicator, index) => {
+            indicator.addEventListener('click', function() {
+                if (index <= maxVisitedStep) {
+                    step = index;
+                    updateWizard();
+                }
+            });
+        });
 
 	    function updateEdadMode() {
 	        const usarFecha = edadModoSwitch.checked;
@@ -550,7 +564,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	        divEdad.style.display = val === 'Genetica' ? 'none' : 'block';
 	        divPeso.style.display = val === 'Genetica' ? 'none' : 'block';
 	        selectCobro.value = selectCobro.value || 'Contacto directo';
-	        document.getElementById('label_sanity').textContent = val === 'Genetica' ? '¿Cuenta con Certificado Genético?' : '¿Cuenta con cartillas de sanidad al día?';
+            const labelSanity = document.getElementById('label_sanity');
+            if (labelSanity) {
+                labelSanity.textContent = val === 'Genetica'
+                    ? '¿Cuenta con certificado genético o genealogía?'
+                    : '¿Cuenta con certificados o datos sanitarios del animal?';
+            }
 	        updateEdadMode();
 	    }
 
@@ -671,14 +690,113 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Toggle Sanity PDF
-	    document.getElementById('has_sanity').addEventListener('change', function() {
-	        document.getElementById('sanidad_upload_zone').style.display = this.checked ? 'block' : 'none';
+    // Toggle Sanity details
+    const hasSanity = document.getElementById('has_sanity');
+    const sanidadDetailZone = document.getElementById('sanidad_detail_zone');
+    if (hasSanity && sanidadDetailZone) {
+	    hasSanity.addEventListener('change', function() {
+	        sanidadDetailZone.style.display = this.checked ? 'block' : 'none';
 	    });
-	    document.getElementById('has_sanity').dispatchEvent(new Event('change', { bubbles: true }));
+	    hasSanity.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
-    document.getElementById('pdf-input').addEventListener('change', function() {
+    document.getElementById('pdf-input')?.addEventListener('change', function() {
         if(this.files[0]) document.getElementById('pdf-file-name').textContent = 'Archivo: ' + this.files[0].name;
+    });
+
+    const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+    const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+    function getFileExtension(file) {
+        return (file.name.split('.').pop() || '').toLowerCase();
+    }
+
+    function isAllowedImageFile(file) {
+        return allowedImageTypes.has(file.type) || allowedImageExtensions.includes(getFileExtension(file));
+    }
+
+    function isAllowedFileForInput(input, file) {
+        const extension = getFileExtension(file);
+
+        if (input.accept.includes('.pdf') && extension === 'pdf') {
+            return true;
+        }
+
+        return isAllowedImageFile(file);
+    }
+
+    function renderFileCard(container, file, removeCallback) {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 col-sm-6 mb-3';
+
+        const card = document.createElement('div');
+        card.className = 'card card-outline card-success h-100 mb-0 maquinaria-image-card';
+
+        const removeButton = removeCallback
+            ? '<button type="button" class="btn btn-sm btn-danger position-absolute" style="top:8px;right:8px;" data-remove-preview><i class="fas fa-times"></i></button>'
+            : '';
+
+        if (isAllowedImageFile(file)) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                card.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${event.target.result}" class="card-img-top maquinaria-image-card__image" alt="Vista previa de ${file.name}">
+                        ${removeButton}
+                    </div>
+                    <span class="card-footer bg-white p-2 text-muted small font-weight-bold text-truncate">${file.name}</span>
+                `;
+                col.appendChild(card);
+                container.appendChild(col);
+                if (removeCallback) {
+                    card.querySelector('[data-remove-preview]').addEventListener('click', function() {
+                        removeCallback();
+                        col.remove();
+                    });
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            card.innerHTML = `
+                <div class="position-relative d-flex align-items-center justify-content-center bg-light" style="height:150px;">
+                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                    ${removeButton}
+                </div>
+                <span class="card-footer bg-white p-2 text-muted small font-weight-bold text-truncate">${file.name}</span>
+            `;
+            col.appendChild(card);
+            container.appendChild(col);
+            if (removeCallback) {
+                card.querySelector('[data-remove-preview]').addEventListener('click', function() {
+                    removeCallback();
+                    col.remove();
+                });
+            }
+        }
+    }
+
+    document.querySelectorAll('[data-file-preview-target]').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const container = document.getElementById(input.dataset.filePreviewTarget);
+            if (!container) return;
+
+            container.innerHTML = '';
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!isAllowedFileForInput(input, file)) {
+                input.value = '';
+                alert('Formato no permitido. Usa JPG, PNG, GIF, WEBP o PDF solo donde se indique.');
+                return;
+            }
+
+            renderFileCard(container, file, function() {
+                input.value = '';
+                if (input.id === 'pdf-input') {
+                    document.getElementById('pdf-file-name').textContent = '';
+                }
+            });
+        });
     });
 
 	    // Inicializar visual
@@ -689,50 +807,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ---
     const imagenesInput = document.getElementById('imagenes-input');
     const previewContainer = document.getElementById('preview-container');
+    const selectedGanadoImages = new Map();
 
     if (imagenesInput && previewContainer) {
-        imagenesInput.addEventListener('change', function(e) {
-            // Limpiar el contenedor antes de mostrar las nuevas imágenes
-            previewContainer.innerHTML = ''; 
-            
-            // Tomar los archivos y limitar visualmente a 5 (como dice el mockup)
-            const files = Array.from(e.target.files).slice(0, 5);
+        function syncGanadoImagesInput() {
+            const transfer = new DataTransfer();
+            selectedGanadoImages.forEach(function(file) {
+                transfer.items.add(file);
+            });
+            imagenesInput.files = transfer.files;
+        }
 
-            if (files.length > 0) {
-                files.forEach((file) => {
-                    // Validar que sea realmente una imagen
-                    if (!file.type.startsWith('image/')) return;
-
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(event) {
-                        // Crear el elemento visual para la imagen
-                        const col = document.createElement('div');
-                        col.className = 'col-md-4 col-sm-6 mb-3'; // Diseño de cuadrícula
-
-                        const card = document.createElement('div');
-                        card.className = 'card card-outline card-success h-100 mb-0 maquinaria-image-card';
-
-                        const image = document.createElement('img');
-                        image.src = event.target.result;
-                        image.alt = `Vista previa de ${file.name}`;
-                        image.className = 'card-img-top maquinaria-image-card__image';
-
-                        const caption = document.createElement('span');
-                        caption.className = 'card-footer bg-white p-2 text-muted small font-weight-bold text-truncate';
-                        caption.textContent = file.name;
-
-                        card.appendChild(image);
-                        card.appendChild(caption);
-                        col.appendChild(card);
-                        previewContainer.appendChild(col);
-                    };
-                    
-                    // Leer el archivo como URL de datos
-                    reader.readAsDataURL(file);
+        function renderGanadoImages() {
+            previewContainer.innerHTML = '';
+            selectedGanadoImages.forEach(function(file, fileKey) {
+                renderFileCard(previewContainer, file, function() {
+                    selectedGanadoImages.delete(fileKey);
+                    syncGanadoImagesInput();
+                    renderGanadoImages();
                 });
-            }
+            });
+        }
+
+        imagenesInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).filter(isAllowedImageFile);
+
+            files.forEach((file) => {
+                if (selectedGanadoImages.size >= 5) return;
+                const key = `${file.name}-${file.size}-${file.lastModified}`;
+                selectedGanadoImages.set(key, file);
+            });
+
+            syncGanadoImagesInput();
+            renderGanadoImages();
         });
+
+        const galleryLabel = document.querySelector('label[for="imagenes-input"]');
+        if (galleryLabel) {
+            ['dragenter', 'dragover'].forEach(function(eventName) {
+                galleryLabel.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    galleryLabel.classList.add('is-dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(function(eventName) {
+                galleryLabel.addEventListener(eventName, function(event) {
+                    event.preventDefault();
+                    galleryLabel.classList.remove('is-dragover');
+                });
+            });
+
+            galleryLabel.addEventListener('drop', function(event) {
+                const files = Array.from(event.dataTransfer.files).filter(isAllowedImageFile);
+                files.forEach((file) => {
+                    if (selectedGanadoImages.size >= 5) return;
+                    const key = `${file.name}-${file.size}-${file.lastModified}`;
+                    selectedGanadoImages.set(key, file);
+                });
+                syncGanadoImagesInput();
+                renderGanadoImages();
+            });
+        }
     }
 
 	});

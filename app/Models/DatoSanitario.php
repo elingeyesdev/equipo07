@@ -12,9 +12,18 @@ class DatoSanitario extends Model
         'ganado_id',
         'has_sanity',
         'documento_pdf',
+        'estado_revision_certificado',
+        'motivo_rechazo_certificado',
+        'revisado_at',
+        'revisado_por_id',
         'destino_matadero_campo',
         'hoja_ruta_foto',
         
+    ];
+
+    protected $casts = [
+        'has_sanity' => 'boolean',
+        'revisado_at' => 'datetime',
     ];
 
     public function ganado()

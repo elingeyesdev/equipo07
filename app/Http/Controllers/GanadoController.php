@@ -72,7 +72,7 @@ class GanadoController extends Controller
     public function store(Request $request)
     {
         // 1. Validación alineada al Mockup
-        $request->validate([
+        $request->validate(array_merge([
             'modalidad'      => 'required|string',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
             'raza_id'        => 'required',
@@ -99,11 +99,11 @@ class GanadoController extends Controller
                 'date',
                 'before_or_equal:today',
             ],
-            'imagenes.*'     => 'nullable|image|max:10240',
+            'imagenes.*'     => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
             'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
             'latitud'        => 'required|numeric',
             'longitud'       => 'required|numeric',
-        ]);
+        ], $this->reglasValidacionSanitaria()), $this->mensajesValidacionSanitaria());
 
         $edadGanado = $this->resolverEdadGanado($request);
 
@@ -146,17 +146,8 @@ class GanadoController extends Controller
             'fecha_publicacion' => now(),
         ]);
 
-        // 4. Manejo del PDF de Sanidad
-        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
-            $pdfPath = null;
-            if ($request->hasFile('documento_pdf')) {
-                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
-            }
-            $ganado->datosSanitarios()->create([
-                'has_sanity'    => true,
-                'documento_pdf' => $pdfPath,
-            ]);
-        }
+        // 4. Manejo completo de datos sanitarios y certificados
+        $this->guardarDatosSanitariosGanado($ganado, $request);
 
         // 5. Manejo de Imágenes (Max 5 según mockup)
         if ($request->hasFile('imagenes')) {
@@ -222,7 +213,7 @@ class GanadoController extends Controller
                 ->with('error', 'No tienes permisos para editar este anuncio.');
         }
 
-        $request->validate([
+        $request->validate(array_merge([
             'modalidad'      => 'required|string',
             'tipo_animal_id' => 'required|exists:tipo_animals,id',
             'raza_id'        => 'required',
@@ -249,11 +240,11 @@ class GanadoController extends Controller
                 'date',
                 'before_or_equal:today',
             ],
-            'imagenes.*'     => 'nullable|image|max:10240',
+            'imagenes.*'     => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
             'documento_pdf'  => 'nullable|mimes:pdf|max:10240',
             'latitud'        => 'required|numeric',
             'longitud'       => 'required|numeric',
-        ]);
+        ], $this->reglasValidacionSanitaria()), $this->mensajesValidacionSanitaria());
 
         $edadGanado = $this->resolverEdadGanado($request);
 
@@ -269,26 +260,8 @@ class GanadoController extends Controller
         $this->agregarDatosUbicacion($data, $request);
         $this->sincronizarUbicacionNormalizada($data, $ganado);
 
-        // Manejo del PDF de Sanidad
-        if ($request->has_sanity === '1' || $request->has_sanity === 'true') {
-            $datosSanitario = $ganado->datosSanitarios()->latest('id')->first();
-            $pdfPath = $datosSanitario->documento_pdf ?? null;
-
-            if ($request->hasFile('documento_pdf')) {
-                if ($pdfPath && Storage::disk('public')->exists($pdfPath)) {
-                    Storage::disk('public')->delete($pdfPath);
-                }
-                $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
-            }
-
-            $ganado->datosSanitarios()->updateOrCreate(
-                ['ganado_id' => $ganado->id],
-                [
-                    'has_sanity'    => true,
-                    'documento_pdf' => $pdfPath,
-                ]
-            );
-        }
+        // Manejo completo de datos sanitarios y certificados
+        $this->guardarDatosSanitariosGanado($ganado, $request);
 
         // Manejo de Imágenes (Max 5 según mockup)
         if ($request->hasFile('imagenes')) {
@@ -511,7 +484,16 @@ class GanadoController extends Controller
             'raza',
             'tipoAnimal',
             'tipoPeso',
-            'datoSanitario',
+            'datoSanitario.tratamientoMedicamento',
+            'datoSanitario.vacunacion.imagenPrincipal',
+            'datoSanitario.marcaAnimal.imagenPrincipal',
+            'datoSanitario.datoDueno',
+            'datoSanitario.logroReconocimiento.bellezaEstructura',
+            'datoSanitario.logroReconocimiento.produccionLeche',
+            'datoSanitario.logroReconocimiento.produccionCarne',
+            'datoSanitario.logroReconocimiento.reproduccionLogro',
+            'datoSanitario.imagenCertificadoCampeonPrincipal',
+            'datoSanitario.archivoArbolGenealogicoPrincipal',
             'datosSanitarios',
             'imagenes',
             'ubicacionGanado.ubicacionGeografica',
@@ -521,6 +503,350 @@ class GanadoController extends Controller
             'genealogia.madre',
             'genealogia.padre',
         ];
+    }
+
+    private function reglasValidacionSanitaria(): array
+    {
+        return [
+            'has_sanity' => 'nullable|boolean',
+            'vacuna' => 'nullable|string',
+            'vacunado_fiebre_aftosa' => 'nullable|boolean',
+            'vacunado_antirabica' => 'nullable|boolean',
+            'tratamiento' => 'nullable|string',
+            'medicamento' => 'nullable|string',
+            'fecha_aplicacion' => 'nullable|date|before_or_equal:today',
+            'proxima_fecha' => 'nullable|date|after:today',
+            'veterinario' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'certificado_imagen' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'certificado_campeon_imagen' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'arbol_genealogico' => 'nullable|file|mimes:pdf,jpg,jpeg,png,gif,webp|max:10240',
+            'marca_ganado' => 'nullable|string|max:255',
+            'marca_ganado_foto' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'senal_numero' => 'nullable|string|max:255',
+            'nombre_dueno' => 'nullable|string|max:255',
+            'carnet_dueno_foto' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'logro_campeon_raza' => 'nullable|boolean',
+            'logro_gran_campeon_macho' => 'nullable|boolean',
+            'logro_gran_campeon_hembra' => 'nullable|boolean',
+            'logro_mejor_ubre' => 'nullable|boolean',
+            'logro_campeona_litros_dia' => 'nullable|boolean',
+            'logro_mejor_lactancia' => 'nullable|boolean',
+            'logro_mejor_calidad_leche' => 'nullable|boolean',
+            'logro_mejor_novillo' => 'nullable|boolean',
+            'logro_gran_campeon_carne' => 'nullable|boolean',
+            'logro_mejor_semental' => 'nullable|boolean',
+            'logro_mejor_madre' => 'nullable|boolean',
+            'logro_mejor_padre' => 'nullable|boolean',
+            'logro_mejor_fertilidad' => 'nullable|boolean',
+        ];
+    }
+
+    private function mensajesValidacionSanitaria(): array
+    {
+        return [
+            'fecha_aplicacion.before_or_equal' => 'La fecha de aplicación debe ser hoy o una fecha pasada.',
+            'proxima_fecha.after' => 'La próxima fecha debe ser una fecha futura.',
+            'imagenes.*.mimes' => 'Las fotos del ganado deben ser JPG, PNG, GIF o WEBP. No se aceptan HEIC, HEIF ni AVIF.',
+            'certificado_imagen.mimes' => 'El certificado SENASAG debe ser una imagen JPG, PNG, GIF o WEBP.',
+            'certificado_campeon_imagen.mimes' => 'El certificado de campeón debe ser una imagen JPG, PNG, GIF o WEBP.',
+            'marca_ganado_foto.mimes' => 'La foto de la marca debe ser JPG, PNG, GIF o WEBP.',
+            'carnet_dueno_foto.mimes' => 'La foto del carnet debe ser JPG, PNG, GIF o WEBP.',
+            'arbol_genealogico.mimes' => 'El árbol genealógico debe ser PDF, JPG, PNG, GIF o WEBP.',
+        ];
+    }
+
+    private function guardarDatosSanitariosGanado(Ganado $ganado, Request $request): void
+    {
+        $datoSanitario = $ganado->datoSanitario()->first();
+        $debeGuardar = $request->boolean('has_sanity') || $datoSanitario || $this->requestTieneDatosSanitarios($request);
+
+        if (! $debeGuardar) {
+            return;
+        }
+
+        $pdfPath = $datoSanitario->documento_pdf ?? null;
+        if ($request->hasFile('documento_pdf')) {
+            $this->eliminarArchivoPublico($pdfPath);
+            $pdfPath = $request->file('documento_pdf')->store('sanidad_pdfs', 'public');
+        }
+
+        $datoSanitario = $ganado->datosSanitarios()->updateOrCreate(
+            ['ganado_id' => $ganado->id],
+            [
+                'has_sanity' => $request->boolean('has_sanity') || $this->requestTieneDatosSanitarios($request),
+                'documento_pdf' => $pdfPath,
+            ]
+        );
+
+        $datosNormalizados = $request->only([
+            'vacuna',
+            'tratamiento',
+            'medicamento',
+            'fecha_aplicacion',
+            'proxima_fecha',
+            'veterinario',
+            'observaciones',
+            'marca_ganado',
+            'senal_numero',
+            'nombre_dueno',
+        ]);
+
+        $datosNormalizados['ganado_id'] = $ganado->id;
+        $datosNormalizados['vacunado_fiebre_aftosa'] = $request->has('vacunado_fiebre_aftosa');
+        $datosNormalizados['vacunado_antirabica'] = $request->has('vacunado_antirabica');
+
+        $this->agregarLogrosReconocimientosSanitarios($datosNormalizados, $request);
+
+        if ($request->hasFile('certificado_imagen')) {
+            $this->eliminarArchivoPublico($datoSanitario->certificado_imagen);
+            $datosNormalizados['certificado_imagen'] = $request->file('certificado_imagen')->store('certificados_senasag', 'public');
+        }
+
+        if ($request->hasFile('certificado_campeon_imagen')) {
+            $this->eliminarArchivoPublico($datoSanitario->certificado_campeon_imagen);
+            $datosNormalizados['certificado_campeon_imagen'] = $request->file('certificado_campeon_imagen')->store('certificados_campeon', 'public');
+        }
+
+        if ($request->hasFile('arbol_genealogico')) {
+            $this->eliminarArchivoPublico($datoSanitario->arbol_genealogico);
+            $datosNormalizados['arbol_genealogico'] = $request->file('arbol_genealogico')->store('arboles_genealogicos', 'public');
+        }
+
+        if ($request->hasFile('marca_ganado_foto')) {
+            $this->eliminarArchivoPublico($datoSanitario->marca_ganado_foto);
+            $datosNormalizados['marca_ganado_foto'] = $request->file('marca_ganado_foto')->store('marcas_ganado', 'public');
+        }
+
+        if ($request->hasFile('carnet_dueno_foto')) {
+            $this->eliminarArchivoPublico($datoSanitario->carnet_dueno_foto);
+            $datosNormalizados['carnet_dueno_foto'] = $request->file('carnet_dueno_foto')->store('carnets_duenos', 'public');
+        }
+
+        $this->sincronizarDatosSanitariosNormalizados($datoSanitario, $datosNormalizados);
+    }
+
+    private function requestTieneDatosSanitarios(Request $request): bool
+    {
+        $campos = [
+            'vacuna',
+            'tratamiento',
+            'medicamento',
+            'fecha_aplicacion',
+            'proxima_fecha',
+            'veterinario',
+            'observaciones',
+            'marca_ganado',
+            'senal_numero',
+            'nombre_dueno',
+        ];
+
+        $archivos = [
+            'documento_pdf',
+            'certificado_imagen',
+            'certificado_campeon_imagen',
+            'arbol_genealogico',
+            'marca_ganado_foto',
+            'carnet_dueno_foto',
+        ];
+
+        $checks = [
+            'vacunado_fiebre_aftosa',
+            'vacunado_antirabica',
+            'logro_campeon_raza',
+            'logro_gran_campeon_macho',
+            'logro_gran_campeon_hembra',
+            'logro_mejor_ubre',
+            'logro_campeona_litros_dia',
+            'logro_mejor_lactancia',
+            'logro_mejor_calidad_leche',
+            'logro_mejor_novillo',
+            'logro_gran_campeon_carne',
+            'logro_mejor_semental',
+            'logro_mejor_madre',
+            'logro_mejor_padre',
+            'logro_mejor_fertilidad',
+        ];
+
+        return collect($campos)->contains(fn ($campo) => filled($request->input($campo)))
+            || collect($archivos)->contains(fn ($campo) => $request->hasFile($campo))
+            || collect($checks)->contains(fn ($campo) => $request->has($campo));
+    }
+
+    private function agregarLogrosReconocimientosSanitarios(array &$data, Request $request): void
+    {
+        foreach ([
+            'logro_campeon_raza',
+            'logro_gran_campeon_macho',
+            'logro_gran_campeon_hembra',
+            'logro_mejor_ubre',
+            'logro_campeona_litros_dia',
+            'logro_mejor_lactancia',
+            'logro_mejor_calidad_leche',
+            'logro_mejor_novillo',
+            'logro_gran_campeon_carne',
+            'logro_mejor_semental',
+            'logro_mejor_madre',
+            'logro_mejor_padre',
+            'logro_mejor_fertilidad',
+        ] as $campo) {
+            $data[$campo] = $request->has($campo);
+        }
+    }
+
+    private function sincronizarDatosSanitariosNormalizados(DatoSanitario $datoSanitario, array $data): void
+    {
+        $tratamientoData = [
+            'tratamiento' => $data['tratamiento'] ?? null,
+            'medicamento' => $data['medicamento'] ?? null,
+            'fecha_aplicacion' => $data['fecha_aplicacion'] ?? null,
+            'proxima_fecha' => $data['proxima_fecha'] ?? null,
+            'veterinario' => $data['veterinario'] ?? null,
+            'observaciones' => $data['observaciones'] ?? null,
+        ];
+
+        if ($datoSanitario->tratamientoMedicamento || $this->tieneDatos($tratamientoData)) {
+            $datoSanitario->tratamientoMedicamento()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $tratamientoData
+            );
+        }
+
+        $vacunacion = $datoSanitario->vacunacion()->updateOrCreate(
+            ['dato_sanitario_id' => $datoSanitario->id],
+            [
+                'vacuna' => $data['vacuna'] ?? null,
+                'vacunado_fiebre_aftosa' => $data['vacunado_fiebre_aftosa'] ?? false,
+                'vacunado_antirabica' => $data['vacunado_antirabica'] ?? false,
+            ]
+        );
+
+        if (! empty($data['certificado_imagen'])) {
+            foreach ($vacunacion->imagenes as $imagen) {
+                $this->eliminarArchivoPublico($imagen->ruta);
+                $imagen->delete();
+            }
+
+            $vacunacion->imagenes()->create([
+                'ruta' => $data['certificado_imagen'],
+                'orden' => 0,
+            ]);
+        }
+
+        $marcaData = [
+            'marca_ganado' => $data['marca_ganado'] ?? null,
+            'senal_numero' => $data['senal_numero'] ?? null,
+        ];
+        $marcaFoto = $data['marca_ganado_foto'] ?? null;
+
+        if ($datoSanitario->marcaAnimal || $this->tieneDatos($marcaData) || filled($marcaFoto)) {
+            $marcaAnimal = $datoSanitario->marcaAnimal()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $marcaData
+            );
+
+            if (filled($marcaFoto)) {
+                foreach ($marcaAnimal->imagenes as $imagen) {
+                    $this->eliminarArchivoPublico($imagen->ruta);
+                    $imagen->delete();
+                }
+
+                $marcaAnimal->imagenes()->create([
+                    'ruta' => $marcaFoto,
+                    'orden' => 0,
+                ]);
+            }
+        }
+
+        $duenoData = ['nombre_dueno' => $data['nombre_dueno'] ?? null];
+        if (array_key_exists('carnet_dueno_foto', $data)) {
+            $duenoData['carnet_dueno_foto'] = $data['carnet_dueno_foto'];
+        }
+
+        if ($datoSanitario->datoDueno || $this->tieneDatos($duenoData)) {
+            $datoSanitario->datoDueno()->updateOrCreate(
+                ['dato_sanitario_id' => $datoSanitario->id],
+                $duenoData
+            );
+        }
+
+        if (! empty($data['certificado_campeon_imagen'])) {
+            foreach ($datoSanitario->imagenesCertificadoCampeon as $imagen) {
+                $this->eliminarArchivoPublico($imagen->ruta);
+                $imagen->delete();
+            }
+
+            $datoSanitario->imagenesCertificadoCampeon()->create([
+                'ruta' => $data['certificado_campeon_imagen'],
+                'orden' => 0,
+            ]);
+        }
+
+        if (! empty($data['arbol_genealogico'])) {
+            foreach ($datoSanitario->archivosArbolGenealogico as $archivo) {
+                $this->eliminarArchivoPublico($archivo->ruta);
+                $archivo->delete();
+            }
+
+            $datoSanitario->archivosArbolGenealogico()->create([
+                'ruta' => $data['arbol_genealogico'],
+                'orden' => 0,
+            ]);
+        }
+
+        $logroReconocimiento = $datoSanitario->logroReconocimiento()->updateOrCreate(
+            ['dato_sanitario_id' => $datoSanitario->id],
+            []
+        );
+
+        $logroReconocimiento->bellezaEstructura()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_campeon_raza' => $data['logro_campeon_raza'] ?? false,
+                'logro_gran_campeon_macho' => $data['logro_gran_campeon_macho'] ?? false,
+                'logro_gran_campeon_hembra' => $data['logro_gran_campeon_hembra'] ?? false,
+                'logro_mejor_ubre' => $data['logro_mejor_ubre'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->produccionLeche()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_campeona_litros_dia' => $data['logro_campeona_litros_dia'] ?? false,
+                'logro_mejor_lactancia' => $data['logro_mejor_lactancia'] ?? false,
+                'logro_mejor_calidad_leche' => $data['logro_mejor_calidad_leche'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->produccionCarne()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_mejor_novillo' => $data['logro_mejor_novillo'] ?? false,
+                'logro_gran_campeon_carne' => $data['logro_gran_campeon_carne'] ?? false,
+                'logro_mejor_semental' => $data['logro_mejor_semental'] ?? false,
+            ]
+        );
+
+        $logroReconocimiento->reproduccionLogro()->updateOrCreate(
+            ['logro_reconocimiento_id' => $logroReconocimiento->id],
+            [
+                'logro_mejor_madre' => $data['logro_mejor_madre'] ?? false,
+                'logro_mejor_padre' => $data['logro_mejor_padre'] ?? false,
+                'logro_mejor_fertilidad' => $data['logro_mejor_fertilidad'] ?? false,
+            ]
+        );
+    }
+
+    private function eliminarArchivoPublico(?string $path): void
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+
+    private function tieneDatos(array $data): bool
+    {
+        return collect($data)->contains(fn ($value) => filled($value));
     }
 
     private function resolverEdadGanado(Request $request): array

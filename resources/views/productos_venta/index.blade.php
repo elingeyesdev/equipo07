@@ -4,6 +4,12 @@
 @section('page_title', $esAdmin ? 'Productos en venta' : 'Mis productos')
 
 @section('content')
+    @php
+        $deleteMessage = $esAdmin
+            ? '¿Eliminar esta publicación del mercado?'
+            : '¿Eliminar tu publicación del mercado?';
+    @endphp
+
     <style>
         .product-type-filters {
             display: flex;
@@ -95,9 +101,14 @@
                 <div>
                     <h3 class="card-title font-weight-bold mb-1">
                         <i class="fas fa-store text-success mr-2"></i>
-                        {{ $esAdmin ? 'Catalogo publicado' : 'Productos publicados' }}
+                        {{ $esAdmin ? 'Panel rapido de publicaciones' : 'Productos publicados' }}
                     </h3>
-                    <div class="text-muted small">{{ $productos->total() }} productos encontrados</div>
+                    <div class="text-muted small">
+                        {{ $productos->total() }} productos encontrados
+                        @if($esAdmin)
+                            para revisar o eliminar
+                        @endif
+                    </div>
                 </div>
                 <div class="product-type-filters">
                     @foreach([
@@ -191,6 +202,15 @@
                                         title="Ver producto"><i class="fas fa-eye"></i></a>
                                     <a href="{{ $producto['edit_url'] }}" class="btn btn-sm btn-outline-success"
                                         title="Editar producto"><i class="fas fa-edit"></i></a>
+                                    <form action="{{ $producto['delete_url'] }}" method="POST" class="d-inline delete-form"
+                                        data-message="{{ $deleteMessage }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar publicación">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @empty

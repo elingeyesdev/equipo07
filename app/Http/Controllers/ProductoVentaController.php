@@ -7,6 +7,7 @@ use App\Models\Maquinaria;
 use App\Models\Organico;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 
 class ProductoVentaController extends Controller
 {
@@ -44,6 +45,7 @@ class ProductoVentaController extends Controller
                 'imagen' => $item->imagenes->first()?->ruta,
                 'show_url' => route('ganados.show', $item),
                 'edit_url' => route('ganados.edit', $item),
+                'delete_url' => route('productos-venta.destroy', ['tipo' => 'ganado', 'id' => $item->id]),
                 'created_at' => $item->created_at,
             ]));
         }
@@ -66,6 +68,7 @@ class ProductoVentaController extends Controller
                 'imagen' => $item->imagenes->first()?->ruta,
                 'show_url' => route('maquinarias.show', $item),
                 'edit_url' => route('maquinarias.edit', $item),
+                'delete_url' => route('productos-venta.destroy', ['tipo' => 'maquinaria', 'id' => $item->id]),
                 'created_at' => $item->created_at,
             ]));
         }
@@ -88,6 +91,7 @@ class ProductoVentaController extends Controller
                 'imagen' => $item->imagenes->first()?->ruta,
                 'show_url' => route('organicos.show', $item),
                 'edit_url' => route('organicos.edit', $item),
+                'delete_url' => route('productos-venta.destroy', ['tipo' => 'organico', 'id' => $item->id]),
                 'created_at' => $item->created_at,
             ]));
         }
@@ -109,6 +113,38 @@ class ProductoVentaController extends Controller
             'q' => $q,
             'esAdmin' => $user->isAdmin(),
         ]);
+    }
+
+    public function destroy(Request $request, string $tipo, int $id)
+    {
+        $modelos = [
+            'ganado' => Ganado::class,
+            'maquinaria' => Maquinaria::class,
+            'organico' => Organico::class,
+        ];
+
+        abort_unless(array_key_exists($tipo, $modelos), 404);
+
+        $producto = $modelos[$tipo]::with('imagenes')->findOrFail($id);
+        $user = $request->user();
+
+        if (!$user->isAdmin() && $producto->user_id !== $user->id) {
+            return redirect()
+                ->route('productos-venta.index')
+                ->with('error', 'No tienes permisos para eliminar esta publicación.');
+        }
+
+        foreach ($producto->imagenes as $imagen) {
+            if ($imagen->ruta && Storage::disk('public')->exists($imagen->ruta)) {
+                Storage::disk('public')->delete($imagen->ruta);
+            }
+        }
+
+        $producto->delete();
+
+        return redirect()
+            ->route('productos-venta.index', $request->only(['q', 'tipos']))
+            ->with('success', 'Publicación eliminada correctamente.');
     }
 
     private function aplicarPropietario($query, $user): void

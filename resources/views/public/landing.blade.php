@@ -85,7 +85,7 @@
             <div class="mx-auto flex h-[5.25rem] w-full max-w-[1216px] items-center justify-between gap-4 px-5 sm:px-7 lg:px-6 xl:px-0">
                 <a href="{{ route('landing') }}" class="flex items-center gap-3 no-underline">
                     <span class="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-white">
-                        <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="Mercado Agrícola" class="h-7 w-7 object-contain">
+                        <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="Mercado Agrícola" class="h-7 w-7 rounded-full object-cover">
                     </span>
                     <span class="serif text-[1.15rem] text-[var(--green-d)]">Mercado Agrícola</span>
                 </a>

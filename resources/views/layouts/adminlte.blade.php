@@ -39,7 +39,8 @@
             left: 0;
             width: 52px;
             height: 52px;
-            object-fit: contain;
+            border-radius: 50%;
+            object-fit: cover;
             animation: agrovida-process-run 1.8s ease-in-out infinite;
         }
 
@@ -270,6 +271,14 @@
                                     </ul>
                                 </li>
 
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.ganados.certificados.pendientes') }}"
+                                        class="nav-link {{ request()->routeIs('admin.ganados.certificados.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-file-medical"></i>
+                                        <p>Certificados Ganado</p>
+                                    </a>
+                                </li>
+
                                 <li class="nav-item has-treeview {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'menu-open' : '' }}">
                                     <a href="#" class="nav-link {{ request()->routeIs('admin.tipo_cultivos.*', 'admin.unidades_organicos.*', 'admin.certificados_organicos.*', 'admin.organicos.certificados.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-seedling"></i>
@@ -407,7 +416,7 @@
                                     <a href="{{ route('productos-venta.index') }}"
                                         class="nav-link {{ request()->routeIs('productos-venta.*') ? 'active' : '' }}">
                                         <i class="nav-icon fas fa-store"></i>
-                                        <p>Productos en venta</p>
+                                        <p>Publicaciones</p>
                                     </a>
                                 </li>
 
@@ -469,6 +478,18 @@
                                 </li>
                             @endif
 
+                            {{-- ===== OPCIONES SOLO PARA TRANSPORTISTA ===== --}}
+                            @if (auth()->user()->isTransportista())
+                                <li class="nav-header">TRANSPORTE</li>
+                                <li class="nav-item">
+                                    <a href="{{ route('transportista.envios.index') }}"
+                                        class="nav-link {{ request()->routeIs('transportista.envios.*') ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-truck"></i>
+                                        <p>Mis envios</p>
+                                    </a>
+                                </li>
+                            @endif
+
                             {{-- ===== OPCIONES SOLO PARA CLIENTE ===== --}}
                             @if (auth()->user()->isCliente())
                                 <li class="nav-item">
@@ -526,6 +547,32 @@
 
             <section class="content">
                 <div class="container-fluid">
+                    @auth
+                        @php($notificacionesNoLeidas = auth()->user()->unreadNotifications()->latest()->limit(3)->get())
+                        @if ($notificacionesNoLeidas->isNotEmpty())
+                            <div class="alert alert-warning shadow-sm">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                    <div>
+                                        @foreach ($notificacionesNoLeidas as $notificacion)
+                                            <div class="{{ !$loop->last ? 'mb-2' : '' }}">
+                                                <strong>{{ $notificacion->data['titulo'] ?? 'Notificación' }}</strong>
+                                                <span class="d-block">{{ $notificacion->data['mensaje'] ?? '' }}</span>
+                                                @if (!empty($notificacion->data['motivo']))
+                                                    <small class="d-block">Motivo: {{ $notificacion->data['motivo'] }}</small>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <form action="{{ route('notificaciones.marcarLeidas') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-dark">
+                                            Marcar como leído
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                    @endauth
                     @yield('content')
                 </div>
             </section>
@@ -884,7 +931,7 @@
                         Swal.fire({
                             title: form.dataset.loadingText || 'Procesando...',
                             html: '<div class="agrovida-process-loading">' +
-                                '<img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">' +
+                                '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">' +
                                 '</div>',
                             allowOutsideClick: false,
                             allowEscapeKey: false,

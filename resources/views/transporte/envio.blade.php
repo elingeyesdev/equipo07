@@ -29,7 +29,7 @@
             background: rgba(255,255,255,.96);
         }
         .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
-        .brand img { width: 38px; height: 38px; object-fit: contain; }
+        .brand img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
         .exit { border: 0; color: #596658; background: transparent; cursor: pointer; }
         .page { width: min(1120px, 100%); margin: 0 auto; padding: 18px; }
         .status-band {
@@ -179,6 +179,19 @@
         .btn-danger { color: #a52620; border-color: #e7b9b6; background: #fff; }
         .btn:disabled { opacity: .55; cursor: not-allowed; }
         .gps-status { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); background: #f8faf7; }
+        .gps-demo {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 12px;
+            border: 1px solid #cfe0ca;
+            border-radius: 6px;
+            background: #fbfdf9;
+        }
+        .gps-demo__title { margin: 0; color: var(--ink); font-size: .92rem; font-weight: 800; }
+        .gps-demo__text { margin: 0; color: var(--muted); font-size: .84rem; }
+        .gps-demo__bar { height: 7px; overflow: hidden; border-radius: 999px; background: #e7f0e3; }
+        .gps-demo__bar span { display: block; width: 0; height: 100%; background: #0d6efd; transition: width .25s ease; }
         .timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 6px; margin-top: 16px; }
         .step { min-height: 62px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; color: #748073; font-size: .72rem; font-weight: 700; text-align: center; }
         .step i { display: block; margin-bottom: 5px; }
@@ -211,7 +224,8 @@
             left: 0;
             width: 52px;
             height: 52px;
-            object-fit: contain;
+            border-radius: 50%;
+            object-fit: cover;
             animation: agrovida-delivery-run 1.8s ease-in-out infinite;
         }
         @keyframes agrovida-delivery-run {
@@ -255,7 +269,7 @@
 
     <header class="topbar">
         <div class="brand">
-            <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">
+            <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">
             <span>Transporte AgroVida</span>
         </div>
         <form method="POST" action="{{ route('transporte.salir') }}">
@@ -332,6 +346,13 @@
                         <button type="button" class="btn btn-outline" id="gps-stop" disabled>
                             <i class="fas fa-stop"></i> Detener GPS
                         </button>
+                        <button type="button" class="btn btn-outline" id="gps-demo-start"
+                            {{ $puedeActivarGps ? '' : 'disabled' }}>
+                            <i class="fas fa-route"></i> Simular recorrido
+                        </button>
+                        <button type="button" class="btn btn-outline" id="gps-demo-stop" disabled>
+                            <i class="fas fa-pause"></i> Pausar simulacion
+                        </button>
                         <button type="button" class="btn btn-primary" id="state-next"
                             style="{{ $siguienteEstado ? '' : 'display:none' }}">
                             <i class="fas fa-arrow-right"></i>
@@ -349,6 +370,13 @@
 
                     <div class="gps-status" id="gps-status">
                         {{ $puedeActivarGps ? 'GPS detenido.' : 'Esperando que el transporte sea habilitado.' }}
+                    </div>
+                    <div class="gps-demo">
+                        <p class="gps-demo__title"><i class="fas fa-vial"></i> Simulacion de recorrido</p>
+                        <p class="gps-demo__text" id="gps-demo-text">
+                            Recorrido listo para enviar ubicaciones durante el trayecto.
+                        </p>
+                        <div class="gps-demo__bar" aria-hidden="true"><span id="gps-demo-progress"></span></div>
                     </div>
                 </div>
             </section>
@@ -420,9 +448,14 @@
             const locationUrl = @json(route('transporte.ubicacion'));
             const stateUrl = @json(route('transporte.estado'));
             const updateUrl = @json(route('transporte.actualizacion'));
+            const landingUrl = @json(route('landing'));
             const gpsInterval = {{ config('transporte.gps_intervalo_segundos', 10) * 1000 }};
             const gpsStart = document.getElementById('gps-start');
             const gpsStop = document.getElementById('gps-stop');
+            const gpsDemoStart = document.getElementById('gps-demo-start');
+            const gpsDemoStop = document.getElementById('gps-demo-stop');
+            const gpsDemoText = document.getElementById('gps-demo-text');
+            const gpsDemoProgress = document.getElementById('gps-demo-progress');
             const gpsStatus = document.getElementById('gps-status');
             const notice = document.getElementById('notice');
             const mapShell = document.getElementById('transport-map-shell');
@@ -431,14 +464,20 @@
             const mapFullscreenRoute = document.getElementById('map-fullscreen-route');
             const mapFullscreenDriver = document.getElementById('map-fullscreen-driver');
             let watchId = null;
+            let demoTimer = null;
+            let demoStep = 0;
+            const demoTotalSteps = 18;
             let lastSentAt = 0;
             let liveMarker = null;
             let originMarker = null;
             let targetMarker = null;
             let routeLine = null;
             let lastRouteKey = null;
+            let activeRouteCoordinates = [];
             let currentState = @json($actual);
             let currentNextState = @json($siguienteEstado);
+            let canActivateGps = @json($puedeActivarGps);
+            let terminalRedirectShown = false;
             let updateBusy = false;
             let updateTimer = null;
             const stateLabels = @json($estadoLabels);
@@ -554,15 +593,50 @@
                 }
             }
 
-            function drawFallbackRoute(points) {
+            function setVisibleRoute(coordinates, options) {
                 clearRoute();
-                routeLine = L.polyline(points, {
+                activeRouteCoordinates = coordinates;
+                routeLine = L.polyline(coordinates, {
                     color: '#2f7d24',
+                    weight: options.weight,
+                    opacity: options.opacity,
+                    dashArray: options.dashArray || null
+                }).addTo(map);
+                map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 14 });
+                return routeLine;
+            }
+
+            function drawFallbackRoute(points) {
+                setVisibleRoute(points, {
                     weight: 4,
                     opacity: .85,
                     dashArray: '8,8'
-                }).addTo(map);
-                map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 14 });
+                });
+            }
+
+            function fetchRoadRoute(fromLat, fromLng, toLat, toLng) {
+                const osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
+                    fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
+                    '?overview=full&geometries=geojson';
+
+                return fetch(osrmUrl)
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Ruta no disponible');
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        const route = data.routes && data.routes[0];
+                        if (!route || !route.geometry) {
+                            throw new Error('Ruta no disponible');
+                        }
+
+                        return {
+                            route: route,
+                            coordinates: route.geometry.coordinates.map(function (coordinate) {
+                                return [coordinate[1], coordinate[0]];
+                            })
+                        };
+                    });
             }
 
             function drawRoadRoute(fromLat, fromLng, toLat, toLng, label) {
@@ -577,35 +651,17 @@
                 if (routeKey === lastRouteKey) return;
                 lastRouteKey = routeKey;
 
-                const osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
-                    fromLng + ',' + fromLat + ';' + toLng + ',' + toLat +
-                    '?overview=full&geometries=geojson';
-
-                fetch(osrmUrl)
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('Ruta no disponible');
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        const route = data.routes && data.routes[0];
-                        if (!route || !route.geometry) {
-                            drawFallbackRoute(points);
-                            return;
-                        }
-                        const coordinates = route.geometry.coordinates.map(function (coordinate) {
-                            return [coordinate[1], coordinate[0]];
-                        });
-                        clearRoute();
-                        routeLine = L.polyline(coordinates, {
-                            color: '#2f7d24',
+                fetchRoadRoute(fromLat, fromLng, toLat, toLng)
+                    .then(function (result) {
+                        setVisibleRoute(result.coordinates, {
                             weight: 5,
                             opacity: .9
-                        }).addTo(map);
+                        });
+                        const route = result.route;
                         const distance = (route.distance / 1000).toFixed(1);
                         const minutes = Math.round(route.duration / 60);
                         routeLine.bindPopup('<strong>' + label + '</strong><br>' + distance +
                             ' km · ' + minutes + ' min aprox.');
-                        map.fitBounds(routeLine.getBounds(), { padding: [35, 35], maxZoom: 14 });
                     })
                     .catch(function () { drawFallbackRoute(points); });
             }
@@ -647,6 +703,114 @@
                 return error && error.message ? error.message : 'No se pudo obtener la ubicacion.';
             }
 
+            function stopRealGps() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
+                watchId = null;
+            }
+
+            function setDemoProgress(percent) {
+                if (gpsDemoProgress) {
+                    gpsDemoProgress.style.width = Math.max(0, Math.min(100, percent)) + '%';
+                }
+            }
+
+            function setDemoRunning(running) {
+                if (gpsDemoStart) gpsDemoStart.disabled = running || !canActivateGps || !routeTargetForState(currentState);
+                if (gpsDemoStop) gpsDemoStop.disabled = !running;
+            }
+
+            function stopDemo(message) {
+                if (demoTimer !== null) {
+                    clearInterval(demoTimer);
+                    demoTimer = null;
+                }
+
+                setDemoRunning(false);
+
+                if (gpsDemoText && message) {
+                    gpsDemoText.textContent = message;
+                }
+
+                if (watchId === null) {
+                    gpsStart.disabled = !canActivateGps;
+                }
+            }
+
+            function demoStartPoint(target) {
+                if (liveMarker) {
+                    const latLng = liveMarker.getLatLng();
+                    return [latLng.lat, latLng.lng];
+                }
+
+                if (target.lat === targetLat && target.lng === targetLng && originLat && originLng) {
+                    return [originLat, originLng];
+                }
+
+                if (target.lat === originLat && target.lng === originLng && targetLat && targetLng) {
+                    return [targetLat, targetLng];
+                }
+
+                return [target.lat - 0.008, target.lng - 0.008];
+            }
+
+            function distanceMeters(from, to) {
+                const earthRadius = 6371000;
+                const latDelta = (to[0] - from[0]) * Math.PI / 180;
+                const lngDelta = (to[1] - from[1]) * Math.PI / 180;
+                const fromLat = from[0] * Math.PI / 180;
+                const toLat = to[0] * Math.PI / 180;
+                const a = Math.sin(latDelta / 2) ** 2 +
+                    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(lngDelta / 2) ** 2;
+
+                return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function pointAtRouteProgress(routeCoordinates, progress) {
+                if (!routeCoordinates.length) {
+                    return null;
+                }
+
+                if (routeCoordinates.length === 1 || progress <= 0) {
+                    return routeCoordinates[0];
+                }
+
+                if (progress >= 1) {
+                    return routeCoordinates[routeCoordinates.length - 1];
+                }
+
+                const segmentDistances = [];
+                let totalDistance = 0;
+
+                for (let index = 1; index < routeCoordinates.length; index += 1) {
+                    const segmentDistance = distanceMeters(routeCoordinates[index - 1], routeCoordinates[index]);
+                    segmentDistances.push(segmentDistance);
+                    totalDistance += segmentDistance;
+                }
+
+                let targetDistance = totalDistance * progress;
+
+                for (let index = 1; index < routeCoordinates.length; index += 1) {
+                    const segmentDistance = segmentDistances[index - 1];
+
+                    if (targetDistance <= segmentDistance || index === routeCoordinates.length - 1) {
+                        const start = routeCoordinates[index - 1];
+                        const end = routeCoordinates[index];
+                        const segmentProgress = segmentDistance > 0 ? targetDistance / segmentDistance : 0;
+
+                        return [
+                            start[0] + ((end[0] - start[0]) * segmentProgress),
+                            start[1] + ((end[1] - start[1]) * segmentProgress)
+                        ];
+                    }
+
+                    targetDistance -= segmentDistance;
+                }
+
+                return routeCoordinates[routeCoordinates.length - 1];
+            }
+
             function sendPosition(position, force) {
                 const now = Date.now();
                 if (!force && now - lastSentAt < gpsInterval) return;
@@ -683,9 +847,135 @@
                 });
             }
 
+            function sendDemoPoint(latLng) {
+                sendPosition({
+                    coords: {
+                        latitude: latLng[0],
+                        longitude: latLng[1],
+                        accuracy: 8,
+                        speed: 9,
+                        heading: null
+                    }
+                }, true);
+            }
+
+            function isTerminalState(state, nextState) {
+                return !nextState && [
+                    'entregado',
+                    'devuelto_vendedor',
+                    'cancelado',
+                    'finalizado',
+                    'devuelto'
+                ].includes(state);
+            }
+
+            function showTerminalRedirect(stateLabel) {
+                if (terminalRedirectShown) {
+                    return;
+                }
+
+                terminalRedirectShown = true;
+                stopRealGps();
+                stopDemo();
+                gpsStart.disabled = true;
+                gpsStop.disabled = true;
+                if (gpsDemoStart) gpsDemoStart.disabled = true;
+                if (gpsDemoStop) gpsDemoStop.disabled = true;
+
+                Swal.fire({
+                    title: 'Envio finalizado',
+                    text: 'El recorrido quedo en estado: ' + (stateLabel || 'finalizado') + '. Seras redirigido al inicio.',
+                    icon: 'success',
+                    confirmButtonText: 'Ir al inicio',
+                    confirmButtonColor: '#2f7d24',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    timer: 4500,
+                    timerProgressBar: true
+                }).then(function () {
+                    window.location.href = landingUrl;
+                });
+            }
+
+            function startDemo() {
+                const target = routeTargetForState(currentState);
+
+                if (!canActivateGps || !target) {
+                    showNotice('error', 'No hay coordenadas suficientes para simular este tramo.');
+                    return;
+                }
+
+                stopRealGps();
+                stopDemo();
+                demoStep = 0;
+                lastSentAt = 0;
+                const origin = demoStartPoint(target);
+
+                gpsStart.disabled = true;
+                gpsStop.disabled = true;
+                setDemoRunning(true);
+                setDemoProgress(0);
+                gpsStatus.textContent = 'Calculando ruta por calles hacia: ' + target.label + '.';
+                if (gpsDemoText) {
+                    gpsDemoText.textContent = 'Buscando la ruta del mapa para mover el transportista por las calles.';
+                }
+
+                fetchRoadRoute(origin[0], origin[1], target.lat, target.lng)
+                    .catch(function () {
+                        return {
+                            route: null,
+                            coordinates: [origin, [target.lat, target.lng]]
+                        };
+                    })
+                    .then(function (result) {
+                        const demoRoute = result.coordinates && result.coordinates.length
+                            ? result.coordinates
+                            : [origin, [target.lat, target.lng]];
+
+                        setVisibleRoute(demoRoute, {
+                            weight: result.route ? 5 : 4,
+                            opacity: .9,
+                            dashArray: result.route ? null : '8,8'
+                        });
+
+                        gpsStatus.textContent = 'Simulando recorrido por la ruta marcada.';
+                        if (gpsDemoText) {
+                            gpsDemoText.textContent = result.route
+                                ? 'El transportista sigue la ruta calculada por calles.'
+                                : 'No se pudo calcular ruta por calles; usando linea de respaldo.';
+                        }
+
+                        sendDemoPoint(demoRoute[0]);
+
+                        demoTimer = setInterval(function () {
+                            demoStep += 1;
+                            const progress = demoStep / demoTotalSteps;
+                            const latLng = pointAtRouteProgress(demoRoute, progress);
+
+                            if (!latLng) {
+                                stopDemo('No se pudo continuar la simulacion.');
+                                showNotice('error', 'No se pudo continuar la simulacion.');
+                                return;
+                            }
+
+                            sendDemoPoint(latLng);
+                            setDemoProgress(progress * 100);
+
+                            if (demoStep >= demoTotalSteps) {
+                                stopDemo('Llegaste al objetivo. Ahora presiona el boton Marcar para cambiar el estado.');
+                                setDemoProgress(100);
+                                gpsStatus.textContent = 'Simulacion completada. Ultima ubicacion enviada cerca del objetivo.';
+                                showNotice('success', 'Simulacion completada. Ya puedes avanzar el estado del envio.');
+                            }
+                        }, 1200);
+                    });
+            }
+
             function renderState(data) {
+                const previousState = currentState;
                 currentState = data.estado;
                 currentNextState = data.siguiente_estado;
+                canActivateGps = !!data.puede_activar_gps;
                 document.getElementById('estado-label').textContent = data.estado_label;
                 const currentVisibleState = statePhases[currentState] || currentState;
                 const currentIndex = flow.indexOf(currentVisibleState);
@@ -717,13 +1007,26 @@
                 document.getElementById('state-cancel').style.display =
                     ['preparando', 'en_camino_entrega', 'asignado', 'en_camino_recogida'].includes(currentState) ? '' : 'none';
 
+                if (isTerminalState(currentState, currentNextState)) {
+                    showTerminalRedirect(data.estado_label);
+                    return;
+                }
+
                 if (watchId === null) {
-                    gpsStart.disabled = !data.puede_activar_gps;
-                    if (!data.puede_activar_gps && ['aceptado', 'esperando_confirmacion'].includes(currentState)) {
+                    gpsStart.disabled = !canActivateGps;
+                    if (gpsDemoStart && demoTimer === null) {
+                        gpsDemoStart.disabled = !canActivateGps;
+                    }
+                    if (!canActivateGps && ['aceptado', 'esperando_confirmacion'].includes(currentState)) {
                         gpsStatus.textContent = 'Esperando que el transporte sea habilitado para el siguiente paso.';
-                    } else if (data.puede_activar_gps && gpsStatus.textContent.includes('Esperando')) {
+                    } else if (canActivateGps && gpsStatus.textContent.includes('Esperando')) {
                         gpsStatus.textContent = 'Ya puedes activar el GPS y continuar el recorrido.';
                     }
+                }
+
+                if (previousState !== currentState) {
+                    stopDemo('Estado actualizado. Puedes simular el siguiente tramo cuando corresponda.');
+                    setDemoProgress(0);
                 }
 
                 if (data.ubicacion) {
@@ -797,6 +1100,8 @@
                 }
 
                 gpsStatus.textContent = 'Solicitando permiso de ubicacion...';
+                stopDemo('GPS real activo. La simulacion queda pausada.');
+                setDemoProgress(0);
                 navigator.geolocation.getCurrentPosition(
                     function (position) { sendPosition(position, true); },
                     function (error) { showNotice('error', gpsError(error)); },
@@ -813,14 +1118,19 @@
             });
 
             gpsStop.addEventListener('click', function () {
-                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-                watchId = null;
+                stopRealGps();
                 gpsStart.disabled = false;
                 gpsStop.disabled = true;
                 gpsStatus.textContent = 'GPS detenido.';
             });
 
-            function updateState(action, cancellationReason) {
+            gpsDemoStart?.addEventListener('click', startDemo);
+            gpsDemoStop?.addEventListener('click', function () {
+                stopDemo('Simulacion pausada. Puedes retomarla con el mismo boton.');
+                gpsStatus.textContent = 'Simulacion pausada.';
+            });
+
+            function updateState(action, cancellationReason, driverSignature) {
                 fetch(stateUrl, {
                     method: 'POST',
                     headers: {
@@ -830,7 +1140,8 @@
                     },
                     body: JSON.stringify({
                         accion: action,
-                        motivo_cancelacion: cancellationReason || null
+                        motivo_cancelacion: cancellationReason || null,
+                        firma_transportista: driverSignature || null
                     })
                 })
                     .then(async function (response) {
@@ -854,6 +1165,57 @@
                     });
             }
 
+            function bindSignatureCanvas(canvas) {
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+                let signed = false;
+
+                ctx.lineWidth = 2.4;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#172817';
+
+                function point(event) {
+                    const rect = canvas.getBoundingClientRect();
+                    const source = event.touches ? event.touches[0] : event;
+                    return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+                }
+
+                function start(event) {
+                    event.preventDefault();
+                    drawing = true;
+                    signed = true;
+                    const p = point(event);
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
+
+                function move(event) {
+                    if (!drawing) return;
+                    event.preventDefault();
+                    const p = point(event);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                }
+
+                function stop() { drawing = false; }
+
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', move);
+                window.addEventListener('mouseup', stop);
+                canvas.addEventListener('touchstart', start, { passive: false });
+                canvas.addEventListener('touchmove', move, { passive: false });
+                canvas.addEventListener('touchend', stop);
+
+                return {
+                    isSigned: function () { return signed; },
+                    clear: function () {
+                        signed = false;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    },
+                    data: function () { return canvas.toDataURL('image/png'); }
+                };
+            }
+
             function confirmStateAdvance() {
                 if (!currentNextState) return;
 
@@ -871,7 +1233,12 @@
 
                 Swal.fire({
                     title: title,
-                    text: text,
+                    text: isWaitingBuyer ? undefined : text,
+                    html: isWaitingBuyer
+                        ? '<p>' + text + '</p><p class="text-muted">Firma como transportista para dejar constancia de la entrega.</p>' +
+                            '<canvas id="driver-signature-canvas" width="520" height="180" style="width:100%;max-width:520px;border:1px solid #cfdccc;border-radius:6px;background:#fff"></canvas>' +
+                            '<button type="button" id="driver-signature-clear" class="btn btn-sm btn-light mt-2">Limpiar firma</button>'
+                        : undefined,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: confirmText,
@@ -880,21 +1247,37 @@
                     cancelButtonColor: '#6c757d',
                     reverseButtons: true,
                     focusCancel: true,
-                    allowOutsideClick: false
+                    allowOutsideClick: false,
+                    didOpen: function () {
+                        if (!isWaitingBuyer) return;
+
+                        window.driverSignaturePad = bindSignatureCanvas(document.getElementById('driver-signature-canvas'));
+                        document.getElementById('driver-signature-clear').addEventListener('click', function () {
+                            window.driverSignaturePad.clear();
+                        });
+                    },
+                    preConfirm: function () {
+                        if (isWaitingBuyer && (!window.driverSignaturePad || !window.driverSignaturePad.isSigned())) {
+                            Swal.showValidationMessage('Dibuja tu firma antes de confirmar la entrega.');
+                            return false;
+                        }
+
+                        return isWaitingBuyer ? window.driverSignaturePad.data() : null;
+                    }
                 }).then(function (result) {
                     if (!result.isConfirmed) return;
 
                     Swal.fire({
                         title: 'Actualizando el recorrido...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,
                         allowEscapeKey: false
                     });
 
-                    updateState('avanzar');
+                    updateState('avanzar', null, result.value);
                 });
             }
 
@@ -950,7 +1333,7 @@
                     Swal.fire({
                         title: 'Registrando la cancelación...',
                         html: '<div class="transport-loading">' +
-                            '<img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">' +
+                            '<img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">' +
                             '</div>',
                         showConfirmButton: false,
                         allowOutsideClick: false,

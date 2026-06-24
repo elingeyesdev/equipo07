@@ -67,6 +67,54 @@
                 gap: .6rem;
             }
 
+            .driver-simulation-panel {
+                border: 1px solid #dfe8dc;
+                border-radius: 8px;
+                background: #fbfdf9;
+            }
+
+            .driver-simulation-panel__body {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: .75rem;
+                align-items: center;
+                padding: .85rem;
+            }
+
+            .driver-simulation-panel__title {
+                margin: 0;
+                color: #1f2a1b;
+                font-size: .96rem;
+                font-weight: 800;
+            }
+
+            .driver-simulation-panel__text {
+                margin: .15rem 0 0;
+                color: #607060;
+                font-size: .84rem;
+            }
+
+            .driver-simulation-panel__actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: .5rem;
+                justify-content: flex-end;
+            }
+
+            .driver-simulation-progress {
+                height: .45rem;
+                overflow: hidden;
+                border-radius: 999px;
+                background: #eaf1e6;
+            }
+
+            .driver-simulation-progress__bar {
+                width: 0;
+                height: 100%;
+                background: #0d6efd;
+                transition: width .25s ease;
+            }
+
             .driver-transport-flow {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -227,6 +275,15 @@
                     font-weight: 800;
                 }
 
+                .driver-simulation-panel__body {
+                    grid-template-columns: 1fr;
+                }
+
+                .driver-simulation-panel__actions,
+                .driver-simulation-panel__actions .btn {
+                    width: 100%;
+                }
+
                 #driver-gps-map {
                     min-height: 470px;
                     border-radius: 0;
@@ -302,6 +359,30 @@
                     <a href="{{ auth()->user()->isTransportista() ? route('transportista.envios.show', $solicitud) : route('vendedor.solicitudes.show', $solicitud) }}" class="btn btn-light">
                         <i class="fas fa-arrow-left mr-1"></i>Volver
                     </a>
+                </div>
+
+                <div class="driver-simulation-panel mb-3">
+                    <div class="driver-simulation-panel__body">
+                        <div>
+                            <h5 class="driver-simulation-panel__title">
+                                <i class="fas fa-route mr-1"></i>Modo simulacion
+                            </h5>
+                            <p class="driver-simulation-panel__text" id="gps-simulation-text">
+                                Mueve el transportista hacia el objetivo actual y registra su ubicacion.
+                            </p>
+                            <div class="driver-simulation-progress mt-2" aria-hidden="true">
+                                <div class="driver-simulation-progress__bar" id="gps-simulation-progress"></div>
+                            </div>
+                        </div>
+                        <div class="driver-simulation-panel__actions">
+                            <button type="button" id="gps-simulate" class="btn btn-outline-primary">
+                                <i class="fas fa-play-circle mr-1"></i>Simular recorrido
+                            </button>
+                            <button type="button" id="gps-simulate-stop" class="btn btn-outline-secondary" disabled>
+                                <i class="fas fa-pause mr-1"></i>Pausar demo
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card border mb-3">
@@ -407,11 +488,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             var startBtn = document.getElementById('gps-start');
             var stopBtn = document.getElementById('gps-stop');
+            var simulateBtn = document.getElementById('gps-simulate');
+            var simulateStopBtn = document.getElementById('gps-simulate-stop');
+            var simulationText = document.getElementById('gps-simulation-text');
+            var simulationProgress = document.getElementById('gps-simulation-progress');
             var statusEl = document.getElementById('gps-status');
             var lastSendEl = document.getElementById('gps-last-send');
             var accuracyEl = document.getElementById('gps-accuracy');
             var messageEl = document.getElementById('gps-message');
             var watchId = null;
+            var simulationTimer = null;
+            var simulationStep = 0;
+            var simulationTotalSteps = 18;
+            var simulationStartLatLng = null;
             var lastSentAt = 0;
             var lastRouteAt = 0;
             var sendEveryMs = 10000;
@@ -421,6 +510,7 @@
             var targetMarker = null;
             var routeLine = null;
             var navigationRouteLine = null;
+            var navigationRoutePoints = [];
             var transportStateKeys = @json($estadoTransporteKeys);
             var currentTransportState = @json($estadoTransporteActual);
             var transportStateForm = document.getElementById('transport-state-form');
@@ -576,6 +666,7 @@
                         var routeCoordinates = route.geometry.coordinates.map(function(coordinate) {
                             return [coordinate[1], coordinate[0]];
                         });
+                        navigationRoutePoints = routeCoordinates;
 
                         if (!navigationRouteLine) {
                             navigationRouteLine = L.polyline(routeCoordinates, {
@@ -598,6 +689,7 @@
                             originLatLng,
                             [target.lat, target.lng]
                         ];
+                        navigationRoutePoints = fallbackCoordinates;
 
                         if (!navigationRouteLine) {
                             navigationRouteLine = L.polyline(fallbackCoordinates, {
@@ -617,6 +709,157 @@
             function setMessage(type, text) {
                 messageEl.className = 'alert alert-' + type;
                 messageEl.textContent = text;
+            }
+
+            function stopRealGpsWatch() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+            }
+
+            function setSimulationProgress(percent) {
+                if (simulationProgress) {
+                    simulationProgress.style.width = Math.max(0, Math.min(100, percent)) + '%';
+                }
+            }
+
+            function setSimulationText(text) {
+                if (simulationText) {
+                    simulationText.textContent = text;
+                }
+            }
+
+            function setSimulationButtons(running) {
+                if (simulateBtn) {
+                    simulateBtn.disabled = running;
+                }
+
+                if (simulateStopBtn) {
+                    simulateStopBtn.disabled = !running;
+                }
+            }
+
+            function stopSimulation(message) {
+                if (simulationTimer !== null) {
+                    clearInterval(simulationTimer);
+                    simulationTimer = null;
+                }
+
+                setSimulationButtons(false);
+
+                if (message) {
+                    setSimulationText(message);
+                }
+
+                if (statusEl.textContent === 'Simulando recorrido') {
+                    statusEl.textContent = 'Detenido';
+                }
+
+                if (watchId === null) {
+                    startBtn.disabled = false;
+                }
+            }
+
+            function simulatedStartForTarget(target) {
+                if (lastKnownLatLng) {
+                    return lastKnownLatLng;
+                }
+
+                if (target.type === 'customer' && productPoint.lat && productPoint.lng) {
+                    return [productPoint.lat, productPoint.lng];
+                }
+
+                if (target.type === 'return' && customerPoint.lat && customerPoint.lng) {
+                    return [customerPoint.lat, customerPoint.lng];
+                }
+
+                return [
+                    target.lat - 0.008,
+                    target.lng - 0.008
+                ];
+            }
+
+            function distanceMeters(from, to) {
+                var earthRadius = 6371000;
+                var latDelta = (to[0] - from[0]) * Math.PI / 180;
+                var lngDelta = (to[1] - from[1]) * Math.PI / 180;
+                var fromLat = from[0] * Math.PI / 180;
+                var toLat = to[0] * Math.PI / 180;
+                var a = Math.sin(latDelta / 2) ** 2 +
+                    Math.cos(fromLat) * Math.cos(toLat) * Math.sin(lngDelta / 2) ** 2;
+
+                return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function pointAtRouteProgress(routeCoordinates, progress) {
+                if (!routeCoordinates.length) {
+                    return null;
+                }
+
+                if (routeCoordinates.length === 1 || progress <= 0) {
+                    return routeCoordinates[0];
+                }
+
+                if (progress >= 1) {
+                    return routeCoordinates[routeCoordinates.length - 1];
+                }
+
+                var segmentDistances = [];
+                var totalDistance = 0;
+
+                for (var index = 1; index < routeCoordinates.length; index += 1) {
+                    var segmentDistance = distanceMeters(routeCoordinates[index - 1], routeCoordinates[index]);
+                    segmentDistances.push(segmentDistance);
+                    totalDistance += segmentDistance;
+                }
+
+                var targetDistance = totalDistance * progress;
+
+                for (var routeIndex = 1; routeIndex < routeCoordinates.length; routeIndex += 1) {
+                    var currentSegmentDistance = segmentDistances[routeIndex - 1];
+
+                    if (targetDistance <= currentSegmentDistance || routeIndex === routeCoordinates.length - 1) {
+                        var start = routeCoordinates[routeIndex - 1];
+                        var end = routeCoordinates[routeIndex];
+                        var segmentProgress = currentSegmentDistance > 0 ? targetDistance / currentSegmentDistance : 0;
+
+                        return [
+                            start[0] + ((end[0] - start[0]) * segmentProgress),
+                            start[1] + ((end[1] - start[1]) * segmentProgress)
+                        ];
+                    }
+
+                    targetDistance -= currentSegmentDistance;
+                }
+
+                return routeCoordinates[routeCoordinates.length - 1];
+            }
+
+            function fetchSimulationRoute(originLatLng, target) {
+                var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
+                    originLatLng[1] + ',' + originLatLng[0] + ';' + target.lng + ',' + target.lat +
+                    '?overview=full&geometries=geojson';
+
+                return fetch(osrmUrl)
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('Ruta no disponible');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        var route = data.routes && data.routes[0];
+
+                        if (!route || !route.geometry || !route.geometry.coordinates) {
+                            throw new Error('Ruta no disponible');
+                        }
+
+                        return route.geometry.coordinates.map(function(coordinate) {
+                            return [coordinate[1], coordinate[0]];
+                        });
+                    });
             }
 
             function renderTransportFlow(estadoActual) {
@@ -664,6 +907,8 @@
 
                 renderTransportFlow(estado);
                 setTargetMarker(estado, true);
+                stopSimulation('Estado actualizado. Puedes iniciar otra simulacion hacia el nuevo objetivo.');
+                setSimulationProgress(0);
 
                 if (!transportStateControl) {
                     return;
@@ -744,33 +989,147 @@
                         transportStateButton.disabled = true;
                     }
 
-                    fetch(transportStateForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': @json(csrf_token())
-                        },
-                        body: new FormData(transportStateForm)
-                    })
-                        .then(function(response) {
-                            return response.json().then(function(data) {
-                                if (!response.ok) {
-                                    throw data;
+                    function submitStateForm(driverSignature) {
+                        var formData = new FormData(transportStateForm);
+
+                        if (driverSignature) {
+                            formData.append('firma_transportista', driverSignature);
+                        }
+
+                        fetch(transportStateForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': @json(csrf_token())
+                            },
+                            body: formData
+                        })
+                            .then(function(response) {
+                                return response.json().then(function(data) {
+                                    if (!response.ok) {
+                                        throw data;
+                                    }
+
+                                    return data;
+                                });
+                            })
+                            .then(function(data) {
+                                setMessage('success', data.message || 'Estado actualizado correctamente.');
+                                renderTransportControl(data);
+                            })
+                            .catch(function(error) {
+                                setMessage('danger', error.message || 'No se pudo actualizar el estado.');
+                                if (transportStateButton) {
+                                    transportStateButton.disabled = false;
+                                }
+                            });
+                    }
+
+                    if (lastNextTransportState === 'esperando_confirmacion') {
+                        requestDriverSignature()
+                            .then(function(signature) {
+                                if (!signature) {
+                                    if (transportStateButton) {
+                                        transportStateButton.disabled = false;
+                                    }
+                                    return;
                                 }
 
-                                return data;
+                                submitStateForm(signature);
                             });
-                        })
-                        .then(function(data) {
-                            setMessage('success', data.message || 'Estado actualizado correctamente.');
-                            renderTransportControl(data);
-                        })
-                        .catch(function(error) {
-                            setMessage('danger', error.message || 'No se pudo actualizar el estado.');
-                            if (transportStateButton) {
-                                transportStateButton.disabled = false;
-                            }
+                        return;
+                    }
+
+                    submitStateForm(null);
+                });
+            }
+
+            function bindSignatureCanvas(canvas) {
+                var ctx = canvas.getContext('2d');
+                var drawing = false;
+                var signed = false;
+
+                ctx.lineWidth = 2.4;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#172817';
+
+                function point(event) {
+                    var rect = canvas.getBoundingClientRect();
+                    var source = event.touches ? event.touches[0] : event;
+                    return {
+                        x: source.clientX - rect.left,
+                        y: source.clientY - rect.top
+                    };
+                }
+
+                function start(event) {
+                    event.preventDefault();
+                    drawing = true;
+                    signed = true;
+                    var p = point(event);
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
+
+                function move(event) {
+                    if (!drawing) return;
+                    event.preventDefault();
+                    var p = point(event);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                }
+
+                function stop() {
+                    drawing = false;
+                }
+
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', move);
+                window.addEventListener('mouseup', stop);
+                canvas.addEventListener('touchstart', start, { passive: false });
+                canvas.addEventListener('touchmove', move, { passive: false });
+                canvas.addEventListener('touchend', stop);
+
+                return {
+                    isSigned: function() { return signed; },
+                    clear: function() {
+                        signed = false;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    },
+                    data: function() { return canvas.toDataURL('image/png'); }
+                };
+            }
+
+            function requestDriverSignature() {
+                if (typeof Swal === 'undefined') {
+                    return Promise.resolve(null);
+                }
+
+                return Swal.fire({
+                    title: 'Firma de entrega',
+                    html: '<p class="text-muted">Firma como transportista para dejar constancia de la entrega.</p>' +
+                        '<canvas id="driver-signature-canvas" width="520" height="180" style="width:100%;max-width:520px;border:1px solid #cfdccc;border-radius:6px;background:#fff"></canvas>' +
+                        '<button type="button" id="driver-signature-clear" class="btn btn-sm btn-light mt-2">Limpiar firma</button>',
+                    showCancelButton: true,
+                    confirmButtonText: 'Registrar entrega',
+                    cancelButtonText: 'Todavia no',
+                    confirmButtonColor: '#238647',
+                    didOpen: function() {
+                        window.driverSignaturePad = bindSignatureCanvas(document.getElementById('driver-signature-canvas'));
+                        document.getElementById('driver-signature-clear').addEventListener('click', function() {
+                            window.driverSignaturePad.clear();
                         });
+                    },
+                    preConfirm: function() {
+                        if (!window.driverSignaturePad || !window.driverSignaturePad.isSigned()) {
+                            Swal.showValidationMessage('Dibuja tu firma antes de confirmar la entrega.');
+                            return false;
+                        }
+
+                        return window.driverSignaturePad.data();
+                    }
+                }).then(function(result) {
+                    return result.isConfirmed ? result.value : null;
                 });
             }
 
@@ -868,12 +1227,108 @@
                     });
             }
 
+            function sendSimulatedPoint(latLng) {
+                sendPosition({
+                    coords: {
+                        latitude: latLng[0],
+                        longitude: latLng[1],
+                        accuracy: 8,
+                        speed: 9,
+                        heading: null
+                    }
+                }, true);
+            }
+
+            function startSimulation() {
+                var target = targetForState(currentTransportState);
+
+                if (!target || !target.lat || !target.lng) {
+                    setMessage('warning', 'No hay coordenadas suficientes para simular este tramo.');
+                    setSimulationText('Agrega coordenadas del producto y del destino para poder simular.');
+                    return;
+                }
+
+                stopRealGpsWatch();
+                stopSimulation();
+
+                simulationStep = 0;
+                simulationStartLatLng = simulatedStartForTarget(target);
+                routePoints = [];
+                lastSentAt = 0;
+
+                if (routeLine) {
+                    map.removeLayer(routeLine);
+                    routeLine = null;
+                }
+
+                statusEl.textContent = 'Simulando recorrido';
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+                setSimulationButtons(true);
+                setSimulationProgress(0);
+                setSimulationText('Calculando ruta por calles hacia: ' + target.label + '.');
+                setMessage('info', 'Calculando la ruta del mapa para la simulacion.');
+                setTargetMarker(currentTransportState, true);
+
+                fetchSimulationRoute(simulationStartLatLng, target)
+                    .catch(function() {
+                        return [
+                            simulationStartLatLng,
+                            [target.lat, target.lng]
+                        ];
+                    })
+                    .then(function(simulationRoute) {
+                        navigationRoutePoints = simulationRoute;
+
+                        if (!navigationRouteLine) {
+                            navigationRouteLine = L.polyline(simulationRoute, {
+                                color: '#198754',
+                                weight: 6,
+                                opacity: .85,
+                                dashArray: simulationRoute.length > 2 ? null : '8, 8'
+                            }).addTo(map);
+                        } else {
+                            navigationRouteLine.setLatLngs(simulationRoute);
+                        }
+
+                        setSimulationText(simulationRoute.length > 2
+                            ? 'El transportista sigue la ruta calculada por calles.'
+                            : 'No se pudo calcular ruta por calles; usando linea de respaldo.');
+                        setMessage('info', 'Simulacion en marcha: el transportista se movera siguiendo la ruta del mapa.');
+                        sendSimulatedPoint(simulationRoute[0]);
+
+                        simulationTimer = setInterval(function() {
+                            simulationStep += 1;
+
+                            var progress = simulationStep / simulationTotalSteps;
+                            var latLng = pointAtRouteProgress(simulationRoute, progress);
+
+                            if (!latLng) {
+                                stopSimulation('No se pudo continuar la simulacion.');
+                                setMessage('danger', 'No se pudo continuar la simulacion.');
+                                return;
+                            }
+
+                            sendSimulatedPoint(latLng);
+                            setSimulationProgress(progress * 100);
+
+                            if (simulationStep >= simulationTotalSteps) {
+                                stopSimulation('Llegaste al objetivo. Ahora puedes presionar el boton de estado correspondiente.');
+                                setSimulationProgress(100);
+                                setMessage('success', 'Simulacion completada. La ultima ubicacion quedo cerca del objetivo.');
+                            }
+                        }, 1200);
+                    });
+            }
+
             startBtn.addEventListener('click', function() {
                 if (!navigator.geolocation) {
                     setMessage('danger', 'Este navegador no soporta GPS.');
                     return;
                 }
 
+                stopSimulation('GPS real activo. La simulacion queda pausada.');
+                setSimulationProgress(0);
                 statusEl.textContent = 'Compartiendo ubicacion';
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
@@ -901,16 +1356,24 @@
             });
 
             stopBtn.addEventListener('click', function() {
-                if (watchId !== null) {
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                }
+                stopRealGpsWatch();
 
                 statusEl.textContent = 'Detenido';
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
                 setMessage('light border', 'Recorrido detenido.');
             });
+
+            if (simulateBtn) {
+                simulateBtn.addEventListener('click', startSimulation);
+            }
+
+            if (simulateStopBtn) {
+                simulateStopBtn.addEventListener('click', function() {
+                    stopSimulation('Simulacion pausada. Puedes continuar iniciandola nuevamente.');
+                    setMessage('light border', 'Simulacion pausada.');
+                });
+            }
 
             bindTransportStateForm();
             refreshTransportState();

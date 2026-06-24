@@ -92,6 +92,30 @@
             </div>
         </div>
 
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-end justify-content-between">
+                    <div class="mb-3 mb-md-0">
+                        <h5 class="mb-1">
+                            <i class="fas fa-search text-success mr-2"></i>Panel rapido de publicaciones
+                        </h5>
+                        <p class="text-muted mb-0">Busca por nombre y elimina publicaciones de cualquier vendedor.</p>
+                    </div>
+                    <form method="GET" action="{{ route('productos-venta.index') }}" class="form-inline">
+                        <div class="input-group mr-sm-2 mb-2 mb-sm-0">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input name="q" class="form-control" placeholder="Buscar publicación">
+                        </div>
+                        <button class="btn btn-success">
+                            <i class="fas fa-arrow-right mr-1"></i>Gestionar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         @php
             $tipoFiltro = $tipo ?? request('tipo');
         @endphp
@@ -157,9 +181,9 @@
                     <div class="icon">
                         <i class="fas fa-layer-group"></i>
                     </div>
-                    <span class="small-box-footer">
-                        Mercado general
-                    </span>
+                    <a href="{{ route('productos-venta.index') }}" class="small-box-footer">
+                        Gestionar publicaciones <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
             </div>
         </div>

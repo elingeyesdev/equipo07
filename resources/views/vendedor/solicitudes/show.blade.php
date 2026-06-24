@@ -160,6 +160,71 @@
             font-size: .72rem;
             font-weight: 800;
         }
+
+        .seller-map-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: .75rem;
+        }
+
+        .seller-map-fullscreen {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            grid-template-rows: auto 1fr;
+            background: #101810;
+        }
+
+        body.seller-map-fullscreen-open {
+            overflow: hidden;
+        }
+
+        body.seller-map-fullscreen-open .seller-map-fullscreen {
+            display: grid;
+        }
+
+        .seller-map-fullscreen__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            background: rgba(16, 24, 16, .96);
+        }
+
+        .seller-map-fullscreen__header strong,
+        .seller-map-fullscreen__header small {
+            display: block;
+        }
+
+        .seller-map-fullscreen__header small {
+            color: #d9e8d5;
+        }
+
+        .seller-map-fullscreen__close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255, 255, 255, .28);
+            border-radius: 999px;
+            color: #fff;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .seller-map-fullscreen__map {
+            min-height: 0;
+        }
+
+        .seller-map-fullscreen__map #solicitud-destino-map {
+            height: 100% !important;
+            min-height: 100%;
+            border-radius: 0 !important;
+        }
     </style>
 
     <div class="container-fluid">
@@ -615,7 +680,7 @@
                             </div>
                         @endif
 
-                        @if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud)
+	                            @if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud)
                             <div class="solicitud-map-legend">
                                 <span class="solicitud-map-legend__item">
                                     <span class="solicitud-map-dot solicitud-map-dot--driver">
@@ -635,14 +700,50 @@
                                     </span>
                                     Destino comprador
                                 </span>
-                            </div>
-                            <div id="solicitud-destino-map"
-                                style="height: 460px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
-                            <a class="btn btn-sm btn-outline-success mt-3" target="_blank"
-                                href="{{ $mapsUrl }}">
-                                <i class="fas fa-external-link-alt mr-1"></i>Abrir ruta en Google Maps
-                            </a>
-                        @else
+	                            </div>
+                                <div class="seller-map-toolbar">
+                                    <button type="button" class="btn btn-sm btn-outline-success" id="seller-map-expand">
+                                        <i class="fas fa-expand mr-1"></i>Ampliar mapa
+                                    </button>
+                                </div>
+                                <div id="seller-map-shell">
+	                                <div id="solicitud-destino-map"
+	                                    style="height: 460px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
+                                </div>
+	                            <a class="btn btn-sm btn-outline-success mt-3" target="_blank"
+	                                href="{{ $mapsUrl }}">
+	                                <i class="fas fa-external-link-alt mr-1"></i>Abrir ruta en Google Maps
+	                            </a>
+                                @if ($solicitud->estado_solicitud === 'aceptada')
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-3 js-comprobante-modal"
+                                        data-comprobante-url="{{ route('pedidos.comprobante.reserva', $solicitud->pedido) }}"
+                                        data-comprobante-title="Comprobante de reserva">
+                                        <i class="fas fa-file-invoice mr-1"></i>Comprobante de reserva
+                                    </button>
+                                @endif
+                                @if ($solicitud->recepcion_confirmada_at)
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary mt-3 js-comprobante-modal"
+                                        data-comprobante-url="{{ route('pedidos.detalles.comprobante.final', $solicitud) }}"
+                                        data-comprobante-title="Comprobante final">
+                                        <i class="fas fa-file-signature mr-1"></i>Comprobante final
+                                    </button>
+                                @endif
+                                <div class="seller-map-fullscreen" id="seller-map-fullscreen" aria-hidden="true">
+                                    <div class="seller-map-fullscreen__header">
+                                        <div>
+                                            <strong><i class="fas fa-map-marked-alt mr-1"></i>Seguimiento de entrega</strong>
+                                            <small id="seller-map-fullscreen-status">{{ $solicitud->estado_transporte_label }}</small>
+                                        </div>
+                                        <button type="button" class="seller-map-fullscreen__close" id="seller-map-close"
+                                            aria-label="Cerrar mapa ampliado">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="seller-map-fullscreen__map" id="seller-map-fullscreen-target"></div>
+                                </div>
+	                        @else
                             <div class="alert alert-warning mb-0">
                                 Esta solicitud no tiene coordenadas de destino.
                             </div>
@@ -657,6 +758,29 @@
         </a>
     </div>
 
+    <div class="modal fade" id="comprobanteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="comprobanteModalTitle">Comprobante</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="comprobanteModalFrame" title="Vista previa del comprobante"
+                        style="width: 100%; height: 76vh; border: 0;"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" id="comprobanteModalPrint">
+                        <i class="fas fa-download mr-1"></i>Descargar / imprimir PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if ($solicitud->pedido->destino_latitud && $solicitud->pedido->destino_longitud)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -668,14 +792,19 @@
                 var productoLng = @json($solicitud->product_longitud);
                 var transportistaLat = @json($solicitud->ultimaUbicacion?->latitud ? (float) $solicitud->ultimaUbicacion->latitud : null);
                 var transportistaLng = @json($solicitud->ultimaUbicacion?->longitud ? (float) $solicitud->ultimaUbicacion->longitud : null);
-                var googleMapsUrl = @json($mapsUrl);
-                var trackingUrl = @json(route('pedidos.detalles.tracking.latest', $solicitud, false));
-                var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
+	                var googleMapsUrl = @json($mapsUrl);
+	                var trackingUrl = @json(route('pedidos.detalles.tracking.latest', $solicitud, false));
+                    var mapShell = document.getElementById('seller-map-shell');
+                    var mapFullscreen = document.getElementById('seller-map-fullscreen');
+                    var mapFullscreenTarget = document.getElementById('seller-map-fullscreen-target');
+                    var mapFullscreenStatus = document.getElementById('seller-map-fullscreen-status');
+	                var map = L.map('solicitud-destino-map').setView([destinoLat, destinoLng], 16);
                 var transportistaMarker = null;
                 var deliveryFlow = @json($deliveryFlow);
                 var deliveryStatePhases = @json($deliveryStatePhases);
                 var trackingBusy = false;
                 var trackingTimer = null;
+                var lastTrackingKey = null;
 
                 function mapIcon(type, icon, label) {
                     return L.divIcon({
@@ -712,7 +841,7 @@
                         .bindPopup('<strong>Ultima ubicacion del transportista</strong><br>{{ $solicitud->ultimaUbicacion?->created_at?->format('d/m/Y H:i:s') }}');
                 }
 
-                if (productoLat && productoLng) {
+	                if (productoLat && productoLng) {
                     var productoMarker = L.marker([productoLat, productoLng], {
                             icon: productoIcon
                         })
@@ -821,6 +950,35 @@
                     }
 
                     destinoMarker.openPopup();
+	                }
+
+                function animateTransportistaMarker(nextPosition) {
+                    if (!transportistaMarker) {
+                        transportistaMarker = L.marker(nextPosition, { icon: transportistaIcon }).addTo(map);
+                        return;
+                    }
+
+                    var start = transportistaMarker.getLatLng();
+                    var startTime = performance.now();
+                    var duration = 1900;
+
+                    function step(now) {
+                        var progress = Math.min(1, (now - startTime) / duration);
+                        var eased = progress < .5
+                            ? 2 * progress * progress
+                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                        transportistaMarker.setLatLng([
+                            start.lat + ((nextPosition[0] - start.lat) * eased),
+                            start.lng + ((nextPosition[1] - start.lng) * eased)
+                        ]);
+
+                        if (progress < 1) {
+                            requestAnimationFrame(step);
+                        }
+                    }
+
+                    requestAnimationFrame(step);
                 }
 
                 function refreshTracking() {
@@ -836,8 +994,9 @@
                             return response.json();
                         })
                         .then(function(data) {
-                            var status = document.getElementById('seller-delivery-status');
-                            if (status) status.textContent = data.estado_label;
+	                            var status = document.getElementById('seller-delivery-status');
+	                            if (status) status.textContent = data.estado_label;
+                                if (mapFullscreenStatus) mapFullscreenStatus.textContent = data.estado_label;
 
                             var currentVisibleState = deliveryStatePhases[data.estado] || data.estado;
                             var currentIndex = deliveryFlow.indexOf(currentVisibleState);
@@ -847,17 +1006,17 @@
                                 step.classList.toggle('is-current', step.dataset.state === currentVisibleState);
                             });
 
-                            if (!data.ubicacion) return;
-                            var position = [data.ubicacion.latitud, data.ubicacion.longitud];
+	                            if (!data.ubicacion) return;
+	                            var position = [data.ubicacion.latitud, data.ubicacion.longitud];
+                                var trackingKey = data.ubicacion.latitud + ',' + data.ubicacion.longitud + ',' + data.ubicacion.fecha;
 
-                            if (!transportistaMarker) {
-                                transportistaMarker = L.marker(position, { icon: transportistaIcon }).addTo(map);
-                            } else {
-                                transportistaMarker.setLatLng(position);
-                            }
+                                if (trackingKey !== lastTrackingKey) {
+                                    lastTrackingKey = trackingKey;
+                                    animateTransportistaMarker(position);
+                                }
 
-                            transportistaMarker.bindPopup(
-                                '<strong>Ubicacion actual del transportista</strong><br>' +
+	                            transportistaMarker.bindPopup(
+	                                '<strong>Ubicacion actual del transportista</strong><br>' +
                                 (data.ubicacion.fecha_humana || '')
                             );
                         })
@@ -868,19 +1027,51 @@
                         });
                 }
 
-                function scheduleTracking() {
-                    clearTimeout(trackingTimer);
-                    trackingTimer = setTimeout(refreshTracking, 12000);
-                }
+	                function scheduleTracking() {
+	                    clearTimeout(trackingTimer);
+	                    trackingTimer = setTimeout(refreshTracking, 2500);
+	                }
 
-                document.addEventListener('visibilitychange', function() {
-                    if (!document.hidden) {
-                        clearTimeout(trackingTimer);
-                        refreshTracking();
+                    function resizeSellerMapSoon() {
+                        setTimeout(function() {
+                            map.invalidateSize();
+
+                            if (transportistaMarker) {
+                                map.setView(transportistaMarker.getLatLng(), 15);
+                            }
+                        }, 90);
                     }
-                });
 
-                refreshTracking();
+                    function openSellerMapFullscreen() {
+                        mapFullscreenTarget.appendChild(document.getElementById('solicitud-destino-map'));
+                        document.body.classList.add('seller-map-fullscreen-open');
+                        mapFullscreen.setAttribute('aria-hidden', 'false');
+                        resizeSellerMapSoon();
+                    }
+
+                    function closeSellerMapFullscreen() {
+                        mapShell.appendChild(document.getElementById('solicitud-destino-map'));
+                        document.body.classList.remove('seller-map-fullscreen-open');
+                        mapFullscreen.setAttribute('aria-hidden', 'true');
+                        resizeSellerMapSoon();
+                    }
+
+	                document.addEventListener('visibilitychange', function() {
+	                    if (!document.hidden) {
+	                        clearTimeout(trackingTimer);
+	                        refreshTracking();
+	                    }
+	                });
+
+                    document.getElementById('seller-map-expand')?.addEventListener('click', openSellerMapFullscreen);
+                    document.getElementById('seller-map-close')?.addEventListener('click', closeSellerMapFullscreen);
+                    document.addEventListener('keydown', function(event) {
+                        if (event.key === 'Escape' && document.body.classList.contains('seller-map-fullscreen-open')) {
+                            closeSellerMapFullscreen();
+                        }
+                    });
+
+	                refreshTracking();
             });
         </script>
     @endif
@@ -892,6 +1083,36 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var estadoUrl = @json(route('pedidos.detalles.estadoTransporte', $solicitud, false));
+            var comprobanteModal = document.getElementById('comprobanteModal');
+            var comprobanteFrame = document.getElementById('comprobanteModalFrame');
+            var comprobanteTitle = document.getElementById('comprobanteModalTitle');
+            var comprobantePrint = document.getElementById('comprobanteModalPrint');
+
+            document.querySelectorAll('.js-comprobante-modal').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    comprobanteTitle.textContent = button.dataset.comprobanteTitle || 'Comprobante';
+                    comprobanteFrame.src = button.dataset.comprobanteUrl;
+
+                    if (window.jQuery) {
+                        window.jQuery(comprobanteModal).modal('show');
+                    }
+                });
+            });
+
+            if (comprobanteModal && window.jQuery) {
+                window.jQuery(comprobanteModal).on('hidden.bs.modal', function() {
+                    comprobanteFrame.src = 'about:blank';
+                });
+            }
+
+            if (comprobantePrint) {
+                comprobantePrint.addEventListener('click', function() {
+                    if (comprobanteFrame.contentWindow) {
+                        comprobanteFrame.contentWindow.focus();
+                        comprobanteFrame.contentWindow.print();
+                    }
+                });
+            }
 
             function applyState(data) {
                 var transportLabel = document.querySelector('[data-vendor-transport-label]');

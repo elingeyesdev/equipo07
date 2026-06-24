@@ -72,6 +72,25 @@ class TransporteAccesoServiceTest extends TestCase
         $this->assertSame('devuelto_vendedor', $service->siguienteEstado($detalle));
     }
 
+    public function test_identifica_tipo_de_recorrido_entrega_o_devolucion(): void
+    {
+        $service = new TransporteAccesoService();
+
+        $detalle = new PedidoDetalle([
+            'product_type' => 'maquinaria',
+            'estado_solicitud' => 'aceptada',
+            'estado_transporte' => 'en_camino_entrega',
+        ]);
+
+        $this->assertSame('entrega', $service->tipoRecorrido($detalle));
+
+        $detalle->estado_transporte = 'devolucion_solicitada';
+        $this->assertSame('devolucion', $service->tipoRecorrido($detalle));
+
+        $detalle->estado_transporte = 'en_camino_retorno';
+        $this->assertSame('devolucion', $service->tipoRecorrido($detalle));
+    }
+
     public function test_estados_para_organico_no_incluye_estados_de_retorno(): void
     {
         $service = new TransporteAccesoService();

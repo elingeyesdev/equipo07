@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,10 +37,32 @@ class VendedorTransportistaController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'name' => ['required', 'string', 'min:3', 'max:255', 'regex:/^[\pL\s.\'-]+$/u'],
+            'email' => 'required|email:rfc,dns|max:255|unique:users,email',
             'telefono' => ['nullable', 'string', 'max:18', 'regex:/^(?:\+?591[\s-]?)?[0-9](?:[\s-]?[0-9]){6,7}$/'],
-            'password' => 'required|string|min:8|max:72|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:72',
+                'confirmed',
+                function (string $attribute, mixed $value, Closure $fail) use ($request): void {
+                    $password = strtolower(trim((string) $value));
+                    $name = strtolower(trim((string) $request->input('name')));
+                    $email = strtolower(trim((string) $request->input('email')));
+
+                    if ($password !== '' && ($password === $name || $password === $email)) {
+                        $fail('La contraseña no puede ser igual al nombre ni al correo electrónico.');
+                    }
+                },
+            ],
+        ], [
+            'name.min' => 'El nombre debe tener al menos 3 caracteres.',
+            'name.regex' => 'El nombre solo puede contener letras, espacios, puntos, guiones o apóstrofes.',
+            'email.email' => 'Debe ser un correo electrónico válido con un dominio existente.',
+            'telefono.regex' => 'El teléfono debe ser un número boliviano válido.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.max' => 'La contraseña no puede exceder 72 caracteres.',
         ]);
 
         $role = Role::where('nombre', Role::TRANSPORTISTA)->firstOrFail();

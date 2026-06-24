@@ -34,7 +34,7 @@
             gap: 12px;
             margin-bottom: 26px;
         }
-        .transport-brand img { width: 48px; height: 48px; object-fit: contain; }
+        .transport-brand img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
         h1 { margin: 0 0 8px; font-size: 1.65rem; }
         p { margin: 0 0 24px; color: #667363; line-height: 1.5; }
         label { display: block; margin-bottom: 8px; font-weight: 700; }
@@ -160,7 +160,7 @@
 <body>
     <main class="transport-access">
         <div class="transport-brand">
-            <img src="{{ asset('img/logo-agrovida.png') }}?v={{ filemtime(public_path('img/logo-agrovida.png')) }}" alt="AgroVida">
+            <img src="{{ asset('img/brand/logo-agrovida.jpeg') }}?v={{ filemtime(public_path('img/brand/logo-agrovida.jpeg')) }}" alt="AgroVida">
             <strong>AgroVida Transporte</strong>
         </div>
 

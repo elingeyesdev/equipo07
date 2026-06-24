@@ -179,6 +179,11 @@ class PedidoController extends Controller
     public function confirmarRecepcion(PedidoDetalle $detalle)
     {
         $detalle->load('pedido');
+        request()->validate([
+            'firma_comprador' => ['required', 'string', 'starts_with:data:image/png;base64,'],
+        ], [
+            'firma_comprador.required' => 'La firma del comprador es obligatoria para generar el comprobante final.',
+        ]);
 
         if ((int) $detalle->pedido->user_id !== (int) Auth::id()) {
             abort(403);
@@ -193,6 +198,7 @@ class PedidoController extends Controller
         }
 
         $detallesEnvio = $detalle->detallesEnvio()
+            ->where('pedido_id', $detalle->pedido_id)
             ->where('estado_solicitud', 'aceptada')
             ->where('estado_transporte', 'esperando_confirmacion')
             ->get();
@@ -201,6 +207,8 @@ class PedidoController extends Controller
             $detalleEnvio->update([
                 'estado_transporte' => 'entregado',
                 'recepcion_confirmada_at' => now(),
+                'firma_comprador' => request('firma_comprador'),
+                'firma_comprador_at' => now(),
                 'estado_alquiler' => $detalleEnvio->es_alquiler_maquinaria
                     ? 'en_uso'
                     : $detalleEnvio->estado_alquiler,

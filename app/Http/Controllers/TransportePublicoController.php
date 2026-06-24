@@ -153,6 +153,7 @@ class TransportePublicoController extends Controller
         $data = $request->validate([
             'accion' => ['required', 'in:avanzar,cancelar'],
             'motivo_cancelacion' => ['required_if:accion,cancelar', 'nullable', 'string', 'min:10', 'max:1000'],
+            'firma_transportista' => ['nullable', 'string', 'starts_with:data:image/png;base64,'],
         ]);
 
         $acceso = $request->attributes->get('transporteAcceso');

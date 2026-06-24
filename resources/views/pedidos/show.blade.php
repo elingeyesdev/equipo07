@@ -149,6 +149,24 @@
                 background: #fd7e14;
             }
 
+            .tracking-map-marker {
+                display: inline-flex;
+                align-items: center;
+                gap: .35rem;
+                padding: .18rem .55rem .18rem .18rem;
+                border: 2px solid #fff;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, .96);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .24);
+                white-space: nowrap;
+            }
+
+            .tracking-map-marker small {
+                color: #1f2a1b;
+                font-size: .72rem;
+                font-weight: 800;
+            }
+
             .order-route-picker {
                 display: flex;
                 flex-wrap: wrap;
@@ -165,6 +183,73 @@
                 display: block;
                 font-weight: 600;
                 opacity: .78;
+            }
+
+            .order-map-header {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                margin-top: .75rem;
+            }
+
+            .order-map-fullscreen {
+                position: fixed;
+                inset: 0;
+                z-index: 3000;
+                display: none;
+                grid-template-rows: auto 1fr;
+                background: #101810;
+            }
+
+            body.order-map-fullscreen-open {
+                overflow: hidden;
+            }
+
+            body.order-map-fullscreen-open .order-map-fullscreen {
+                display: grid;
+            }
+
+            .order-map-fullscreen__header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 12px 16px;
+                color: #fff;
+                background: rgba(16, 24, 16, .96);
+            }
+
+            .order-map-fullscreen__header strong,
+            .order-map-fullscreen__header small {
+                display: block;
+            }
+
+            .order-map-fullscreen__header small {
+                color: #d9e8d5;
+            }
+
+            .order-map-fullscreen__close {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 42px;
+                height: 42px;
+                border: 1px solid rgba(255, 255, 255, .28);
+                border-radius: 999px;
+                color: #fff;
+                background: transparent;
+                cursor: pointer;
+            }
+
+            .order-map-fullscreen__map {
+                min-height: 0;
+            }
+
+            .order-map-fullscreen__map #pedido-destino-map {
+                height: 100% !important;
+                min-height: 100%;
+                margin-top: 0 !important;
+                border-radius: 0 !important;
             }
         </style>
         <div class="orders-card orders-detail-card">
@@ -231,8 +316,15 @@
                                 @endforeach
                             </div>
                         @endif
-                        <div id="pedido-destino-map" class="mt-3"
-                            style="height: 320px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
+                        <div class="order-map-header">
+                            <button type="button" class="btn btn-sm btn-outline-success" id="pedido-map-expand">
+                                <i class="fas fa-expand mr-1"></i>Ampliar mapa
+                            </button>
+                        </div>
+                        <div id="pedido-map-shell">
+                            <div id="pedido-destino-map" class="mt-3"
+                                style="height: 320px; width: 100%; border-radius: 8px; overflow: hidden;"></div>
+                        </div>
                         <div id="pedido-live-tracking" class="alert alert-light border mt-3 mb-0">
                             <strong><i class="fas fa-location-arrow mr-1"></i>Seguimiento en vivo:</strong>
                             <span id="pedido-live-status">Esperando ubicacion del transportista.</span>
@@ -248,15 +340,29 @@
                                 No se pudo dibujar la ruta porque el producto no tiene coordenadas registradas.
                             </div>
                         @endif
-                        <a class="btn btn-sm btn-outline-success mt-2" target="_blank"
-                            href="{{ $trackingOptions->first()['mapsUrl'] ?? $mapaDestinoUrl }}"
-                            id="pedido-google-maps-link">
-                            <i class="fas fa-external-link-alt mr-1"></i>{{ $trackingOptions->isNotEmpty() ? 'Abrir ruta en Google Maps' : 'Abrir mapa' }}
-                        </a>
-                    @endif
+	                        <a class="btn btn-sm btn-outline-success mt-2" target="_blank"
+	                            href="{{ $trackingOptions->first()['mapsUrl'] ?? $mapaDestinoUrl }}"
+	                            id="pedido-google-maps-link">
+	                            <i class="fas fa-external-link-alt mr-1"></i>{{ $trackingOptions->isNotEmpty() ? 'Abrir ruta en Google Maps' : 'Abrir mapa' }}
+	                        </a>
+	                    @endif
+	                </div>
+
+                <div class="order-map-fullscreen" id="pedido-map-fullscreen" aria-hidden="true">
+                    <div class="order-map-fullscreen__header">
+                        <div>
+                            <strong><i class="fas fa-map-marked-alt mr-1"></i>Seguimiento del pedido</strong>
+                            <small id="pedido-map-fullscreen-status">Esperando ubicacion del transportista.</small>
+                        </div>
+                        <button type="button" class="order-map-fullscreen__close" id="pedido-map-close"
+                            aria-label="Cerrar mapa ampliado">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="order-map-fullscreen__map" id="pedido-map-fullscreen-target"></div>
                 </div>
 
-                <div class="table-responsive orders-table-wrap">
+		                <div class="table-responsive orders-table-wrap">
                     @php
                         $resumenesEnvio = $pedido->detalles
                             ->groupBy('grupo_envio')
@@ -401,15 +507,12 @@
                                                 <div data-live-confirm-container="{{ $detalle->id }}"
                                                     style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display: none;' }}">
                                                     <form action="{{ route('pedidos.detalles.confirmarRecepcion', $detalle) }}"
-                                                        method="POST" class="mt-2 question-confirm-form"
+                                                        method="POST" class="mt-2 buyer-signature-form"
                                                         id="buyer-receive-form-{{ $detalle->id }}"
                                                         style="{{ $detalle->estado_transporte_actual === 'esperando_confirmacion' ? '' : 'display:none' }}"
-                                                        data-confirm-title="¿Recibiste tu pedido?"
-                                                        data-confirm-text="Confirma únicamente cuando el producto ya esté contigo. Al continuar, la entrega quedará registrada como recibida."
-                                                        data-confirm-button="Sí, recibí mi pedido"
-                                                        data-cancel-button="Aún no"
-                                                        data-loading-text="Confirmando la recepción...">
+                                                        data-product-name="{{ $detalle->nombre_producto }}">
                                                         @csrf
+                                                        <input type="hidden" name="firma_comprador" value="">
                                                         <button type="submit" class="btn btn-sm btn-success">
                                                             <i class="fas fa-check-circle mr-1"></i>Confirmar recepcion
                                                         </button>
@@ -425,6 +528,20 @@
                                                         {{ $detalle->recepcion_confirmada_at ? 'el ' . $detalle->recepcion_confirmada_at->format('d/m/Y H:i') : '' }}
                                                     </span>
                                                 </div>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-primary mt-2 js-comprobante-modal"
+                                                    data-comprobante-url="{{ route('pedidos.comprobante.reserva', $pedido) }}"
+                                                    data-comprobante-title="Comprobante de reserva">
+                                                    <i class="fas fa-file-invoice mr-1"></i>Comprobante de reserva
+                                                </button>
+                                                @if ($detalle->recepcion_confirmada_at)
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary mt-2 js-comprobante-modal"
+                                                        data-comprobante-url="{{ route('pedidos.detalles.comprobante.final', $detalle) }}"
+                                                        data-comprobante-title="Comprobante final">
+                                                        <i class="fas fa-file-signature mr-1"></i>Comprobante final
+                                                    </button>
+                                                @endif
 
                                                 @if($mostrarPostventa)
                                                     @include('organicos.partials.postventa', ['detalle' => $detalle, 'modo' => 'comprador'])
@@ -452,12 +569,65 @@
         </div>
     </div>
 
+    <div class="modal fade" id="comprobanteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="comprobanteModalTitle">Comprobante</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="comprobanteModalFrame" title="Vista previa del comprobante"
+                        style="width: 100%; height: 76vh; border: 0;"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" id="comprobanteModalPrint">
+                        <i class="fas fa-download mr-1"></i>Descargar / imprimir PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var statesUrl = @json(route('pedidos.tracking.estados', $pedido, false));
             var transportStatePhases = @json(\App\Models\PedidoDetalle::transporteEstadoFases());
             var statusBusy = false;
             var statusTimer = null;
+            var comprobanteModal = document.getElementById('comprobanteModal');
+            var comprobanteFrame = document.getElementById('comprobanteModalFrame');
+            var comprobanteTitle = document.getElementById('comprobanteModalTitle');
+            var comprobantePrint = document.getElementById('comprobanteModalPrint');
+
+            document.querySelectorAll('.js-comprobante-modal').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    comprobanteTitle.textContent = button.dataset.comprobanteTitle || 'Comprobante';
+                    comprobanteFrame.src = button.dataset.comprobanteUrl;
+
+                    if (window.jQuery) {
+                        window.jQuery(comprobanteModal).modal('show');
+                    }
+                });
+            });
+
+            if (comprobanteModal && window.jQuery) {
+                window.jQuery(comprobanteModal).on('hidden.bs.modal', function() {
+                    comprobanteFrame.src = 'about:blank';
+                });
+            }
+
+            if (comprobantePrint) {
+                comprobantePrint.addEventListener('click', function() {
+                    if (comprobanteFrame.contentWindow) {
+                        comprobanteFrame.contentWindow.focus();
+                        comprobanteFrame.contentWindow.print();
+                    }
+                });
+            }
 
             function updateDeliveryDetail(detail) {
                 var row = document.querySelector('[data-buyer-delivery-detail="' + detail.detalle_id + '"]');
@@ -559,14 +729,18 @@
                 var destinoLng = {{ $pedido->destino_longitud }};
                 var routeOptions = @json($trackingOptions);
                 var selectedRoute = routeOptions[0] || null;
-                var liveStatus = document.getElementById('pedido-live-status');
-                var routeSummary = document.getElementById('pedido-route-summary');
-                var routeSummaryText = document.getElementById('pedido-route-summary-text');
-                var mapsLink = document.getElementById('pedido-google-maps-link');
+	                var liveStatus = document.getElementById('pedido-live-status');
+	                var fullscreenStatus = document.getElementById('pedido-map-fullscreen-status');
+	                var routeSummary = document.getElementById('pedido-route-summary');
+	                var routeSummaryText = document.getElementById('pedido-route-summary-text');
+	                var mapsLink = document.getElementById('pedido-google-maps-link');
+                    var mapShell = document.getElementById('pedido-map-shell');
+                    var mapFullscreen = document.getElementById('pedido-map-fullscreen');
+                    var mapFullscreenTarget = document.getElementById('pedido-map-fullscreen-target');
                 var liveMarker = null;
-                var liveLine = null;
-                var livePoints = [];
                 var lastLiveKey = null;
+                var remainingRouteLine = null;
+                var remainingRouteKey = null;
                 var trackingBusy = false;
                 var trackingTimer = null;
                 var routeRequestId = 0;
@@ -575,23 +749,32 @@
                 var liveLayer = L.layerGroup().addTo(map);
                 var currentIcon = L.divIcon({
                     className: '',
-                    html: '<span class="tracking-pin tracking-pin--current"><i class="fas fa-location-arrow"></i></span>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
+                    html: '<div class="tracking-map-marker">' +
+                        '<span class="tracking-pin tracking-pin--current"><i class="fas fa-truck"></i></span>' +
+                        '<small>Transportista</small>' +
+                    '</div>',
+                    iconSize: [160, 40],
+                    iconAnchor: [18, 18],
                     popupAnchor: [0, -16]
                 });
                 var targetIcon = L.divIcon({
                     className: '',
-                    html: '<span class="tracking-pin tracking-pin--target"><i class="fas fa-home"></i></span>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
+                    html: '<div class="tracking-map-marker">' +
+                        '<span class="tracking-pin tracking-pin--target"><i class="fas fa-home"></i></span>' +
+                        '<small>Comprador</small>' +
+                    '</div>',
+                    iconSize: [150, 40],
+                    iconAnchor: [18, 18],
                     popupAnchor: [0, -16]
                 });
                 var originIcon = L.divIcon({
                     className: '',
-                    html: '<span class="tracking-pin tracking-pin--origin"><i class="fas fa-box"></i></span>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
+                    html: '<div class="tracking-map-marker">' +
+                        '<span class="tracking-pin tracking-pin--origin"><i class="fas fa-box"></i></span>' +
+                        '<small>Producto</small>' +
+                    '</div>',
+                    iconSize: [145, 40],
+                    iconAnchor: [18, 18],
                     popupAnchor: [0, -16]
                 });
 
@@ -612,8 +795,8 @@
                     clearTimeout(trackingTimer);
                     liveLayer.clearLayers();
                     liveMarker = null;
-                    liveLine = null;
-                    livePoints = [];
+                    remainingRouteLine = null;
+                    remainingRouteKey = null;
                     lastLiveKey = null;
                     trackingBusy = false;
                 }
@@ -758,10 +941,147 @@
                         });
                 }
 
-                function setLiveStatus(text) {
-                    if (liveStatus) {
-                        liveStatus.textContent = text;
+	                function setLiveStatus(text) {
+	                    if (liveStatus) {
+	                        liveStatus.textContent = text;
+	                    }
+                        if (fullscreenStatus) {
+                            fullscreenStatus.textContent = text;
+                        }
+	                }
+
+                    function resizePedidoMapSoon() {
+                        setTimeout(function() {
+                            map.invalidateSize();
+
+                            if (remainingRouteLine) {
+                                map.fitBounds(remainingRouteLine.getBounds(), { padding: [40, 40], maxZoom: 15 });
+                            } else if (liveMarker) {
+                                map.setView(liveMarker.getLatLng(), 16);
+                            }
+                        }, 90);
                     }
+
+                    function openPedidoMapFullscreen() {
+                        mapFullscreenTarget.appendChild(document.getElementById('pedido-destino-map'));
+                        document.body.classList.add('order-map-fullscreen-open');
+                        mapFullscreen.setAttribute('aria-hidden', 'false');
+                        resizePedidoMapSoon();
+                    }
+
+                    function closePedidoMapFullscreen() {
+                        mapShell.appendChild(document.getElementById('pedido-destino-map'));
+                        document.body.classList.remove('order-map-fullscreen-open');
+                        mapFullscreen.setAttribute('aria-hidden', 'true');
+                        resizePedidoMapSoon();
+                    }
+
+                function targetForLiveState(ubicacion) {
+                    var estado = ubicacion.estado_transporte;
+
+                    if (selectedRoute && [
+                        'asignado',
+                        'en_camino_recogida',
+                        'devolucion_solicitada',
+                        'en_camino_recoger_devolucion',
+                        'llego_recoger_devolucion',
+                        'maquinaria_recogida_retorno',
+                        'en_camino_retorno',
+                        'llego_retorno',
+                        'devuelto_vendedor'
+                    ].indexOf(estado) !== -1) {
+                        return {
+                            lat: selectedRoute.originLat,
+                            lng: selectedRoute.originLng,
+                            label: 'punto del producto'
+                        };
+                    }
+
+                    return {
+                        lat: destinoLat,
+                        lng: destinoLng,
+                        label: 'destino del comprador'
+                    };
+                }
+
+                function animateMarkerTo(marker, nextLatLng) {
+                    var start = marker.getLatLng();
+                    var startTime = performance.now();
+                    var duration = 1900;
+
+                    function step(now) {
+                        var progress = Math.min(1, (now - startTime) / duration);
+                        var eased = progress < .5
+                            ? 2 * progress * progress
+                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                        marker.setLatLng([
+                            start.lat + ((nextLatLng[0] - start.lat) * eased),
+                            start.lng + ((nextLatLng[1] - start.lng) * eased)
+                        ]);
+
+                        if (progress < 1) {
+                            requestAnimationFrame(step);
+                        }
+                    }
+
+                    requestAnimationFrame(step);
+                }
+
+                function drawRemainingRoute(fromLatLng, target) {
+                    if (!target || !target.lat || !target.lng) return;
+
+                    var routeKey = [
+                        Number(fromLatLng[0]).toFixed(5),
+                        Number(fromLatLng[1]).toFixed(5),
+                        Number(target.lat).toFixed(5),
+                        Number(target.lng).toFixed(5)
+                    ].join('|');
+
+                    if (routeKey === remainingRouteKey) return;
+                    remainingRouteKey = routeKey;
+
+                    var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/' +
+                        fromLatLng[1] + ',' + fromLatLng[0] + ';' + target.lng + ',' + target.lat +
+                        '?overview=full&geometries=geojson';
+
+                    fetch(osrmUrl)
+                        .then(function(response) {
+                            if (!response.ok) throw new Error('Ruta no disponible');
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            var route = data.routes && data.routes[0];
+                            var coordinates = route && route.geometry && route.geometry.coordinates
+                                ? route.geometry.coordinates.map(function(coordinate) {
+                                    return [coordinate[1], coordinate[0]];
+                                })
+                                : [fromLatLng, [target.lat, target.lng]];
+
+                            if (!remainingRouteLine) {
+                                remainingRouteLine = L.polyline(coordinates, {
+                                    color: '#198754',
+                                    weight: 5,
+                                    opacity: .9
+                                }).addTo(liveLayer);
+                            } else {
+                                remainingRouteLine.setLatLngs(coordinates);
+                            }
+                        })
+                        .catch(function() {
+                            var fallback = [fromLatLng, [target.lat, target.lng]];
+
+                            if (!remainingRouteLine) {
+                                remainingRouteLine = L.polyline(fallback, {
+                                    color: '#198754',
+                                    weight: 4,
+                                    opacity: .75,
+                                    dashArray: '8, 8'
+                                }).addTo(liveLayer);
+                            } else {
+                                remainingRouteLine.setLatLngs(fallback);
+                            }
+                        });
                 }
 
                 function updateLiveLocation(ubicacion) {
@@ -773,17 +1093,17 @@
                     var latLng = [ubicacion.latitud, ubicacion.longitud];
                     var liveKey = ubicacion.latitud + ',' + ubicacion.longitud + ',' + ubicacion.fecha;
 
-                    if (liveKey !== lastLiveKey) {
-                        livePoints.push(latLng);
-                        lastLiveKey = liveKey;
-                    }
-
                     if (!liveMarker) {
                         liveMarker = L.marker(latLng, {
                             icon: currentIcon
                         }).addTo(liveLayer);
                     } else {
-                        liveMarker.setLatLng(latLng);
+                        animateMarkerTo(liveMarker, latLng);
+                    }
+
+                    if (liveKey !== lastLiveKey) {
+                        lastLiveKey = liveKey;
+                        drawRemainingRoute(latLng, targetForLiveState(ubicacion));
                     }
 
                     var popup = '<strong>Transportista</strong>';
@@ -800,16 +1120,6 @@
                         popup += '<br>Precision: ' + Math.round(ubicacion.precision_metros) + ' m';
                     }
                     liveMarker.bindPopup(popup);
-
-                    if (!liveLine) {
-                        liveLine = L.polyline(livePoints, {
-                            color: '#007bff',
-                            weight: 5,
-                            opacity: .85
-                        }).addTo(liveLayer);
-                    } else {
-                        liveLine.setLatLngs(livePoints);
-                    }
 
                     var estadoTexto = ubicacion.estado_transporte_label || (ubicacion.tipo_recorrido === 'devolucion' ? 'En devolucion' : 'En entrega');
                     setLiveStatus(estadoTexto + (ubicacion.fecha_humana ? '. Ultima actualizacion: ' + ubicacion.fecha_humana : '.'));
@@ -854,15 +1164,23 @@
 
                 function scheduleTracking() {
                     clearTimeout(trackingTimer);
-                    trackingTimer = setTimeout(refreshLiveLocation, 12000);
+                    trackingTimer = setTimeout(refreshLiveLocation, 2500);
                 }
 
-                document.addEventListener('visibilitychange', function() {
-                    if (!document.hidden) {
-                        clearTimeout(trackingTimer);
-                        refreshLiveLocation();
-                    }
-                });
+	                document.addEventListener('visibilitychange', function() {
+	                    if (!document.hidden) {
+	                        clearTimeout(trackingTimer);
+	                        refreshLiveLocation();
+	                    }
+	                });
+
+                    document.getElementById('pedido-map-expand')?.addEventListener('click', openPedidoMapFullscreen);
+                    document.getElementById('pedido-map-close')?.addEventListener('click', closePedidoMapFullscreen);
+                    document.addEventListener('keydown', function(event) {
+                        if (event.key === 'Escape' && document.body.classList.contains('order-map-fullscreen-open')) {
+                            closePedidoMapFullscreen();
+                        }
+                    });
 
                 document.querySelectorAll('[data-route-option]').forEach(function(button) {
                     button.addEventListener('click', function() {
@@ -883,9 +1201,111 @@
         </script>
     @endif
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var detailStates = @json($liveDetailStates);
+	    <script>
+	        document.addEventListener('DOMContentLoaded', function() {
+            function bindSignatureCanvas(canvas) {
+                var ctx = canvas.getContext('2d');
+                var drawing = false;
+                var signed = false;
+
+                ctx.lineWidth = 2.4;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#172817';
+
+                function point(event) {
+                    var rect = canvas.getBoundingClientRect();
+                    var source = event.touches ? event.touches[0] : event;
+                    return {
+                        x: source.clientX - rect.left,
+                        y: source.clientY - rect.top
+                    };
+                }
+
+                function start(event) {
+                    event.preventDefault();
+                    drawing = true;
+                    signed = true;
+                    var p = point(event);
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
+
+                function move(event) {
+                    if (!drawing) return;
+                    event.preventDefault();
+                    var p = point(event);
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                }
+
+                function stop() {
+                    drawing = false;
+                }
+
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', move);
+                window.addEventListener('mouseup', stop);
+                canvas.addEventListener('touchstart', start, { passive: false });
+                canvas.addEventListener('touchmove', move, { passive: false });
+                canvas.addEventListener('touchend', stop);
+
+                return {
+                    isSigned: function() { return signed; },
+                    clear: function() {
+                        signed = false;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    },
+                    data: function() { return canvas.toDataURL('image/png'); }
+                };
+            }
+
+            document.querySelectorAll('form.buyer-signature-form').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    if (form.dataset.submitting === 'true') {
+                        return;
+                    }
+
+                    var buyerSignaturePad = null;
+
+                    Swal.fire({
+                        title: 'Firma de recepcion',
+                        html: '<p class="text-muted mb-2">Firma para confirmar que recibiste: <strong>' +
+                            (form.dataset.productName || 'tu pedido') +
+                            '</strong></p><canvas id="buyer-signature-canvas" width="520" height="180" style="width:100%;max-width:520px;border:1px solid #cfdccc;border-radius:6px;background:#fff"></canvas>' +
+                            '<button type="button" id="buyer-signature-clear" class="btn btn-sm btn-light mt-2">Limpiar firma</button>',
+                        showCancelButton: true,
+                        confirmButtonText: 'Confirmar recepcion',
+                        cancelButtonText: 'Aun no',
+                        confirmButtonColor: '#238647',
+                        cancelButtonColor: '#6c757d',
+                        focusConfirm: false,
+                        didOpen: function() {
+                            buyerSignaturePad = bindSignatureCanvas(document.getElementById('buyer-signature-canvas'));
+                            document.getElementById('buyer-signature-clear').addEventListener('click', function() {
+                                buyerSignaturePad.clear();
+                            });
+                        },
+                        preConfirm: function() {
+                            if (!buyerSignaturePad || !buyerSignaturePad.isSigned()) {
+                                Swal.showValidationMessage('Dibuja tu firma antes de confirmar.');
+                                return false;
+                            }
+
+                            return buyerSignaturePad.data();
+                        }
+                    }).then(function(result) {
+                        if (!result.isConfirmed) return;
+
+                        form.querySelector('input[name="firma_comprador"]').value = result.value;
+                        form.dataset.submitting = 'true';
+                        HTMLFormElement.prototype.submit.call(form);
+                    });
+                });
+            });
+
+	            var detailStates = @json($liveDetailStates);
 
             function applyDetailState(config, data) {
                 var transportWrap = document.querySelector('[data-live-transport-wrap="' + config.id + '"]');
