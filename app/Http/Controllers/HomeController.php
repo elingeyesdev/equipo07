@@ -35,6 +35,7 @@ class HomeController extends Controller
         $categoria_id = $request->get('categoria_id', '');
         $tipo_animal_id = $request->get('tipo_animal_id', '');
         $raza_id = $request->get('raza_id', '');
+        $tipo_cultivo_id = $request->get('tipo_cultivo_id', '');
         $tipo = $request->get('tipo', ''); // ganados, maquinarias, organicos
 
         // Inicializar resultados
@@ -43,7 +44,7 @@ class HomeController extends Controller
         $organicos = collect();
 
         // Si hay búsqueda o filtros, buscar (siempre mostrar todos los tipos)
-        if ($q || $categoria_id || $tipo_animal_id || $raza_id) {
+        if ($q || $categoria_id || $tipo_animal_id || $raza_id || $tipo_cultivo_id) {
             // Búsqueda en Ganados (siempre mostrar)
             $ganadosQuery = Ganado::with($this->relacionesGanado())
                 ->where(function ($query) use ($q) {
@@ -112,6 +113,10 @@ class HomeController extends Controller
                 $organicosQuery->where('categoria_id', $categoria_id);
             }
 
+            if ($tipo_cultivo_id) {
+                $organicosQuery->where('tipo_cultivo_id', $tipo_cultivo_id);
+            }
+
             $organicos = $organicosQuery->orderBy('created_at', 'desc')->paginate(12);
         } else {
             // Sin búsqueda: mostrar productos destacados/recientes (últimos 3 de cada tipo)
@@ -145,6 +150,7 @@ class HomeController extends Controller
             'categoria_id',
             'tipo_animal_id',
             'raza_id',
+            'tipo_cultivo_id',
             'tipo'
         ));
     }
