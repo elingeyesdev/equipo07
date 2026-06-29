@@ -46,6 +46,7 @@ class OrganicoController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = auth()->id();
+        $data['categoria_id'] = $this->categoriaOrganicos()->id;
 
         $datosComerciales = $this->extraerDatosComerciales($data);
         $ubicacion = $this->extraerDatosUbicacion($data);
@@ -106,6 +107,7 @@ class OrganicoController extends Controller
         }
 
         $data = $request->validated();
+        $data['categoria_id'] = $this->categoriaOrganicos()->id;
 
         $datosComerciales = $this->extraerDatosComerciales($data);
         $ubicacion = $this->extraerDatosUbicacion($data);
@@ -200,6 +202,17 @@ class OrganicoController extends Controller
     private function puedeModificarProducto(Organico $organico): bool
     {
         return auth()->user()?->isAdmin() || $organico->user_id === auth()->id();
+    }
+
+    private function categoriaOrganicos(): Categoria
+    {
+        return Categoria::firstOrCreate(
+            ['nombre' => 'Organicos'],
+            [
+                'tipo' => 'general',
+                'descripcion' => 'Categoría para publicaciones de productos orgánicos.',
+            ]
+        );
     }
 
     private function extraerDatosComerciales(array &$data): array

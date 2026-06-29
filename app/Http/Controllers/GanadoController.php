@@ -111,6 +111,7 @@ class GanadoController extends Controller
         $data = [
             'nombre'         => $request->nombre,
             'user_id'        => auth()->id(),
+            'categoria_id'   => $this->categoriaAnimales()->id,
             'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id'        => $request->raza_id !== 'Cruce/Mestizo' ? $request->raza_id : null,
             'modalidad'      => $request->modalidad,
@@ -250,6 +251,7 @@ class GanadoController extends Controller
 
         $data = [
             'nombre'         => $request->nombre,
+            'categoria_id'   => $this->categoriaAnimales()->id,
             'tipo_animal_id' => $request->tipo_animal_id,
             'raza_id'        => $request->raza_id !== 'Cruce/Mestizo' ? $request->raza_id : null,
             'modalidad'      => $request->modalidad,
@@ -320,6 +322,17 @@ class GanadoController extends Controller
 
         return redirect()->route('ganados.index')
             ->with('success', 'Registro actualizado correctamente.');
+    }
+
+    private function categoriaAnimales(): Categoria
+    {
+        return Categoria::firstOrCreate(
+            ['nombre' => 'Animales'],
+            [
+                'tipo' => 'ganado',
+                'descripcion' => 'Categoría para publicaciones de animales.',
+            ]
+        );
     }
 
 
